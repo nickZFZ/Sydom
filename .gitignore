@@ -1,0 +1,33 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+
+# Build
+build/
+out/
+
+# Browser-validation artifacts (kept locally, not in repo)
+/*.png
+.playwright-mcp/
