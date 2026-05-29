@@ -31,3 +31,4 @@ out/
 # Browser-validation artifacts (kept locally, not in repo)
 /*.png
 .playwright-mcp/
+/casbin/
