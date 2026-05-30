@@ -31,7 +31,59 @@
 
 ---
 
-## 3. 系统全局架构
+## 3. Casbin v3.10.0 能力边界
+
+> 本节是 Sydom 详细设计的前提。所有设计决策必须先问：casbin 是否已覆盖？覆盖了就复用，没覆盖才自己做。
+
+### 3.1 casbin 已覆盖（直接复用）
+
+| 能力 | casbin 实现 | Sydom 使用方式 |
+|------|------------|--------------|
+| 多模型支持 | ACL / RBAC / ABAC / RESTful / 优先级，通过 `.conf` 配置切换 | 直接加载对应 model conf |
+| 多租户域隔离 | `DomainManager`：per-domain `RoleManagerImpl`，`g(user,role,domain)` 三元组 | 以 Application 为 domain，天然隔离多业务系统 |
+| 角色继承图 | `RoleManagerImpl`（内存邻接表），`BuildRoleLinks()` 从 `g` 段策略重建 | 直接使用默认实现，无需重造 |
+| 条件角色 | `ConditionalRoleManager`：带参数条件函数的角色匹配 | 复杂角色场景按需启用 |
+| 决策执行 | `SyncedEnforcer`（RWMutex 线程安全） + `EnforceContext`（多截面） | Sidecar 内核：`SyncedEnforcer.Enforce(ctx, sub, dom, obj, act)` |
+| 批量鉴权 | `BatchEnforce` / `BatchEnforceWithMatcher` | 对应 Sidecar `/batch-check` 接口 |
+| 决策解释 | `EnforceEx` 返回命中规则列表 | 对应 `/check?explain=true` |
+| 决策缓存 | `CachedEnforcer`（LRU + 过期时间） | 热点权限点缓存优化（按需叠加） |
+| 事务批量写 | `TransactionalEnforcer` | 控制面批量策略变更时使用 |
+| 策略存储接口 | `persist.Adapter` / `BatchAdapter` / `FilteredAdapter` | **Sydom 实现内存 Adapter**（Sidecar 侧），控制面实现 DB Adapter |
+| 策略变更通知 | `persist.Watcher` / `WatcherEx` / `UpdatableWatcher` 接口 | **Sydom 实现 gRPC Watcher**（控制面 → Sidecar 推送） |
+| 循环继承检测 | `detector.DefaultDetector.Check()`，DFS 检测环 | 控制面在保存角色关系前调用 |
+| 前端权限导出 | `CasbinJsGetPermissionForUser` | 如需前端鉴权直接复用 |
+| 效果合并 | `DefaultEffector.MergeEffects`：4 种内置 effect 表达式，支持短路 | 直接使用内置效果，无需自定义 |
+
+### 3.2 casbin 未覆盖（Sydom 需要自行实现）
+
+| 能力 | 说明 | 对应 Sydom 模块 |
+|------|------|--------------|
+| **数据权限（行级过滤）** | casbin 只做 true/false 鉴权，不做"返回条件表达式"这类语义 | Sidecar 数据权限引擎：条件树求值 + SQL/ORM 方言渲染 |
+| **策略持久化存储** | 内置只有 `fileadapter`（CSV），无 DB adapter | 控制面：实现 `persist.BatchAdapter` 对接 PG/MySQL |
+| **策略下发传输层** | casbin Watcher 接口只定义回调契约，不提供传输实现 | 控制面 → Sidecar：实现 gRPC stream Watcher |
+| **内存 Adapter（Sidecar）** | Sidecar 策略从内存缓存读，需实现读内存的 Adapter | `MemoryAdapter`：实现 `persist.BatchAdapter`，从本地缓存加载 |
+| **权限点注册机制** | casbin 无"权限点"概念，只有 policy 规则 | 控制面：权限点注册表 + SDK 埋点上报 API |
+| **控制面管理 API** | casbin 是纯库，无 HTTP/gRPC 管理接口 | 控制面：REST API + gRPC service（CRUD 策略、角色、应用） |
+| **Sidecar 进程** | casbin 是 Go 库，不是独立进程 | 将 casbin 封装为独立 Sidecar 进程，暴露 HTTP/gRPC 鉴权 API |
+| **多语言 SDK** | casbin 官方 SDK 各语言独立维护，不含框架 middleware | Sydom SDK：极薄框架胶水层（Go 优先，后续 Java/Node） |
+| **审计日志** | casbin logger 接口只记录内部日志，无业务审计语义 | Sidecar 鉴权日志 + 控制面策略变更审计 |
+| **可观测性** | casbin 无 Prometheus metrics | Sidecar 暴露 metrics（QPS、延迟、缓存命中率） |
+| **UI 管理界面** | casbin 无 UI | 控制面 Web Console |
+| **AI 配置助手** | casbin 无 | 控制面内嵌 AI 助手 / MCP 工具 |
+
+### 3.3 casbin 的关键限制（设计时需规避）
+
+| 限制 | 影响 | 规避方案 |
+|------|------|---------|
+| `govaluate` 每次请求重新编译 matcher | 高并发下 CPU 开销大 | 优先使用 `CachedEnforcer`；Sidecar 启用决策缓存 |
+| 角色图是纯内存结构 | 重启后需从策略重建，大规模时 `BuildRoleLinks()` 耗时 | Sidecar 启动时全量加载，增量更新用 `LoadIncrementalFilteredPolicy` |
+| Watcher 默认触发全量 `LoadPolicy()` | 高频策略变更时抖动大 | 实现 `WatcherEx` + 增量 `UpdatableWatcher`，只推变更 delta |
+| 循环继承不自动检测 | 角色环导致 matcher 死循环 | 控制面保存角色关系前调用 `detector.Check()` |
+| 无内置分布式一致性 | 多 Sidecar 策略更新有时序差 | 接受最终一致（< 5s），Sidecar 使用本地缓存降级 |
+
+---
+
+## 4. 系统全局架构
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
