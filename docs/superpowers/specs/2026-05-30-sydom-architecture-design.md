@@ -81,6 +81,72 @@
 | 循环继承不自动检测 | 角色环导致 matcher 死循环 | 控制面保存角色关系前调用 `detector.Check()` |
 | 无内置分布式一致性 | 多 Sidecar 策略更新有时序差 | 接受最终一致（< 5s），Sidecar 使用本地缓存降级 |
 
+### 3.4 领域模型边界：casbin 是计算内核，不是领域模型
+
+> 关键判断：casbin **不是"领域模型有缺陷"，而是它刻意不做完整的鉴权领域模型**。它要支持 ACL/RBAC/ABAC/ReBAC 任意范式，所以只能提供一套**无 schema 的元模型**（`Model = map[string]AssertionMap`，policy 是裸 `[]string`），把领域建模的责任留给集成方。司域的领域模型 = 复用 casbin 的授权计算 + 在其上下游补齐主体、资源、权限、治理四层。
+
+#### 工程定位
+
+casbin = 嵌在 Sidecar 进程里的**纯函数鉴权计算内核**：输入（model + policy + 请求）→ 输出（allow/deny）。它是无状态、无 I/O、无认证、无网络的计算单元，刻意把存储、传输、认证、租户隔离全部下推给集成方。
+
+#### 完整鉴权服务的领域模型分层（业界收敛：Zanzibar / AWS IAM / OPA / Oso）
+
+```
+1. 主体层 (Subject)
+   Principal ─┬─ User（用户）
+              ├─ ServiceAccount（服务账号 / 机器身份）
+              └─ Group（用户组，身份聚合，区别于 Role）
+   要点：Group（你属于谁）≠ Role（你能做什么）
+
+2. 资源层 (Resource)
+   ResourceType（order / document）
+     └─ Resource 实例（order#123）
+          ├─ attributes（owner / department / status）← 数据权限基础
+          └─ hierarchy（folder → file）              ← ReBAC 基础
+
+3. 权限层 (Permission)
+   Action（read / write / approve）
+   Permission = ResourceType + Action  ← 即"权限点"，具象为 menu/button/api
+   PermissionSet（权限集）
+
+4. 授权层 (Authorization) ── casbin 的强项
+   RoleBinding: (Subject, Role, Scope) 三元组
+   Role = PermissionSet 载体 + 可继承
+   Scope = Tenant / Application(Domain) / Org / ResourceInstance
+   DataPolicy = (Subject/Role, ResourceType, ConditionExpr, Scope)  ← casbin 无
+
+横切治理层 (Governance) ── casbin 完全空白
+   AuthN（认证：谁在调用）       ← AppID/Secret 在此层
+   Administration（管理鉴权：谁能改策略，元权限）
+   Audit（审计：谁何时改了/查了什么）
+   Multi-tenancy（租户物理/逻辑隔离）
+```
+
+#### casbin 覆盖对照
+
+| 领域层 | casbin 提供 | 司域要补 |
+|--------|------------|---------|
+| 主体层 | 扁平字符串 + `g` 继承（User/Role 糊在一起） | User / Group / ServiceAccount 清晰建模 |
+| 资源层 | 单个 `obj` 字符串 | ResourceType + 属性 + 层级 |
+| 权限层 | 单个 `act` 字符串 | 权限点注册表 + 埋点上报 |
+| 授权层 | **工业级强项**：RoleBinding 三元组 + domain Scope + 角色继承图 | Scope 扩展到 Tenant/Org；DataPolicy 条件树 |
+| 治理层 | **完全空白** | 认证、管理鉴权、审计、租户隔离 |
+
+#### 两层隔离叠加（重要）
+
+casbin 的 `domain`（`DomainManager`）只提供**鉴权计算时的命名空间隔离**——A 域的 admin 越不到 B 域，发生在 Enforce 那一瞬间。它**不提供**工程意义的租户隔离：谁能读写某域的策略、策略数据在存储层是否隔离、认证凭据——全部为零。
+
+因此司域的租户隔离是**两层叠加**：
+
+- **鉴权层隔离**（运行时）：直接用 casbin domain，Application = domain，零自研。
+- **管理层隔离**（控制面）：AppID/Secret 认证 + 服务端按凭据归属强制 app_id，casbin 完全空白，司域自建。
+
+#### 该判断对其他决策的解释力
+
+- **C1**（数据权限自建条件树）← casbin 资源层太薄，`obj` 只是字符串
+- **I2**（AppID/Secret + 租户隔离）← casbin 治理层完全空白
+- **权限点上报**（第 8 节）← casbin 权限层没有"权限点"实体
+
 ---
 
 ## 4. 系统全局架构
