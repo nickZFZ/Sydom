@@ -58,3 +58,27 @@ func TestApplication_Constraints(t *testing.T) {
 		VALUES (999999, 'x', 'x', 'AK_x', 'hashx')`)
 	require.Error(t, err)
 }
+
+// seedApp 建一个租户+应用，返回 app_id。供需要 app 上下文的表测试复用。
+func seedApp(t *testing.T, db *sql.DB) int64 {
+	t.Helper()
+	var tenantID, appID int64
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO tenant (name) VALUES ('acme') RETURNING id`).Scan(&tenantID))
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_hash)
+		 VALUES ($1, 'order-system', '订单系统', 'AK_order', 'hash1') RETURNING id`,
+		tenantID).Scan(&appID))
+	return appID
+}
+
+func TestRole_AppCodeUnique(t *testing.T) {
+	db := setupSchema(t)
+	appID := seedApp(t, db)
+
+	_, err := db.Exec(`INSERT INTO role (app_id, code, name) VALUES ($1, 'manager', '经理')`, appID)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO role (app_id, code, name) VALUES ($1, 'manager', '重复')`, appID)
+	require.Error(t, err)
+}
