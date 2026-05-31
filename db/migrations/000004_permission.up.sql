@@ -1,6 +1,6 @@
 CREATE TABLE permission (
     id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    app_id      BIGINT       NOT NULL REFERENCES application(id),
+    app_id      BIGINT       NOT NULL,
     code        VARCHAR(255) NOT NULL,
     resource    VARCHAR(128) NOT NULL,
     action      VARCHAR(64)  NOT NULL,
@@ -10,5 +10,6 @@ CREATE TABLE permission (
     source      VARCHAR(8)   NOT NULL DEFAULT 'manual',
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    CONSTRAINT uq_permission_app_code UNIQUE (app_id, code)
+    CONSTRAINT fk_permission_application FOREIGN KEY (app_id) REFERENCES application(id),
+    CONSTRAINT uq_permission_app_code    UNIQUE (app_id, code)
 );

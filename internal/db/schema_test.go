@@ -81,6 +81,10 @@ func TestRole_AppCodeUnique(t *testing.T) {
 
 	_, err = db.Exec(`INSERT INTO role (app_id, code, name) VALUES ($1, 'manager', '重复')`, appID)
 	require.Error(t, err)
+
+	// app_id 外键：不存在的应用应被拒绝
+	_, err = db.Exec(`INSERT INTO role (app_id, code, name) VALUES (999999, 'x', 'x')`)
+	require.Error(t, err)
 }
 
 func TestPermission_AppCodeUnique(t *testing.T) {
@@ -99,5 +103,10 @@ func TestPermission_AppCodeUnique(t *testing.T) {
 
 	_, err = db.Exec(`INSERT INTO permission (app_id, code, resource, action, type, name)
 		VALUES ($1, 'order:create', 'order', 'create', 'api', '重复')`, appID)
+	require.Error(t, err)
+
+	// app_id 外键：不存在的应用应被拒绝
+	_, err = db.Exec(`INSERT INTO permission (app_id, code, resource, action, type, name)
+		VALUES (999999, 'x:y', 'x', 'y', 'api', 'x')`)
 	require.Error(t, err)
 }
