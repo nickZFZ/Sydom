@@ -1,0 +1,14 @@
+version: v2
+modules:
+  - path: api/proto
+lint:
+  use:
+    - DEFAULT
+  except:
+    # 服务名 PolicySync 是 spec 定义的公开契约名，不加 Service 后缀
+    - SERVICE_SUFFIX
+    # SyncEvent / Snapshot 是 spec 定义的流式事件/快照类型，保留契约语义名
+    - RPC_RESPONSE_STANDARD_NAME
+breaking:
+  use:
+    - FILE

@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package sydom.sync.v1;
+
+option go_package = "github.com/nickZFZ/Sydom/gen/sydom/sync/v1;syncv1";
+
+// PolicySync 是控制面向 Sidecar 下发策略的同步服务。
+// 控制面实现，Sidecar 调用。所有 RPC 均需 HMAC 认证。
+service PolicySync {
+  // Subscribe 订阅策略变更流。Sidecar 启动后调一次并长连保持，
+  // 控制面持续推送 delta / heartbeat / snapshot_required。
+  rpc Subscribe(SubscribeRequest) returns (stream SyncEvent);
+
+  // PullSnapshot 拉取该 app 全量策略快照。
+  // 冷启动、版本断档、收到 SnapshotRequired 时调用。
+  rpc PullSnapshot(PullSnapshotRequest) returns (Snapshot);
+}
+
+// SubscribeRequest 携带 Sidecar 已应用到的版本号；冷启动为 0。
+// app_id 由认证凭据强制，不在请求体。
+message SubscribeRequest {
+  uint64 last_applied_version = 1;
+}
+
+// PullSnapshotRequest 为空——app_id 由认证凭据强制，快照总返回该 app 当前全量态。
+message PullSnapshotRequest {}
+
+// SyncEvent 是 Subscribe 流推送的事件包络。
+message SyncEvent {
+  oneof event {
+    Delta delta = 1;                        // 实时增量变更
+    Heartbeat heartbeat = 2;                // ~30s 版本心跳（反熵）
+    SnapshotRequired snapshot_required = 3; // 控制面要求 Sidecar 全量对齐
+  }
+}
+
+// Delta 对应控制面一次策略变更事务的产物（一个新版本号，原子整体 apply）。
+message Delta {
+  uint64 version = 1;                         // 本次变更后的 app 版本号（单调递增）
+  repeated PolicyChange policy_changes = 2;   // casbin_rule 行的增删改
+  repeated DataPolicyChange data_changes = 3; // data_policy 的增删改
+}
+
+// ChangeOp 是变更操作类型。
+enum ChangeOp {
+  CHANGE_OP_UNSPECIFIED = 0; // proto3 要求首值为 0
+  CHANGE_OP_ADD = 1;
+  CHANGE_OP_REMOVE = 2;
+  CHANGE_OP_UPDATE = 3;
+}
+
+// PolicyChange 是 casbin 策略行变更（对应 casbin_rule 表）。
+message PolicyChange {
+  ChangeOp op = 1;
+  PolicyRule rule = 2;     // ADD/UPDATE 的新行；REMOVE 时留空
+  PolicyRule old_rule = 3; // UPDATE 的旧行；REMOVE 时为待删行
+}
+
+// PolicyRule 是一条 casbin 策略行。
+message PolicyRule {
+  string ptype = 1;           // "p" / "g"
+  repeated string values = 2; // v0..v5，变长（casbin []string 风格，尾部空串可省）
+}
+
+// DataPolicyChange 是数据权限变更（对应 data_policy 表）。
+// 与 PolicyChange 不同，无 old 字段：data_policy 有代理键 id，
+// UPDATE 时 policy 携带完整新值并通过 id 与旧行关联；REMOVE 时按 id 定位删除。
+message DataPolicyChange {
+  ChangeOp op = 1;
+  DataPolicy policy = 2;
+}
+
+// DataPolicy 是一条数据权限规则。
+message DataPolicy {
+  uint64 id = 1;           // data_policy.id；REMOVE/UPDATE 靠它定位（无自然唯一键）
+  string subject_type = 2; // "role" / "user"
+  string subject_id = 3;
+  string resource = 4;
+  string condition = 5;    // 条件树 JSON 字符串（协议层不透明传输）
+}
+
+// Heartbeat 是反熵心跳，携带该 app 当前 max 版本号。
+message Heartbeat {
+  uint64 current_version = 1;
+}
+
+// SnapshotRequired 要求 Sidecar 调 PullSnapshot 全量对齐。
+message SnapshotRequired {
+  uint64 current_version = 1; // 当前版本，供 Sidecar 日志/决策
+  string reason = 2;          // "behind" / "reconnect" 等，便于排查
+}
+
+// Snapshot 是 PullSnapshot 返回的全量策略快照。
+message Snapshot {
+  uint64 version = 1;                    // 快照对应的 app 当前版本号
+  repeated PolicyRule rules = 2;         // 全量 casbin 策略行（p + g）
+  repeated DataPolicy data_policies = 3; // 全量 data_policy
+}
