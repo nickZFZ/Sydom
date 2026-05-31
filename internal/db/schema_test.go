@@ -145,3 +145,30 @@ func TestRolePermission_Constraints(t *testing.T) {
 		VALUES ($1, $2, 999999)`, appID, roleID)
 	require.Error(t, err)
 }
+
+func TestRoleInheritance_EdgeUnique(t *testing.T) {
+	db := setupSchema(t)
+	appID := seedApp(t, db)
+
+	var parentID, childID int64
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO role (app_id, code, name) VALUES ($1, 'admin', '管理员') RETURNING id`,
+		appID).Scan(&parentID))
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO role (app_id, code, name) VALUES ($1, 'manager', '经理') RETURNING id`,
+		appID).Scan(&childID))
+
+	_, err := db.Exec(`INSERT INTO role_inheritance (app_id, parent_role_id, child_role_id)
+		VALUES ($1, $2, $3)`, appID, parentID, childID)
+	require.NoError(t, err)
+
+	// 同一条继承边唯一（防重复边；环检测由控制面 detector.Check 负责，不在表层）
+	_, err = db.Exec(`INSERT INTO role_inheritance (app_id, parent_role_id, child_role_id)
+		VALUES ($1, $2, $3)`, appID, parentID, childID)
+	require.Error(t, err)
+
+	// 外键：不存在的角色应被拒绝
+	_, err = db.Exec(`INSERT INTO role_inheritance (app_id, parent_role_id, child_role_id)
+		VALUES ($1, $2, 999999)`, appID, parentID)
+	require.Error(t, err)
+}
