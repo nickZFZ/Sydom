@@ -183,6 +183,28 @@ func TestRoleInheritance_EdgeUnique(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestDataPolicy_JSONBCondition(t *testing.T) {
+	db := setupSchema(t)
+	appID := seedApp(t, db)
+
+	cond := `{"op":"AND","children":[{"field":"department","op":"EQ","value":"$user.department"}]}`
+	_, err := db.Exec(`INSERT INTO data_policy (app_id, subject_type, subject_id, resource, condition, version)
+		VALUES ($1, 'role', 'manager', 'order', $2::jsonb, 1)`, appID, cond)
+	require.NoError(t, err)
+
+	// jsonb 路径查询可用，证明确为 jsonb 而非纯文本
+	var op string
+	require.NoError(t, db.QueryRow(
+		`SELECT condition->>'op' FROM data_policy WHERE app_id = $1 AND subject_id = 'manager'`,
+		appID).Scan(&op))
+	require.Equal(t, "AND", op)
+
+	// app_id 外键：不存在的应用应被拒绝
+	_, err = db.Exec(`INSERT INTO data_policy (app_id, subject_type, subject_id, resource, condition, version)
+		VALUES (999999, 'role', 'x', 'y', '{}'::jsonb, 1)`)
+	require.Error(t, err)
+}
+
 func TestUserRoleBinding_Unique(t *testing.T) {
 	db := setupSchema(t)
 	appID := seedApp(t, db)
