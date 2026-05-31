@@ -110,3 +110,38 @@ func TestPermission_AppCodeUnique(t *testing.T) {
 		VALUES (999999, 'x:y', 'x', 'y', 'api', 'x')`)
 	require.Error(t, err)
 }
+
+func TestRolePermission_Constraints(t *testing.T) {
+	db := setupSchema(t)
+	appID := seedApp(t, db)
+
+	var roleID, permID int64
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO role (app_id, code, name) VALUES ($1, 'manager', '经理') RETURNING id`,
+		appID).Scan(&roleID))
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO permission (app_id, code, resource, action, type, name)
+		 VALUES ($1, 'order:create', 'order', 'create', 'api', '创建订单') RETURNING id`,
+		appID).Scan(&permID))
+
+	_, err := db.Exec(`INSERT INTO role_permission (app_id, role_id, permission_id)
+		VALUES ($1, $2, $3)`, appID, roleID, permID)
+	require.NoError(t, err)
+
+	// eft 默认 allow
+	var eft string
+	require.NoError(t, db.QueryRow(
+		`SELECT eft FROM role_permission WHERE role_id = $1 AND permission_id = $2`,
+		roleID, permID).Scan(&eft))
+	require.Equal(t, "allow", eft)
+
+	// (app_id, role_id, permission_id) 唯一
+	_, err = db.Exec(`INSERT INTO role_permission (app_id, role_id, permission_id)
+		VALUES ($1, $2, $3)`, appID, roleID, permID)
+	require.Error(t, err)
+
+	// 外键：不存在的 permission_id 应被拒绝
+	_, err = db.Exec(`INSERT INTO role_permission (app_id, role_id, permission_id)
+		VALUES ($1, $2, 999999)`, appID, roleID)
+	require.Error(t, err)
+}
