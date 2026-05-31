@@ -82,3 +82,22 @@ func TestRole_AppCodeUnique(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO role (app_id, code, name) VALUES ($1, 'manager', '重复')`, appID)
 	require.Error(t, err)
 }
+
+func TestPermission_AppCodeUnique(t *testing.T) {
+	db := setupSchema(t)
+	appID := seedApp(t, db)
+
+	_, err := db.Exec(`INSERT INTO permission (app_id, code, resource, action, type, name)
+		VALUES ($1, 'order:create', 'order', 'create', 'api', '创建订单')`, appID)
+	require.NoError(t, err)
+
+	var source string
+	require.NoError(t, db.QueryRow(
+		`SELECT source FROM permission WHERE app_id = $1 AND code = 'order:create'`,
+		appID).Scan(&source))
+	require.Equal(t, "manual", source)
+
+	_, err = db.Exec(`INSERT INTO permission (app_id, code, resource, action, type, name)
+		VALUES ($1, 'order:create', 'order', 'create', 'api', '重复')`, appID)
+	require.Error(t, err)
+}
