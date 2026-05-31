@@ -16,7 +16,7 @@
 | # | 子项目 | 状态 | 产出 |
 |---|--------|------|------|
 | 1 | 数据库 Schema | ✅ 设计+实现，已并入 main | spec + plan + 代码（`d2b78d6`） |
-| 2 | gRPC 同步协议契约 | 🔄 spec 已完成，待实现 | spec（`348ae57`） |
+| 2 | gRPC 同步协议契约 | 🔄 spec + plan 已完成，待实现 | spec（`348ae57`）+ plan（`f258956`） |
 | 3 | 控制面 | ⏳ 未开始 | — |
 | 4 | Sidecar 内部结构 | ⏳ 未开始 | — |
 | 5 | SDK 接口规范 | ⏳ 未开始 | — |
@@ -30,12 +30,13 @@
 | ① Schema 实现计划 | `plans/2026-05-31-sydom-database-schema.md` | `70eaad7` |
 | ① Schema 代码 | `db/migrations/000001-000010`、`internal/db/`、`Makefile` | `d2b78d6` |
 | ② gRPC 协议设计 | `specs/2026-05-31-sydom-grpc-sync-protocol-design.md` | `348ae57` |
+| ② gRPC 实现计划 | `plans/2026-05-31-sydom-grpc-sync-protocol.md` | `f258956` |
 
 ## 待办
 
 **近期（子项目 ②）：**
-- [ ] gRPC 协议 `writing-plans` → 实现计划
-- [ ] 实现：proto 工具链（protoc/buf）+ `PolicySync` service + HMAC 拦截器 + 测试
+- [x] gRPC 协议 `writing-plans` → 实现计划（`f258956`，5 个 TDD 任务）
+- [ ] 实现：执行 `plans/2026-05-31-sydom-grpc-sync-protocol.md`（migration 000011 + AES-GCM + buf 工具链/proto 生成 + HMAC 拦截器 + bufconn 集成测试）
 - [ ] **跨子项目回改**：新增 migration `000011`，`application.app_secret_hash` → `app_secret_enc`（AES-GCM 可逆加密，HMAC 验签需密钥原文）；同步更新数据库 spec §4.1 application 表说明
 
 **后续（子项目 ③④⑤）：**
