@@ -56,8 +56,8 @@ func seedApp(t *testing.T, db *sql.DB) int64 {
 	require.NoError(t, db.QueryRow(
 		`INSERT INTO tenant (name) VALUES ('acme') RETURNING id`).Scan(&tenantID))
 	require.NoError(t, db.QueryRow(
-		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_hash)
-		 VALUES ($1, 'order-system', '订单系统', 'AK_order', 'hash1') RETURNING id`,
+		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
+		 VALUES ($1, 'order-system', '订单系统', 'AK_order', '\xab'::bytea) RETURNING id`,
 		tenantID).Scan(&appID))
 	return appID
 }

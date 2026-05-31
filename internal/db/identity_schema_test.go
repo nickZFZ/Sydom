@@ -30,8 +30,8 @@ func TestApplication_Constraints(t *testing.T) {
 	require.NoError(t, db.QueryRow(
 		`INSERT INTO tenant (name) VALUES ('acme') RETURNING id`).Scan(&tenantID))
 
-	_, err := db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_hash)
-		VALUES ($1, 'order-system', '订单系统', 'AK_order', 'hash1')`, tenantID)
+	_, err := db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
+		VALUES ($1, 'order-system', '订单系统', 'AK_order', '\xab'::bytea)`, tenantID)
 	require.NoError(t, err)
 
 	var ver int64
@@ -39,16 +39,16 @@ func TestApplication_Constraints(t *testing.T) {
 		`SELECT current_version FROM application WHERE app_key = 'AK_order'`).Scan(&ver))
 	require.Equal(t, int64(0), ver)
 
-	_, err = db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_hash)
-		VALUES ($1, 'other', '其他', 'AK_order', 'hash2')`, tenantID)
+	_, err = db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
+		VALUES ($1, 'other', '其他', 'AK_order', '\xab'::bytea)`, tenantID)
 	require.Error(t, err)
 
-	_, err = db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_hash)
-		VALUES ($1, 'order-system', '重复域', 'AK_dup', 'hash3')`, tenantID)
+	_, err = db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
+		VALUES ($1, 'order-system', '重复域', 'AK_dup', '\xab'::bytea)`, tenantID)
 	require.Error(t, err)
 
-	_, err = db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_hash)
-		VALUES (999999, 'x', 'x', 'AK_x', 'hashx')`)
+	_, err = db.Exec(`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
+		VALUES (999999, 'x', 'x', 'AK_x', '\xab'::bytea)`)
 	require.Error(t, err)
 }
 
@@ -84,6 +84,27 @@ func TestApplication_VersionBumpSerialized(t *testing.T) {
 		`SELECT current_version FROM application WHERE id = $1`, appID).Scan(&final))
 	// 无丢失更新：最终版本号 == 总递增次数
 	require.Equal(t, int64(goroutines*bumpsEach), final)
+}
+
+func TestApplication_SecretColumnIsEnc(t *testing.T) {
+	db := setupSchema(t)
+
+	// 新列 app_secret_enc 必须是 bytea 且 NOT NULL（限定 public schema，避免同名表干扰）
+	var dataType, isNullable string
+	require.NoError(t, db.QueryRow(`
+		SELECT data_type, is_nullable FROM information_schema.columns
+		WHERE table_schema = 'public' AND table_name = 'application'
+		  AND column_name = 'app_secret_enc'`).Scan(&dataType, &isNullable))
+	require.Equal(t, "bytea", dataType)
+	require.Equal(t, "NO", isNullable)
+
+	// 旧列 app_secret_hash 必须已被移除
+	var n int
+	require.NoError(t, db.QueryRow(`
+		SELECT count(*) FROM information_schema.columns
+		WHERE table_schema = 'public' AND table_name = 'application'
+		  AND column_name = 'app_secret_hash'`).Scan(&n))
+	require.Equal(t, 0, n)
 }
 
 // bumpVersion 自行开启事务，复现规格 §6 步骤 1-2、5：行锁读取 current_version 后递增写回。
