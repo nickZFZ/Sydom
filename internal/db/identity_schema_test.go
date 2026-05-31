@@ -86,7 +86,7 @@ func TestApplication_VersionBumpSerialized(t *testing.T) {
 	require.Equal(t, int64(goroutines*bumpsEach), final)
 }
 
-// bumpVersion 复现规格 §6 步骤 1-2、5：行锁读取 current_version 后递增写回。
+// bumpVersion 自行开启事务，复现规格 §6 步骤 1-2、5：行锁读取 current_version 后递增写回。
 func bumpVersion(db *sql.DB, appID int64) error {
 	tx, err := db.Begin()
 	if err != nil {
