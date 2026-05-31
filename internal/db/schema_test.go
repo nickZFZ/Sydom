@@ -226,6 +226,28 @@ func TestCasbinRule_DefaultsAndUnique(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestPolicyAuditLog_Insert(t *testing.T) {
+	db := setupSchema(t)
+	appID := seedApp(t, db)
+
+	diff := `{"before":null,"after":{"code":"manager"}}`
+	_, err := db.Exec(`INSERT INTO policy_audit_log
+		(app_id, operator, action, entity_type, entity_id, diff, version)
+		VALUES ($1, 'admin@acme', 'create', 'role', '1', $2::jsonb, 1)`, appID, diff)
+	require.NoError(t, err)
+
+	// entity_id 允许为 NULL（某些变更无单一实体）
+	_, err = db.Exec(`INSERT INTO policy_audit_log
+		(app_id, operator, action, entity_type, version)
+		VALUES ($1, 'admin@acme', 'update', 'role', 2)`, appID)
+	require.NoError(t, err)
+
+	var cnt int
+	require.NoError(t, db.QueryRow(
+		`SELECT count(*) FROM policy_audit_log WHERE app_id = $1`, appID).Scan(&cnt))
+	require.Equal(t, 2, cnt)
+}
+
 func TestUserRoleBinding_Unique(t *testing.T) {
 	db := setupSchema(t)
 	appID := seedApp(t, db)
