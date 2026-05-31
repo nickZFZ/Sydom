@@ -205,6 +205,27 @@ func TestDataPolicy_JSONBCondition(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestCasbinRule_DefaultsAndUnique(t *testing.T) {
+	db := setupSchema(t)
+
+	// 只给 ptype/v0/v1/v2，其余 v 列应默认空串
+	_, err := db.Exec(`INSERT INTO casbin_rule (app_id, ptype, v0, v1, v2, version)
+		VALUES (1, 'g', 'alice', 'manager', 'order-system', 1)`)
+	require.NoError(t, err)
+
+	var v3, v4, v5 string
+	require.NoError(t, db.QueryRow(
+		`SELECT v3, v4, v5 FROM casbin_rule WHERE app_id = 1 AND v0 = 'alice'`).Scan(&v3, &v4, &v5))
+	require.Equal(t, "", v3)
+	require.Equal(t, "", v4)
+	require.Equal(t, "", v5)
+
+	// 完整 v 元组去重：同 (app_id, ptype, v0..v5) 再插入应失败
+	_, err = db.Exec(`INSERT INTO casbin_rule (app_id, ptype, v0, v1, v2, version)
+		VALUES (1, 'g', 'alice', 'manager', 'order-system', 2)`)
+	require.Error(t, err)
+}
+
 func TestUserRoleBinding_Unique(t *testing.T) {
 	db := setupSchema(t)
 	appID := seedApp(t, db)
