@@ -144,6 +144,11 @@ func TestRolePermission_Constraints(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO role_permission (app_id, role_id, permission_id)
 		VALUES ($1, $2, 999999)`, appID, roleID)
 	require.Error(t, err)
+
+	// 外键：不存在的 app_id 应被拒绝
+	_, err = db.Exec(`INSERT INTO role_permission (app_id, role_id, permission_id)
+		VALUES (999999, $1, $2)`, roleID, permID)
+	require.Error(t, err)
 }
 
 func TestRoleInheritance_EdgeUnique(t *testing.T) {
@@ -171,6 +176,11 @@ func TestRoleInheritance_EdgeUnique(t *testing.T) {
 	_, err = db.Exec(`INSERT INTO role_inheritance (app_id, parent_role_id, child_role_id)
 		VALUES ($1, $2, 999999)`, appID, parentID)
 	require.Error(t, err)
+
+	// 外键：不存在的 app_id 应被拒绝
+	_, err = db.Exec(`INSERT INTO role_inheritance (app_id, parent_role_id, child_role_id)
+		VALUES (999999, $1, $2)`, parentID, childID)
+	require.Error(t, err)
 }
 
 func TestUserRoleBinding_Unique(t *testing.T) {
@@ -194,5 +204,10 @@ func TestUserRoleBinding_Unique(t *testing.T) {
 	// 外键：role_id 必须存在
 	_, err = db.Exec(`INSERT INTO user_role_binding (app_id, user_id, role_id)
 		VALUES ($1, 'bob', 999999)`, appID)
+	require.Error(t, err)
+
+	// 外键：不存在的 app_id 应被拒绝
+	_, err = db.Exec(`INSERT INTO user_role_binding (app_id, user_id, role_id)
+		VALUES (999999, 'carol', $1)`, roleID)
 	require.Error(t, err)
 }
