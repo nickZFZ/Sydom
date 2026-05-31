@@ -14,3 +14,18 @@ func TestPostgresContainerStarts(t *testing.T) {
 	t.Cleanup(func() { _ = db.Close() })
 	require.NoError(t, db.Ping())
 }
+
+func TestTenant_NameUnique(t *testing.T) {
+	db := setupSchema(t)
+
+	_, err := db.Exec(`INSERT INTO tenant (name) VALUES ('acme')`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`INSERT INTO tenant (name) VALUES ('acme')`)
+	require.Error(t, err)
+
+	var status int
+	require.NoError(t, db.QueryRow(
+		`SELECT status FROM tenant WHERE name = 'acme'`).Scan(&status))
+	require.Equal(t, 1, status)
+}
