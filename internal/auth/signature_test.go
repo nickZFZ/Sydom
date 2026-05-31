@@ -10,8 +10,8 @@ func TestSign_Deterministic(t *testing.T) {
 	secret := []byte("s3cr3t")
 	a := Sign(secret, "AK_order", 1700000000, "/sydom.sync.v1.PolicySync/PullSnapshot")
 	b := Sign(secret, "AK_order", 1700000000, "/sydom.sync.v1.PolicySync/PullSnapshot")
-	require.Equal(t, a, b)         // 同输入同输出
-	require.Len(t, a, 64)          // SHA-256 hex = 64 字符
+	require.Equal(t, a, b) // 同输入同输出
+	require.Len(t, a, 64)  // SHA-256 hex = 64 字符
 }
 
 func TestVerify_Match(t *testing.T) {
