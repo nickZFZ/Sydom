@@ -16,7 +16,7 @@
 | # | 子项目 | 状态 | 产出 |
 |---|--------|------|------|
 | 1 | 数据库 Schema | ✅ 设计+实现，已并入 main | spec + plan + 代码（`d2b78d6`） |
-| 2 | gRPC 同步协议契约 | 🔄 spec + plan 已完成，待实现 | spec（`348ae57`）+ plan（`f258956`） |
+| 2 | gRPC 同步协议契约 | ✅ 设计+实现完成（5 个 TDD 任务，待合入 main） | spec（`348ae57`）+ plan（`f258956`）+ 代码（见下） |
 | 3 | 控制面 | ⏳ 未开始 | — |
 | 4 | Sidecar 内部结构 | ⏳ 未开始 | — |
 | 5 | SDK 接口规范 | ⏳ 未开始 | — |
@@ -31,16 +31,23 @@
 | ① Schema 代码 | `db/migrations/000001-000010`、`internal/db/`、`Makefile` | `d2b78d6` |
 | ② gRPC 协议设计 | `specs/2026-05-31-sydom-grpc-sync-protocol-design.md` | `348ae57` |
 | ② gRPC 实现计划 | `plans/2026-05-31-sydom-grpc-sync-protocol.md` | `f258956` |
+| ② migration 000011 + crypto | `db/migrations/000011_*`、`internal/crypto/` | `1f39a56`/`adacfe4` |
+| ② proto 契约 + 生成代码 | `api/proto/sydom/sync/v1/`、`buf.yaml`、`gen/sydom/sync/v1/` | `cc334d2` |
+| ② HMAC 认证 + 拦截器 | `internal/auth/`（signature/拦截器/凭据/bufconn 集成） | `cab2341`/`2c0506b` |
 
 ## 待办
 
-**近期（子项目 ②）：**
+**子项目 ②（已完成）：**
 - [x] gRPC 协议 `writing-plans` → 实现计划（`f258956`，5 个 TDD 任务）
-- [ ] 实现：执行 `plans/2026-05-31-sydom-grpc-sync-protocol.md`（migration 000011 + AES-GCM + buf 工具链/proto 生成 + HMAC 拦截器 + bufconn 集成测试）
-- [ ] **跨子项目回改**：新增 migration `000011`，`application.app_secret_hash` → `app_secret_enc`（AES-GCM 可逆加密，HMAC 验签需密钥原文）；同步更新数据库 spec §4.1 application 表说明
+- [x] 实现：migration 000011 + AES-GCM + buf 工具链/proto 生成 + HMAC 拦截器 + bufconn 集成测试（5 commit，全程两阶段审查；全量 `go test -race ./...` 通过）
+- [x] **跨子项目回改**：migration `000011` 落地 `app_secret_enc`；数据库 spec §4.1 已同步更新
+
+**子项目 ② 实现后浮现的待跟进项（留给后续 spec）：**
+- [ ] 控制面 DB 扫描：proto `version`/`id` 为 `uint64`、DB 为 `BIGINT`(int64)，扫描时统一用 int64 接收再转 uint64（最终审查 M1）
+- [ ] 测试代码 `grpc.DialContext` 已 deprecated，后续 patch 换 `grpc.NewClient`（最终审查 I1，仅测试、不阻塞）
 
 **后续（子项目 ③④⑤）：**
-- [ ] 控制面：管理 API + Policy Manager + DB BatchAdapter + delta 生成 + Redis Pub/Sub 广播
+- [ ] 控制面：管理 API + Policy Manager + DB BatchAdapter + delta 生成 + Redis Pub/Sub 广播；从 `app_secret_enc` 解密实现 `auth.SecretResolver`
 - [ ] Sidecar：同步协程 + MemoryAdapter + SyncedCachedEnforcer 封装 + 数据权限引擎 + 鉴权 API
 - [ ] SDK：middleware + ORM hook + 权限点上报
 

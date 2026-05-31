@@ -63,7 +63,7 @@ erDiagram
         bigint tenant_id FK
         varchar domain "casbin domain"
         varchar app_key UK "对外 AppID"
-        varchar app_secret_hash
+        bytea app_secret_enc
         bigint current_version "单调版本号"
         smallint status
     }
@@ -156,7 +156,7 @@ application
   domain            varchar(64)  NOT NULL   -- casbin domain 值，投影进 v1；默认可等于 app_key
   name              varchar(128) NOT NULL
   app_key           varchar(64)  NOT NULL   -- 对外 AppID
-  app_secret_hash   varchar(255) NOT NULL   -- AppSecret 仅存哈希；明文创建时返回一次
+  app_secret_enc    bytea        NOT NULL   -- AppSecret 的 AES-GCM 密文（nonce||ct||tag）；主密钥经环境变量/KMS 注入控制面，绝不入库。HMAC 验签需密钥原文，故可逆加密而非哈希。见 migration 000011 与 gRPC 协议 spec §4/§7
   current_version   bigint NOT NULL DEFAULT 0  -- 单调版本号，见第 6 节
   status            smallint NOT NULL DEFAULT 1
   created_at, updated_at
