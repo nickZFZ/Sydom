@@ -172,3 +172,27 @@ func TestRoleInheritance_EdgeUnique(t *testing.T) {
 		VALUES ($1, $2, 999999)`, appID, parentID)
 	require.Error(t, err)
 }
+
+func TestUserRoleBinding_Unique(t *testing.T) {
+	db := setupSchema(t)
+	appID := seedApp(t, db)
+
+	var roleID int64
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO role (app_id, code, name) VALUES ($1, 'manager', '经理') RETURNING id`,
+		appID).Scan(&roleID))
+
+	_, err := db.Exec(`INSERT INTO user_role_binding (app_id, user_id, role_id)
+		VALUES ($1, 'alice', $2)`, appID, roleID)
+	require.NoError(t, err)
+
+	// (app_id, user_id, role_id) 唯一
+	_, err = db.Exec(`INSERT INTO user_role_binding (app_id, user_id, role_id)
+		VALUES ($1, 'alice', $2)`, appID, roleID)
+	require.Error(t, err)
+
+	// 外键：role_id 必须存在
+	_, err = db.Exec(`INSERT INTO user_role_binding (app_id, user_id, role_id)
+		VALUES ($1, 'bob', 999999)`, appID)
+	require.Error(t, err)
+}
