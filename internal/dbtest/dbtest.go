@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/modules/redis"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
@@ -68,6 +69,23 @@ func SetupSchema(t *testing.T) *sql.DB {
 	t.Cleanup(func() { _ = conn.Close() })
 	require.NoError(t, conn.Ping())
 	return conn
+}
+
+// StartRedis 起一个临时 Redis 容器，返回 host:port 地址（无密码）。
+func StartRedis(t *testing.T) string {
+	t.Helper()
+	ctx := context.Background()
+	ctr, err := redis.RunContainer(ctx,
+		testcontainers.WithImage("docker.io/redis:7-alpine"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("Ready to accept connections").WithStartupTimeout(60*time.Second)),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = ctr.Terminate(ctx) })
+
+	endpoint, err := ctr.Endpoint(ctx, "")
+	require.NoError(t, err)
+	return endpoint
 }
 
 // SeedApp 建一个租户+应用，返回 app_id。app_secret_enc 用占位字节（不参与本包断言）。
