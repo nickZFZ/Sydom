@@ -288,7 +288,9 @@ policy_audit_log
   id            bigint PK
   app_id        bigint NOT NULL
   operator      varchar(128) NOT NULL   -- 操作人（控制面管理员标识）
-  action        varchar(16)  NOT NULL   -- create / update / delete
+  action        varchar(32)  NOT NULL   -- 写方法动作名，如 grant / upsert_data_policy /
+                                        -- remove_inheritance（最长 18 字符）。
+                                        -- 注：原 varchar(16) 不足，已由 migration 000012 拓宽到 32
   entity_type   varchar(32)  NOT NULL   -- role / permission / role_permission /
                                         -- user_role_binding / role_inheritance / data_policy
   entity_id     varchar(128)            -- 受影响业务实体 id（删除时为原 id）
