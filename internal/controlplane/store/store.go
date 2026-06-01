@@ -4,6 +4,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 )
@@ -169,6 +170,8 @@ func DeleteUserRoleBinding(ctx context.Context, ex cp.DBTX, appID int64, userID 
 
 // UpsertDataPolicy 新增或更新一条数据策略，写入 version；返回行 id 与是否为新增。
 // data_policy 无唯一约束，INSERT/UPDATE 依据 p.ID==0 区分。
+// UPDATE 命中 0 行（id 不存在或不属于本 app）即报错——fail-close：宁可拒绝也不让
+// 版本号在 DB 无实际变更时跳变、不让下游收到描述不存在策略的 Delta（权限一致性铁律）。
 func UpsertDataPolicy(ctx context.Context, ex cp.DBTX, appID int64, p cp.DataPolicy, version int64) (id int64, created bool, err error) {
 	if p.ID == 0 {
 		err = ex.QueryRowContext(ctx, `
@@ -177,16 +180,37 @@ func UpsertDataPolicy(ctx context.Context, ex cp.DBTX, appID int64, p cp.DataPol
 			appID, p.SubjectType, p.SubjectID, p.Resource, p.Condition, version).Scan(&id)
 		return id, true, err
 	}
-	_, err = ex.ExecContext(ctx, `
+	res, err := ex.ExecContext(ctx, `
 		UPDATE data_policy SET subject_type=$1, subject_id=$2, resource=$3, condition=$4::jsonb,
 		       version=$5, updated_at=now()
 		WHERE app_id=$6 AND id=$7`,
 		p.SubjectType, p.SubjectID, p.Resource, p.Condition, version, appID, p.ID)
-	return p.ID, false, err
+	if err != nil {
+		return p.ID, false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return p.ID, false, err
+	}
+	if n == 0 {
+		return 0, false, fmt.Errorf("data_policy id=%d not found for app %d", p.ID, appID)
+	}
+	return p.ID, false, nil
 }
 
-// DeleteDataPolicy 删一条数据策略。
+// DeleteDataPolicy 删一条数据策略。命中 0 行即报错（fail-close）：避免删不存在的策略
+// 却仍 bump 版本、向下游广播一条无中生有的 ChangeRemove。
 func DeleteDataPolicy(ctx context.Context, ex cp.DBTX, appID, id int64) error {
-	_, err := ex.ExecContext(ctx, `DELETE FROM data_policy WHERE app_id=$1 AND id=$2`, appID, id)
-	return err
+	res, err := ex.ExecContext(ctx, `DELETE FROM data_policy WHERE app_id=$1 AND id=$2`, appID, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("data_policy id=%d not found for app %d", id, appID)
+	}
+	return nil
 }

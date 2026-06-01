@@ -197,3 +197,72 @@ func (m *PolicyManager) UnbindUserRole(ctx context.Context, appID int64, userID 
 		},
 	})
 }
+
+// UpsertDataPolicy 新增/更新一条数据策略（不参与投影，只 bump 版本 + 更新 data_policy.version）。
+func (m *PolicyManager) UpsertDataPolicy(ctx context.Context, appID int64, p cp.DataPolicy) (*cp.Delta, error) {
+	return m.runVersionedWriteData(ctx, appID, writeOpData{
+		action: "upsert_data_policy", entityType: "data_policy", entityID: p.SubjectID,
+		apply: func(ctx context.Context, tx *sql.Tx, vNew int64) ([]cp.DataPolicyChange, error) {
+			id, created, err := store.UpsertDataPolicy(ctx, tx, appID, p, vNew)
+			if err != nil {
+				return nil, err
+			}
+			p.ID = id
+			op := cp.ChangeUpdate
+			if created {
+				op = cp.ChangeAdd
+			}
+			return []cp.DataPolicyChange{{Op: op, Policy: p}}, nil
+		},
+	})
+}
+
+// DeleteDataPolicy 删一条数据策略。
+func (m *PolicyManager) DeleteDataPolicy(ctx context.Context, appID, dataPolicyID int64) (*cp.Delta, error) {
+	return m.runVersionedWriteData(ctx, appID, writeOpData{
+		action: "delete_data_policy", entityType: "data_policy", entityID: fmt.Sprintf("%d", dataPolicyID),
+		apply: func(ctx context.Context, tx *sql.Tx, vNew int64) ([]cp.DataPolicyChange, error) {
+			if err := store.DeleteDataPolicy(ctx, tx, appID, dataPolicyID); err != nil {
+				return nil, err
+			}
+			return []cp.DataPolicyChange{{Op: cp.ChangeRemove, Policy: cp.DataPolicy{ID: dataPolicyID}}}, nil
+		},
+	})
+}
+
+// writeOpData 是 data_policy 写变体：apply 接收回填的 v_new（data_policy 需写入 version）。
+type writeOpData struct {
+	action, entityType, entityID string
+	apply                        func(ctx context.Context, tx *sql.Tx, vNew int64) ([]cp.DataPolicyChange, error)
+}
+
+// runVersionedWriteData 是 data_policy 类的写事务：始终 bump 版本（data 变更即策略变更），
+// 不动 casbin_rule，data_policy 写入本次 v_new。
+func (m *PolicyManager) runVersionedWriteData(ctx context.Context, appID int64, op writeOpData) (*cp.Delta, error) {
+	tx, err := m.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("policy: begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	cur, err := store.LockAppVersion(ctx, tx, appID)
+	if err != nil {
+		return nil, fmt.Errorf("policy: lock app %d version: %w", appID, err)
+	}
+	vNew := cur + 1
+	changes, err := op.apply(ctx, tx, vNew)
+	if err != nil {
+		return nil, fmt.Errorf("policy: apply %s: %w", op.action, err)
+	}
+	if err := store.BumpAppVersion(ctx, tx, appID, vNew); err != nil {
+		return nil, fmt.Errorf("policy: bump app %d to v%d: %w", appID, vNew, err)
+	}
+	if err := store.InsertAudit(ctx, tx, appID,
+		cp.OperatorFromContext(ctx), op.action, op.entityType, op.entityID, vNew); err != nil {
+		return nil, fmt.Errorf("policy: audit %s v%d: %w", op.action, vNew, err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("policy: commit %s v%d: %w", op.action, vNew, err)
+	}
+	return &cp.Delta{AppID: appID, Version: vNew, DataChanges: changes}, nil
+}
