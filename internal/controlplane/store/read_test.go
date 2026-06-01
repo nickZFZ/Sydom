@@ -31,6 +31,9 @@ func TestReadCurrentVersion(t *testing.T) {
 	v, err := store.ReadCurrentVersion(ctx, db, appID)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), v) // 种子 app 初始版本 0
+
+	_, err = store.ReadCurrentVersion(ctx, db, 9999999)
+	require.Error(t, err) // 未知 app id → fail-close 报错
 }
 
 func TestReadAppDataPolicies(t *testing.T) {
