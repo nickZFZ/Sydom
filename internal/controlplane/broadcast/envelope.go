@@ -20,7 +20,8 @@ type Publisher interface {
 	Publish(ctx context.Context, appID int64, delta *syncv1.Delta) error
 }
 
-// Subscriber 订阅广播总线，对每条消息回调 handler。Run 阻塞直至 ctx 取消。
+// Subscriber 订阅广播总线，对每条消息回调 handler。
+// Run 阻塞直至 ctx 取消；ctx 取消时返回 ctx.Err()，底层订阅错误时返回非 nil error。
 type Subscriber interface {
 	Run(ctx context.Context, handler func(appID int64, delta *syncv1.Delta)) error
 }
