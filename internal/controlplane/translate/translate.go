@@ -1,4 +1,4 @@
-// Package translate 在控制面领域类型 cp.* 与 syncv1 proto 消息间做双向翻译。
+// Package translate 把控制面领域类型 cp.* 单向翻译为 syncv1 proto 消息。
 // 纯函数，无 DB / 网络副作用。
 package translate
 

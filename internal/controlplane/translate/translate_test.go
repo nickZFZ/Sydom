@@ -82,3 +82,21 @@ func TestDataPoliciesToProto(t *testing.T) {
 	require.Equal(t, "doc", got[0].Resource)
 	require.Equal(t, `{"op":"EQ"}`, got[0].Condition)
 }
+
+func TestOpToProto_AllBranches(t *testing.T) {
+	cases := []struct {
+		name string
+		op   cp.ChangeOp
+		want syncv1.ChangeOp
+	}{
+		{"ChangeAdd", cp.ChangeAdd, syncv1.ChangeOp_CHANGE_OP_ADD},
+		{"ChangeUpdate", cp.ChangeUpdate, syncv1.ChangeOp_CHANGE_OP_UPDATE},
+		{"ChangeRemove", cp.ChangeRemove, syncv1.ChangeOp_CHANGE_OP_REMOVE},
+		{"invalid op", cp.ChangeOp(99), syncv1.ChangeOp_CHANGE_OP_UNSPECIFIED},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, opToProto(tc.op))
+		})
+	}
+}
