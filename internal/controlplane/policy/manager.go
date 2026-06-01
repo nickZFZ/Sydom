@@ -118,3 +118,82 @@ func (m *PolicyManager) RevokePermission(ctx context.Context, appID, roleID, per
 		},
 	})
 }
+
+// CreateRole 建角色。建角色本身不产生 casbin_rule（无绑定/授权），故通常返回 nil Delta。
+func (m *PolicyManager) CreateRole(ctx context.Context, appID int64, code, name string) (roleID int64, d *cp.Delta, err error) {
+	d, err = m.runVersionedWrite(ctx, appID, writeOp{
+		action: "create_role", entityType: "role", entityID: code,
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			id, e := store.InsertRole(ctx, tx, appID, code, name)
+			roleID = id
+			return nil, e
+		},
+	})
+	return roleID, d, err
+}
+
+// DeleteRole 删角色（级联删其全部引用），重投影会清掉相关 casbin_rule 行。
+func (m *PolicyManager) DeleteRole(ctx context.Context, appID, roleID int64) (*cp.Delta, error) {
+	return m.runVersionedWrite(ctx, appID, writeOp{
+		action: "delete_role", entityType: "role", entityID: fmt.Sprintf("%d", roleID),
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			return nil, store.DeleteRole(ctx, tx, appID, roleID)
+		},
+	})
+}
+
+// UpsertPermission 幂等注册权限点。仅注册不授权时不产生 casbin_rule。
+func (m *PolicyManager) UpsertPermission(ctx context.Context, appID int64, code, resource, action, ptype, name string) (permID int64, d *cp.Delta, err error) {
+	d, err = m.runVersionedWrite(ctx, appID, writeOp{
+		action: "upsert_permission", entityType: "permission", entityID: code,
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			id, e := store.UpsertPermission(ctx, tx, appID, code, resource, action, ptype, name)
+			permID = id
+			return nil, e
+		},
+	})
+	return permID, d, err
+}
+
+// AddRoleInheritance 加角色继承边（child 继承 parent），加锁后先做环检测。
+func (m *PolicyManager) AddRoleInheritance(ctx context.Context, appID, childID, parentID int64) (*cp.Delta, error) {
+	return m.runVersionedWrite(ctx, appID, writeOp{
+		action: "add_inheritance", entityType: "role_inheritance", entityID: fmt.Sprintf("%d->%d", childID, parentID),
+		preCheck: func(ctx context.Context, tx *sql.Tx) error {
+			return projection.CheckNoCycle(ctx, tx, appID, childID, parentID)
+		},
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			return nil, store.InsertRoleInheritance(ctx, tx, appID, childID, parentID)
+		},
+	})
+}
+
+// RemoveRoleInheritance 删角色继承边。
+func (m *PolicyManager) RemoveRoleInheritance(ctx context.Context, appID, childID, parentID int64) (*cp.Delta, error) {
+	return m.runVersionedWrite(ctx, appID, writeOp{
+		action: "remove_inheritance", entityType: "role_inheritance", entityID: fmt.Sprintf("%d->%d", childID, parentID),
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			return nil, store.DeleteRoleInheritance(ctx, tx, appID, childID, parentID)
+		},
+	})
+}
+
+// BindUserRole 绑定用户到角色（幂等）。
+func (m *PolicyManager) BindUserRole(ctx context.Context, appID int64, userID string, roleID int64) (*cp.Delta, error) {
+	return m.runVersionedWrite(ctx, appID, writeOp{
+		action: "bind_user", entityType: "user_role_binding", entityID: fmt.Sprintf("%s:%d", userID, roleID),
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			return nil, store.InsertUserRoleBinding(ctx, tx, appID, userID, roleID)
+		},
+	})
+}
+
+// UnbindUserRole 解绑用户角色。
+func (m *PolicyManager) UnbindUserRole(ctx context.Context, appID int64, userID string, roleID int64) (*cp.Delta, error) {
+	return m.runVersionedWrite(ctx, appID, writeOp{
+		action: "unbind_user", entityType: "user_role_binding", entityID: fmt.Sprintf("%s:%d", userID, roleID),
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			return nil, store.DeleteUserRoleBinding(ctx, tx, appID, userID, roleID)
+		},
+	})
+}
