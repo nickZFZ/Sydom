@@ -9,13 +9,17 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/dbtest"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRedisPublishSubscribe(t *testing.T) {
 	addr := dbtest.StartRedis(t)
-	pub := broadcast.NewRedisPublisher(redis.NewClient(&redis.Options{Addr: addr}))
-	sub := broadcast.NewRedisSubscriber(redis.NewClient(&redis.Options{Addr: addr}))
+	pubClient := redis.NewClient(&redis.Options{Addr: addr})
+	subClient := redis.NewClient(&redis.Options{Addr: addr})
+	t.Cleanup(func() { _ = pubClient.Close(); _ = subClient.Close() })
+	pub := broadcast.NewRedisPublisher(pubClient)
+	sub := broadcast.NewRedisSubscriber(subClient)
 
 	type recv struct {
 		appID int64
@@ -31,12 +35,13 @@ func TestRedisPublishSubscribe(t *testing.T) {
 	// 等订阅就绪后再发布（Redis Pub/Sub at-most-once，订阅前发会丢）
 	require.Eventually(t, func() bool {
 		err := pub.Publish(context.Background(), 7, &syncv1.Delta{Version: 99})
-		require.NoError(t, err)
+		if !assert.NoError(t, err) {
+			return false
+		}
 		select {
 		case r := <-got:
-			require.Equal(t, int64(7), r.appID)
-			require.Equal(t, uint64(99), r.delta.Version)
-			return true
+			return assert.Equal(t, int64(7), r.appID) &&
+				assert.Equal(t, uint64(99), r.delta.Version)
 		case <-time.After(100 * time.Millisecond):
 			return false
 		}
