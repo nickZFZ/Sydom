@@ -7,6 +7,7 @@ import (
 
 	syncv1 "github.com/nickZFZ/Sydom/gen/sydom/sync/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
+	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/controlplane/translate"
 	"google.golang.org/grpc"
@@ -158,4 +159,14 @@ func NewGRPCServer(srv *Server, res auth.SecretResolver) *grpc.Server {
 	)
 	syncv1.RegisterPolicySyncServer(g, srv)
 	return g
+}
+
+// RunDispatchLoop 跑广播订阅循环：收到的每条 Delta 包成 SyncEvent 投给本地对应 app 的流。
+// 阻塞直至 ctx 取消。每副本启动一次。
+func (s *Server) RunDispatchLoop(ctx context.Context, sub broadcast.Subscriber) error {
+	return sub.Run(ctx, func(appID int64, delta *syncv1.Delta) {
+		s.hub.Dispatch(appID, &syncv1.SyncEvent{
+			Event: &syncv1.SyncEvent_Delta{Delta: delta},
+		})
+	})
 }

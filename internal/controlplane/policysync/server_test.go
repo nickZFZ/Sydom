@@ -9,10 +9,12 @@ import (
 
 	syncv1 "github.com/nickZFZ/Sydom/gen/sydom/sync/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
+	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policysync"
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
 	"github.com/nickZFZ/Sydom/internal/crypto"
 	"github.com/nickZFZ/Sydom/internal/dbtest"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -200,6 +202,57 @@ func TestSubscribe_InSyncReceivesDispatchedDelta(t *testing.T) {
 
 	cancel()       // 停止后台 Dispatch
 	<-dispatchDone // 等 goroutine 退出，避免泄漏
+}
+
+func TestEndToEnd_PublishToSubscribeStream(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db) // current_version=0
+	addr := dbtest.StartRedis(t)
+
+	srvHolder := make(chan *policysync.Server, 1)
+	conn := startServerCapture(t, db, srvHolder)
+	srv := <-srvHolder
+
+	// 接线：RedisSubscriber → srv.Hub().Dispatch
+	sub := broadcast.NewRedisSubscriber(redis.NewClient(&redis.Options{Addr: addr}))
+	loopCtx, loopCancel := context.WithCancel(context.Background())
+	defer loopCancel()
+	go func() { _ = srv.RunDispatchLoop(loopCtx, sub) }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	stream, err := syncv1.NewPolicySyncClient(conn).Subscribe(ctx, &syncv1.SubscribeRequest{LastAppliedVersion: 0})
+	require.NoError(t, err)
+
+	// Redis pub/sub 无缓冲 + 订阅/注册存在时序窗口（RedisSubscriber 需先 SUBSCRIBE、
+	// Subscribe 流需先 hub.register）。故后台每 50ms 持续发布，直到流上收到 Delta；
+	// 前台 Recv 循环跳过 SnapshotRequired/Heartbeat 等非 Delta 事件。
+	pub := broadcast.NewRedisPublisher(redis.NewClient(&redis.Options{Addr: addr}))
+	pubDone := make(chan struct{})
+	go func() {
+		defer close(pubDone)
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				_ = pub.Publish(context.Background(), appID, &syncv1.Delta{Version: 1})
+			}
+		}
+	}()
+
+	var got *syncv1.Delta
+	for got == nil {
+		ev, err := stream.Recv()
+		require.NoError(t, err)
+		got = ev.GetDelta() // 非 Delta 事件 GetDelta()==nil，跳过
+	}
+	require.Equal(t, uint64(1), got.Version)
+
+	cancel()  // 停止后台发布
+	<-pubDone // 等 goroutine 退出，避免泄漏
 }
 
 // startServerCapture 同 startServer，但把 *Server 经 holder 回传，便于测试直接 Dispatch。
