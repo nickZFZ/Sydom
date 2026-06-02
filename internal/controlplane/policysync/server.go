@@ -79,6 +79,75 @@ func (s *Server) PullSnapshot(ctx context.Context, _ *syncv1.PullSnapshotRequest
 	}, nil
 }
 
+// Subscribe 订阅策略变更流：对账续传 + fan-out + 心跳。
+func (s *Server) Subscribe(req *syncv1.SubscribeRequest, stream syncv1.PolicySync_SubscribeServer) error {
+	ctx := stream.Context()
+	appKey, ok := auth.AppIDFromContext(ctx)
+	if !ok {
+		return status.Error(codes.Unauthenticated, "missing app identity")
+	}
+	appID, err := store.ResolveAppIDByKey(ctx, s.db, appKey)
+	if err != nil {
+		return status.Errorf(codes.NotFound, "resolve app: %v", err)
+	}
+	current, err := store.ReadCurrentVersion(ctx, s.db, appID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "read version: %v", err)
+	}
+
+	// 先注册到 Hub，避免读 current 与注册之间漏掉 Dispatch 的 Delta（重复由 Sidecar 版本去重兜底）。
+	sub := s.hub.register(appID)
+	defer s.hub.unregister(sub)
+
+	// 对账：last_applied 落后于 current（含冷启动 0<current）→ 先发 SnapshotRequired。
+	if uint64(current) != req.LastAppliedVersion {
+		if err := stream.Send(&syncv1.SyncEvent{Event: &syncv1.SyncEvent_SnapshotRequired{
+			SnapshotRequired: &syncv1.SnapshotRequired{CurrentVersion: uint64(current), Reason: "behind"},
+		}}); err != nil {
+			return err
+		}
+	}
+
+	// send-loop：events / overflow / heartbeat 三路。
+	lastVer := uint64(current)
+	const reconcileEvery = 10 // 每 10 个心跳兑正一次内存版本
+	ticks := 0
+	ticker := time.NewTicker(s.cfg.HeartbeatInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil // Sidecar 断开 / 服务端关闭
+		case ev := <-sub.events:
+			if d := ev.GetDelta(); d != nil {
+				lastVer = d.Version
+			}
+			if err := stream.Send(ev); err != nil {
+				return err
+			}
+		case <-sub.overflow:
+			if err := stream.Send(&syncv1.SyncEvent{Event: &syncv1.SyncEvent_SnapshotRequired{
+				SnapshotRequired: &syncv1.SnapshotRequired{CurrentVersion: lastVer, Reason: "overflow"},
+			}}); err != nil {
+				return err
+			}
+		case <-ticker.C:
+			ticks++
+			if ticks%reconcileEvery == 0 {
+				if v, err := store.ReadCurrentVersion(ctx, s.db, appID); err == nil {
+					lastVer = uint64(v)
+				}
+			}
+			if err := stream.Send(&syncv1.SyncEvent{Event: &syncv1.SyncEvent_Heartbeat{
+				Heartbeat: &syncv1.Heartbeat{CurrentVersion: lastVer},
+			}}); err != nil {
+				return err
+			}
+		}
+	}
+}
+
 // NewGRPCServer 组装带认证拦截器与 64MB 消息上限的 grpc.Server 并注册 PolicySync。
 func NewGRPCServer(srv *Server, res auth.SecretResolver) *grpc.Server {
 	g := grpc.NewServer(

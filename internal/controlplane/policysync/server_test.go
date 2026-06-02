@@ -134,3 +134,82 @@ func TestPullSnapshot_Unauthenticated(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, codes.Unauthenticated, status.Code(err))
 }
+
+func TestSubscribe_ColdStartSendsSnapshotRequired(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	_, err := db.Exec(`UPDATE application SET current_version=3 WHERE id=$1`, appID)
+	require.NoError(t, err)
+
+	conn, _ := startServer(t, db)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 冷启动 last_applied=0 < current=3 → 首事件应为 SnapshotRequired(behind)
+	stream, err := syncv1.NewPolicySyncClient(conn).Subscribe(ctx, &syncv1.SubscribeRequest{LastAppliedVersion: 0})
+	require.NoError(t, err)
+	ev, err := stream.Recv()
+	require.NoError(t, err)
+	sr := ev.GetSnapshotRequired()
+	require.NotNil(t, sr)
+	require.Equal(t, uint64(3), sr.CurrentVersion)
+	require.Equal(t, "behind", sr.Reason)
+}
+
+func TestSubscribe_InSyncReceivesDispatchedDelta(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db) // current_version=0
+
+	srvHolder := make(chan *policysync.Server, 1)
+	conn := startServerCapture(t, db, srvHolder)
+	srv := <-srvHolder
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// last_applied==current==0 → 无 SnapshotRequired，注册后等 Dispatch
+	stream, err := syncv1.NewPolicySyncClient(conn).Subscribe(ctx, &syncv1.SubscribeRequest{LastAppliedVersion: 0})
+	require.NoError(t, err)
+
+	// 等服务端注册完成后 Dispatch 一条 Delta（用 Eventually 容忍注册时序）
+	require.Eventually(t, func() bool {
+		srv.Hub().Dispatch(appID, &syncv1.SyncEvent{
+			Event: &syncv1.SyncEvent_Delta{Delta: &syncv1.Delta{Version: 1}},
+		})
+		// 尝试非阻塞收一条；这里直接 Recv（带超时由外层 ctx 保证）
+		return true
+	}, 2*time.Second, 50*time.Millisecond)
+
+	ev, err := stream.Recv()
+	require.NoError(t, err)
+	require.NotNil(t, ev.GetDelta())
+	require.Equal(t, uint64(1), ev.GetDelta().Version)
+}
+
+// startServerCapture 同 startServer，但把 *Server 经 holder 回传，便于测试直接 Dispatch。
+func startServerCapture(t *testing.T, db *sql.DB, holder chan *policysync.Server) *grpc.ClientConn {
+	t.Helper()
+	res, err := secret.NewResolver(db, masterKey())
+	require.NoError(t, err)
+	plain := []byte("app-secret")
+	enc, err := res.EncryptSecret(plain)
+	require.NoError(t, err)
+	_, err = db.Exec(`UPDATE application SET app_secret_enc=$1 WHERE app_key=$2`, enc, dbtest.SeedAppKey)
+	require.NoError(t, err)
+
+	srv := policysync.NewServer(db, policysync.Config{HeartbeatInterval: 50 * time.Millisecond, BufSize: 8})
+	holder <- srv
+	g := policysync.NewGRPCServer(srv, res)
+	lis := bufconn.Listen(1024 * 1024)
+	go func() { _ = g.Serve(lis) }()
+	t.Cleanup(g.Stop)
+
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithPerRPCCredentials(auth.NewPerRPCCredentials(dbtest.SeedAppKey, plain, false)),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	return conn
+}
