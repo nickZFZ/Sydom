@@ -14,7 +14,7 @@ import (
 func TestBindUserRole_ProducesGRow(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	rid, _, err := m.CreateRole(context.Background(), appID, "manager", "经理")
 	require.NoError(t, err)
@@ -28,7 +28,7 @@ func TestBindUserRole_ProducesGRow(t *testing.T) {
 func TestAddRoleInheritance_CycleRejected(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	a, _, err := m.CreateRole(context.Background(), appID, "A", "A")
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestAddRoleInheritance_CycleRejected(t *testing.T) {
 func TestDeleteRole_CascadesAndRemovesRules(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	permID, _, err := m.UpsertPermission(context.Background(), appID, "order:read", "order", "read", "api", "读订单")
 	require.NoError(t, err)

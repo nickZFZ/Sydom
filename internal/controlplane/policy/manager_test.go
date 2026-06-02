@@ -30,7 +30,7 @@ func TestGrantPermission_EndToEnd(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
 	roleID, permID := seedRoleAndPerm(t, db, appID)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	d, err := m.GrantPermission(context.Background(), appID, roleID, permID, "allow")
 	require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestGrantPermission_IdempotentNoOp(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
 	roleID, permID := seedRoleAndPerm(t, db, appID)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	_, err := m.GrantPermission(context.Background(), appID, roleID, permID, "allow")
 	require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestGrantPermission_AtomicRollback(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
 	roleID, _ := seedRoleAndPerm(t, db, appID)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	_, err := m.GrantPermission(context.Background(), appID, roleID, 999999, "allow")
 	require.Error(t, err)
@@ -87,7 +87,7 @@ func TestRevokePermission(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
 	roleID, permID := seedRoleAndPerm(t, db, appID)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	_, err := m.GrantPermission(context.Background(), appID, roleID, permID, "allow")
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestRevokePermission(t *testing.T) {
 func TestVersionSerialized(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	const n = 10
 	var permID int64

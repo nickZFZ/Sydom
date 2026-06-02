@@ -11,14 +11,20 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 )
 
-// PolicyManager 是控制面真相源写入引擎。
-type PolicyManager struct {
-	db *sql.DB
+// DeltaSink 在写事务内（提交前）持久化产出的 Delta；返回 error 触发整笔写回滚。
+type DeltaSink interface {
+	Persist(ctx context.Context, tx cp.DBTX, appID int64, delta *cp.Delta) error
 }
 
-// NewPolicyManager 构造 PolicyManager。
-func NewPolicyManager(db *sql.DB) *PolicyManager {
-	return &PolicyManager{db: db}
+// PolicyManager 是控制面真相源写入引擎。
+type PolicyManager struct {
+	db   *sql.DB
+	sink DeltaSink // 可为 nil（退化为不落 outbox 的纯写）
+}
+
+// NewPolicyManager 构造 PolicyManager。sink 可为 nil。
+func NewPolicyManager(db *sql.DB, sink DeltaSink) *PolicyManager {
+	return &PolicyManager{db: db, sink: sink}
 }
 
 // writeOp 描述一次版本化写：审计元信息 + 业务表变更闭包 + 可选的 data 变更产出。
@@ -87,13 +93,19 @@ func (m *PolicyManager) runVersionedWrite(ctx context.Context, appID int64, op w
 		cp.OperatorFromContext(ctx), op.action, op.entityType, op.entityID, vNew); err != nil {
 		return nil, fmt.Errorf("policy: audit %s v%d: %w", op.action, vNew, err)
 	}
+	delta := &cp.Delta{
+		AppID: appID, Version: vNew,
+		RuleAdds: adds, RuleRemoves: removes, DataChanges: dataChanges,
+	}
+	if m.sink != nil {
+		if err := m.sink.Persist(ctx, tx, appID, delta); err != nil {
+			return nil, fmt.Errorf("policy: sink %s v%d: %w", op.action, vNew, err)
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("policy: commit %s v%d: %w", op.action, vNew, err)
 	}
-	return &cp.Delta{
-		AppID: appID, Version: vNew,
-		RuleAdds: adds, RuleRemoves: removes, DataChanges: dataChanges,
-	}, nil
+	return delta, nil
 }
 
 // GrantPermission 给角色授予权限点（幂等）。
@@ -261,8 +273,14 @@ func (m *PolicyManager) runVersionedWriteData(ctx context.Context, appID int64, 
 		cp.OperatorFromContext(ctx), op.action, op.entityType, op.entityID, vNew); err != nil {
 		return nil, fmt.Errorf("policy: audit %s v%d: %w", op.action, vNew, err)
 	}
+	delta := &cp.Delta{AppID: appID, Version: vNew, DataChanges: changes}
+	if m.sink != nil {
+		if err := m.sink.Persist(ctx, tx, appID, delta); err != nil {
+			return nil, fmt.Errorf("policy: sink %s v%d: %w", op.action, vNew, err)
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("policy: commit %s v%d: %w", op.action, vNew, err)
 	}
-	return &cp.Delta{AppID: appID, Version: vNew, DataChanges: changes}, nil
+	return delta, nil
 }

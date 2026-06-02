@@ -13,7 +13,7 @@ import (
 func TestUpsertDataPolicy(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	d, err := m.UpsertDataPolicy(context.Background(), appID, cp.DataPolicy{
 		SubjectType: "role", SubjectID: "manager", Resource: "order",
@@ -37,7 +37,7 @@ func TestUpsertDataPolicy(t *testing.T) {
 func TestUpsertDataPolicy_UpdateExisting(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	// 先新增
 	d, err := m.UpsertDataPolicy(context.Background(), appID, cp.DataPolicy{
@@ -69,7 +69,7 @@ func TestUpsertDataPolicy_UpdateExisting(t *testing.T) {
 func TestDataPolicy_NotFoundFailClose(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	_, err := m.UpsertDataPolicy(context.Background(), appID, cp.DataPolicy{
 		ID: 999999, SubjectType: "role", SubjectID: "x", Resource: "order", Condition: `{"op":"ALL"}`,
@@ -94,7 +94,7 @@ func errFromDelete(t *testing.T, m *policy.PolicyManager, appID, id int64) error
 func TestDeleteDataPolicy(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	m := policy.NewPolicyManager(db)
+	m := policy.NewPolicyManager(db, nil)
 
 	d, err := m.UpsertDataPolicy(context.Background(), appID, cp.DataPolicy{
 		SubjectType: "role", SubjectID: "manager", Resource: "order", Condition: `{"op":"ALL"}`,
