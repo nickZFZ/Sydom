@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package sydom.admin.v1;
+
+option go_package = "github.com/nickZFZ/Sydom/gen/sydom/admin/v1;adminv1";
+
+// AdminService 是控制面管理写入面（gRPC 优先；REST 后补）。
+// 认证：HMAC（复用 ② auth，metadata 携 operator principal + 签名）。
+// 鉴权：每个写 RPC 由服务端按 (resource, action, app_id 域) 做元-RBAC 校验。
+service AdminService {
+  // —— 业务策略写（下沉 PolicyManager）——
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+  rpc DeleteRole(DeleteRoleRequest) returns (WriteResponse);
+  rpc UpsertPermission(UpsertPermissionRequest) returns (UpsertPermissionResponse);
+  rpc GrantPermission(GrantPermissionRequest) returns (WriteResponse);
+  rpc RevokePermission(RevokePermissionRequest) returns (WriteResponse);
+  rpc AddRoleInheritance(RoleInheritanceRequest) returns (WriteResponse);
+  rpc RemoveRoleInheritance(RoleInheritanceRequest) returns (WriteResponse);
+  rpc BindUserRole(UserRoleRequest) returns (WriteResponse);
+  rpc UnbindUserRole(UserRoleRequest) returns (WriteResponse);
+  rpc UpsertDataPolicy(UpsertDataPolicyRequest) returns (UpsertDataPolicyResponse);
+  rpc DeleteDataPolicy(DeleteDataPolicyRequest) returns (WriteResponse);
+
+  // —— 应用管理 ——
+  rpc CreateApplication(CreateApplicationRequest) returns (CreateApplicationResponse);
+  rpc SetApplicationStatus(SetApplicationStatusRequest) returns (WriteResponse);
+  rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse);
+
+  // —— 管理员自身管理（system 域，super-admin 专属）——
+  rpc CreateOperator(CreateOperatorRequest) returns (CreateOperatorResponse);
+  rpc SetOperatorStatus(SetOperatorStatusRequest) returns (WriteResponse);
+  rpc CreateAdminRole(CreateAdminRoleRequest) returns (CreateAdminRoleResponse);
+  rpc GrantAdminRole(GrantAdminRoleRequest) returns (WriteResponse);
+  rpc BindOperatorRole(BindOperatorRoleRequest) returns (WriteResponse);
+}
+
+// WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
+message WriteResponse {
+  uint64 version = 1;
+  bool changed = 2;
+}
+
+message CreateRoleRequest {
+  uint64 app_id = 1;
+  string code = 2;
+  string name = 3;
+}
+message CreateRoleResponse {
+  int64 role_id = 1;
+  uint64 version = 2;
+  bool changed = 3;
+}
+message DeleteRoleRequest {
+  uint64 app_id = 1;
+  int64 role_id = 2;
+}
+message UpsertPermissionRequest {
+  uint64 app_id = 1;
+  string code = 2;
+  string resource = 3;
+  string action = 4;
+  string ptype = 5;
+  string name = 6;
+}
+message UpsertPermissionResponse {
+  int64 permission_id = 1;
+  uint64 version = 2;
+  bool changed = 3;
+}
+message GrantPermissionRequest {
+  uint64 app_id = 1;
+  int64 role_id = 2;
+  int64 permission_id = 3;
+  string eft = 4; // "allow" / "deny"
+}
+message RevokePermissionRequest {
+  uint64 app_id = 1;
+  int64 role_id = 2;
+  int64 permission_id = 3;
+}
+message RoleInheritanceRequest {
+  uint64 app_id = 1;
+  int64 child_role_id = 2;
+  int64 parent_role_id = 3;
+}
+message UserRoleRequest {
+  uint64 app_id = 1;
+  string user_id = 2;
+  int64 role_id = 3;
+}
+message UpsertDataPolicyRequest {
+  uint64 app_id = 1;
+  int64 id = 2; // 0=新增
+  string subject_type = 3;
+  string subject_id = 4;
+  string resource = 5;
+  string condition = 6; // 条件树 JSON
+}
+message UpsertDataPolicyResponse {
+  int64 data_policy_id = 1;
+  uint64 version = 2;
+  bool changed = 3;
+}
+message DeleteDataPolicyRequest {
+  uint64 app_id = 1;
+  int64 data_policy_id = 2;
+}
+
+message CreateApplicationRequest {
+  string tenant_name = 1;
+  string domain = 2;
+  string name = 3;
+  string app_key = 4;
+}
+message CreateApplicationResponse {
+  uint64 app_id = 1;
+  string app_secret = 2; // 明文仅此一次返回，服务端只存加密
+}
+message SetApplicationStatusRequest {
+  uint64 app_id = 1;
+  uint32 status = 2; // 1=active, 2=disabled
+}
+message ListApplicationsRequest {}
+message ApplicationSummary {
+  uint64 app_id = 1;
+  string domain = 2;
+  string name = 3;
+  string app_key = 4;
+  uint32 status = 5;
+  uint64 current_version = 6;
+}
+message ListApplicationsResponse {
+  repeated ApplicationSummary applications = 1;
+}
+
+message CreateOperatorRequest {
+  string principal = 1;
+}
+message CreateOperatorResponse {
+  int64 operator_id = 1;
+  string secret = 2; // 明文仅此一次返回
+}
+message SetOperatorStatusRequest {
+  int64 operator_id = 1;
+  uint32 status = 2;
+}
+message CreateAdminRoleRequest {
+  string code = 1;
+  string name = 2;
+}
+message CreateAdminRoleResponse {
+  int64 role_id = 1;
+}
+message GrantAdminRoleRequest {
+  int64 role_id = 1;
+  string domain = 2;   // app_id 字符串或 "*"
+  string resource = 3;
+  string action = 4;
+}
+message BindOperatorRoleRequest {
+  int64 operator_id = 1;
+  int64 role_id = 2;
+  string domain = 3;
+}
