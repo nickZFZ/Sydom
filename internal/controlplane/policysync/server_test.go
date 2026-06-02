@@ -171,19 +171,35 @@ func TestSubscribe_InSyncReceivesDispatchedDelta(t *testing.T) {
 	stream, err := syncv1.NewPolicySyncClient(conn).Subscribe(ctx, &syncv1.SubscribeRequest{LastAppliedVersion: 0})
 	require.NoError(t, err)
 
-	// 等服务端注册完成后 Dispatch 一条 Delta（用 Eventually 容忍注册时序）
-	require.Eventually(t, func() bool {
-		srv.Hub().Dispatch(appID, &syncv1.SyncEvent{
-			Event: &syncv1.SyncEvent_Delta{Delta: &syncv1.Delta{Version: 1}},
-		})
-		// 尝试非阻塞收一条；这里直接 Recv（带超时由外层 ctx 保证）
-		return true
-	}, 2*time.Second, 50*time.Millisecond)
+	// 注册要先过认证 + 2 次 DB 读，存在时序窗口：后台每 50ms 持续投递一条 Delta，
+	// 直到注册生效后某次 Dispatch 落入缓冲；前台 Recv 循环跳过心跳直到收到 Delta。
+	dispatchDone := make(chan struct{})
+	go func() {
+		defer close(dispatchDone)
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				srv.Hub().Dispatch(appID, &syncv1.SyncEvent{
+					Event: &syncv1.SyncEvent_Delta{Delta: &syncv1.Delta{Version: 1}},
+				})
+			}
+		}
+	}()
 
-	ev, err := stream.Recv()
-	require.NoError(t, err)
-	require.NotNil(t, ev.GetDelta())
-	require.Equal(t, uint64(1), ev.GetDelta().Version)
+	var delta *syncv1.Delta
+	for delta == nil {
+		ev, err := stream.Recv()
+		require.NoError(t, err)
+		delta = ev.GetDelta() // 心跳的 GetDelta()==nil，跳过；收到 Delta 即退出
+	}
+	require.Equal(t, uint64(1), delta.Version)
+
+	cancel()       // 停止后台 Dispatch
+	<-dispatchDone // 等 goroutine 退出，避免泄漏
 }
 
 // startServerCapture 同 startServer，但把 *Server 经 holder 回传，便于测试直接 Dispatch。
