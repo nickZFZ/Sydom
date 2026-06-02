@@ -15,7 +15,9 @@ import (
 	"github.com/nickZFZ/Sydom/internal/dbtest"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -60,6 +62,38 @@ func startServer(t *testing.T, db *sql.DB) (*grpc.ClientConn, []byte) {
 	return conn, plain
 }
 
+// startServerNoAuth 起同一个 PolicySync 服务端，但返回的客户端连接不携带 per-RPC 凭据，
+// 用于验证认证拦截器的拒绝行为。
+func startServerNoAuth(t *testing.T, db *sql.DB) *grpc.ClientConn {
+	t.Helper()
+	res, err := secret.NewResolver(db, masterKey())
+	require.NoError(t, err)
+
+	plain := []byte("app-secret")
+	enc, err := res.EncryptSecret(plain)
+	require.NoError(t, err)
+	_, err = db.Exec(`UPDATE application SET app_secret_enc=$1 WHERE app_key=$2`, enc, dbtest.SeedAppKey)
+	require.NoError(t, err)
+
+	srv := policysync.NewGRPCServer(policysync.NewServer(db, policysync.Config{
+		HeartbeatInterval: 50 * time.Millisecond,
+		BufSize:           8,
+	}), res)
+
+	lis := bufconn.Listen(1024 * 1024)
+	go func() { _ = srv.Serve(lis) }()
+	t.Cleanup(srv.Stop)
+
+	// 不带 grpc.WithPerRPCCredentials — 触发 Unauthenticated
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	return conn
+}
+
 func TestPullSnapshot(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
@@ -86,4 +120,17 @@ func TestPullSnapshot(t *testing.T) {
 	require.Equal(t, []string{"manager", "order-system", "order", "read", "allow"}, snap.Rules[0].Values)
 	require.Len(t, snap.DataPolicies, 1)
 	require.Equal(t, "manager", snap.DataPolicies[0].SubjectId)
+}
+
+func TestPullSnapshot_Unauthenticated(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	dbtest.SeedApp(t, db)
+
+	conn := startServerNoAuth(t, db)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := syncv1.NewPolicySyncClient(conn).PullSnapshot(ctx, &syncv1.PullSnapshotRequest{})
+	require.Error(t, err)
+	require.Equal(t, codes.Unauthenticated, status.Code(err))
 }
