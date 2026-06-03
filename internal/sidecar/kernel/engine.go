@@ -208,6 +208,8 @@ func (e *Engine) GetImplicitRolesForUser(user, dom string) ([]string, error) {
 // 注意语义差异（刻意取舍）：单条 Enforce 对外域请求显式返回 ErrForeignDomain；批量接口不逐条校验越域，
 // 外域请求经 matcher 自然不命中任何本域策略→false。两者 fail-close 等价（都不放行），但批量以 false
 // 表达拒绝、不回传越域信号——调用方需要区分「越域」与「域内无权」时应走单条 Enforce。
+// 另：casbin 的 BatchEnforce 直调底层 enforce、绕过决策缓存（与单条 Enforce 走缓存不同），
+// 故批量鉴权不享缓存命中，高频批量调用需自行权衡。
 func (e *Engine) BatchEnforce(reqs [][]string) ([]bool, error) {
 	if !e.ready.Load() {
 		return nil, ErrNotReady
