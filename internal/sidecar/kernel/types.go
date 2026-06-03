@@ -33,9 +33,9 @@ func (r Rule) domainValue() string {
 type ChangeOp int
 
 const (
-	ChangeAdd    ChangeOp = iota
-	ChangeUpdate          //nolint:deadcode
-	ChangeRemove          //nolint:deadcode
+	ChangeAdd ChangeOp = iota
+	ChangeUpdate
+	ChangeRemove
 )
 
 // PolicyChange 是一条 casbin 策略行变更。
