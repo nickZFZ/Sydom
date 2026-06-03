@@ -58,3 +58,51 @@ func (e *Engine) Enforce(sub, dom, obj, act string) (bool, error) {
 	}
 	return e.ce.Enforce(sub, dom, obj, act)
 }
+
+// ApplySnapshot 全量重建内核状态：校验越域→ClearPolicy→分段灌入→路由数据策略→全量清缓存→记版本就绪。
+// 越域行整笔拒绝（pre-clear，状态不变）；进入重建后任何失败一律 fail-close（ready=false），等 ④-3 重试。
+//
+// 已知可接受行为：重建经多次自锁调用，并发 Enforce 可能读到「已清空未重建」瞬时态→暂拒（fail-close
+// 新鲜度滞后，非错误放行；快照罕见）。符合架构 §2.2/§5，不消窗。
+func (e *Engine) ApplySnapshot(s Snapshot) error {
+	e.applyMu.Lock()
+	defer e.applyMu.Unlock()
+
+	for _, r := range s.Rules { // 1. pre-clear 越域校验
+		if r.domainValue() != e.domain {
+			return ErrForeignDomain
+		}
+	}
+
+	e.ce.ClearPolicy() // 2. 进入重建——此后任何失败 fail-close
+	var pRules, gRules [][]string
+	for _, r := range s.Rules {
+		switch r.Ptype {
+		case "p":
+			pRules = append(pRules, r.values())
+		case "g":
+			gRules = append(gRules, r.values())
+		}
+	}
+	if len(pRules) > 0 {
+		if _, err := e.ce.AddNamedPolicies("p", pRules); err != nil {
+			e.ready.Store(false)
+			return err
+		}
+	}
+	if len(gRules) > 0 {
+		if _, err := e.ce.AddNamedGroupingPolicies("g", gRules); err != nil {
+			e.ready.Store(false)
+			return err
+		}
+	}
+
+	e.applier.ApplySnapshot(s.DataPolicies) // 3. 路由数据策略
+	if err := e.ce.InvalidateCache(); err != nil {
+		e.ready.Store(false)
+		return err
+	}
+	e.version.Store(s.Version)
+	e.ready.Store(true)
+	return nil
+}
