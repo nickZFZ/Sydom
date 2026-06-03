@@ -150,6 +150,9 @@ func (e *Engine) applyPolicyChange(pc PolicyChange) error {
 	case ChangeRemove:
 		return e.removeRule(pc.Rule)
 	case ChangeUpdate: // 防御性：删旧+加新（section-correct）。③ 不对功能行发 UPDATE，但内核兜住。
+		// 删旧成功而加新失败时 casbin 处于「半新半旧」部分应用态——调用方（ApplyDelta）随即
+		// ready.Store(false)，后续 Enforce 全部 fail-close 屏蔽脏态，等 ④-3 拉全量快照 ApplySnapshot
+		// （ClearPolicy 重建）覆盖。故此处无需回滚：一致性由 ready=false + 快照重建兜底。
 		if err := e.removeRule(pc.OldRule); err != nil {
 			return err
 		}

@@ -18,6 +18,9 @@ func (r Rule) values() []string {
 }
 
 // domainValue 取该行的 domain 列：p 段在 V[1]，g 段在 V[2]（对齐控制面 projection）。
+// 未知 ptype 返回 ""：因 Engine 的 domain 恒非空，apply 的 pre-clear/pre-mutation 越域校验会把这类行
+// 整笔判作越域而拒绝（见 engine.go ApplySnapshot/ApplyDelta）——故下游 addRule/removeRule 的 default
+// 分支对未知 ptype 不可达，三处口径靠「越域校验先拦截」串成一致。
 func (r Rule) domainValue() string {
 	switch r.Ptype {
 	case "p":
