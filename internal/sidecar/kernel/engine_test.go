@@ -1,6 +1,7 @@
 package kernel
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -215,4 +216,37 @@ func TestEngine_BatchEnforce_NotReady(t *testing.T) {
 	e, _ := New("dom1", nil, nil)
 	_, err := e.BatchEnforce([][]string{{"a", "dom1", "o", "r"}})
 	require.ErrorIs(t, err, ErrNotReady)
+}
+
+// TestEngine_ConcurrentApplyAndRead 在 apply（写）与读路径并发下运行，由 -race 守护：
+// 既证明读写经同一把 RWMutex 安全协作，也守护 GetImplicitRolesForUser 不得在外层叠加读锁
+// （否则写者夹在内外两次 RLock 之间会触发 Go RWMutex 递归读锁死锁）。run with -race。
+func TestEngine_ConcurrentApplyAndRead(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+
+	const iters = 200
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	go func() { // 写者：持续重建/增量，反复抢写锁
+		defer wg.Done()
+		for i := uint64(2); i < 2+iters; i++ {
+			_ = e.ApplySnapshot(mgrSnapshot(i))
+		}
+	}()
+	go func() { // 读者：隐式角色展开（内部自取读锁）
+		defer wg.Done()
+		for i := 0; i < iters; i++ {
+			_, _ = e.GetImplicitRolesForUser("alice", "dom1")
+		}
+	}()
+	go func() { // 读者：批量鉴权
+		defer wg.Done()
+		for i := 0; i < iters; i++ {
+			_, _ = e.BatchEnforce([][]string{{"alice", "dom1", "order", "read"}})
+		}
+	}()
+
+	wg.Wait() // 不死锁、-race 干净即通过
 }

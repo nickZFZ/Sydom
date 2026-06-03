@@ -187,7 +187,10 @@ func (e *Engine) removeRule(r Rule) error {
 }
 
 // GetImplicitRolesForUser 把 user 展开为隐式角色集（含继承），供 ④-2 数据权限主体解析。
-// GetImplicitRolesForUser 提升自 *Enforcer（SyncedEnforcer 未重写、无锁），故自取读锁防与 apply 竞争。
+// 已回源核实（casbin v3.10.0）：SyncedEnforcer 重写了 GetImplicitRolesForUser（rbac_api_synced.go:155）
+// 内部已自取 e.m.RLock()，且 SyncedCachedEnforcer 未再重写——故此处直接调用即并发安全。
+// 切勿在外层再 GetLock().RLock()：GetLock() 返回的正是同一把 e.m，叠加读锁在 apply 写锁到来时会触发
+// Go RWMutex 递归读锁死锁（写者阻塞于外层读锁、内层读锁又阻塞于待定写者）。
 func (e *Engine) GetImplicitRolesForUser(user, dom string) ([]string, error) {
 	if !e.ready.Load() {
 		return nil, ErrNotReady
@@ -195,13 +198,13 @@ func (e *Engine) GetImplicitRolesForUser(user, dom string) ([]string, error) {
 	if dom != e.domain {
 		return nil, ErrForeignDomain
 	}
-	lock := e.ce.GetLock()
-	lock.RLock()
-	defer lock.RUnlock()
 	return e.ce.GetImplicitRolesForUser(user, dom)
 }
 
-// BatchEnforce 批量鉴权。未就绪 fail-close。外域请求经 matcher 自然不命中任何策略→false（fail-close）。
+// BatchEnforce 批量鉴权。未就绪 fail-close。
+// 注意语义差异（刻意取舍）：单条 Enforce 对外域请求显式返回 ErrForeignDomain；批量接口不逐条校验越域，
+// 外域请求经 matcher 自然不命中任何本域策略→false。两者 fail-close 等价（都不放行），但批量以 false
+// 表达拒绝、不回传越域信号——调用方需要区分「越域」与「域内无权」时应走单条 Enforce。
 func (e *Engine) BatchEnforce(reqs [][]string) ([]bool, error) {
 	if !e.ready.Load() {
 		return nil, ErrNotReady
