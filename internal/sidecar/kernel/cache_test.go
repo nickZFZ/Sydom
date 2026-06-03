@@ -36,7 +36,7 @@ func TestBoundedCache_EvictsLRU(t *testing.T) {
 	c := newBoundedCache(2)
 	require.NoError(t, c.Set("a", true))
 	require.NoError(t, c.Set("b", true))
-	_, _ = c.Get("a")              // a 变最近使用
+	_, _ = c.Get("a")                    // a 变最近使用
 	require.NoError(t, c.Set("c", true)) // 容量满 → 淘汰最久未用 b
 
 	_, err := c.Get("b")
