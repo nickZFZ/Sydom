@@ -1,0 +1,123 @@
+package mgmt
+
+import (
+	"context"
+	"database/sql"
+
+	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
+	"github.com/nickZFZ/Sydom/internal/auth"
+	cp "github.com/nickZFZ/Sydom/internal/controlplane"
+	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
+	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+const maxMsgSize = 16 * 1024 * 1024
+
+// AdminServer 实现 adminv1.AdminServiceServer。
+type AdminServer struct {
+	adminv1.UnimplementedAdminServiceServer
+	db        *sql.DB
+	mgr       *policy.PolicyManager
+	masterKey []byte // 加密新建的 app/operator 凭据（任务 11 用）
+}
+
+// NewAdminServer 构造。masterKey 用于加密 CreateApplication/CreateOperator 生成的凭据。
+func NewAdminServer(db *sql.DB, mgr *policy.PolicyManager, masterKey []byte) *AdminServer {
+	k := make([]byte, len(masterKey))
+	copy(k, masterKey)
+	return &AdminServer{db: db, mgr: mgr, masterKey: k}
+}
+
+// writeResp 把 (delta, err) 归一为 WriteResponse；delta==nil 表示无策略影响。
+// TODO(error-semantics): 当前把 PolicyManager 的所有错误一律映射 codes.Internal 并以 %v
+// 回传内部细节。待 PolicyManager 暴露领域 sentinel error（如环检测/外键/唯一冲突）后，
+// 应据 errors.Is 细化为 InvalidArgument/FailedPrecondition/NotFound，并对 Internal 路径
+// 只回通用文案、详情转日志（与 authz.go 的 observability TODO 呼应）。
+func writeResp(d *cp.Delta, err error) (*adminv1.WriteResponse, error) {
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "write: %v", err)
+	}
+	if d == nil {
+		return &adminv1.WriteResponse{Changed: false}, nil
+	}
+	return &adminv1.WriteResponse{Version: uint64(d.Version), Changed: true}, nil
+}
+
+func (s *AdminServer) CreateRole(ctx context.Context, r *adminv1.CreateRoleRequest) (*adminv1.CreateRoleResponse, error) {
+	roleID, d, err := s.mgr.CreateRole(ctx, int64(r.AppId), r.Code, r.Name)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "create role: %v", err)
+	}
+	resp := &adminv1.CreateRoleResponse{RoleId: roleID}
+	if d != nil {
+		resp.Version, resp.Changed = uint64(d.Version), true
+	}
+	return resp, nil
+}
+
+func (s *AdminServer) DeleteRole(ctx context.Context, r *adminv1.DeleteRoleRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.DeleteRole(ctx, int64(r.AppId), r.RoleId))
+}
+
+func (s *AdminServer) UpsertPermission(ctx context.Context, r *adminv1.UpsertPermissionRequest) (*adminv1.UpsertPermissionResponse, error) {
+	permID, d, err := s.mgr.UpsertPermission(ctx, int64(r.AppId), r.Code, r.Resource, r.Action, r.Ptype, r.Name)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "upsert permission: %v", err)
+	}
+	resp := &adminv1.UpsertPermissionResponse{PermissionId: permID}
+	if d != nil {
+		resp.Version, resp.Changed = uint64(d.Version), true
+	}
+	return resp, nil
+}
+
+func (s *AdminServer) GrantPermission(ctx context.Context, r *adminv1.GrantPermissionRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.GrantPermission(ctx, int64(r.AppId), r.RoleId, r.PermissionId, r.Eft))
+}
+func (s *AdminServer) RevokePermission(ctx context.Context, r *adminv1.RevokePermissionRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.RevokePermission(ctx, int64(r.AppId), r.RoleId, r.PermissionId))
+}
+func (s *AdminServer) AddRoleInheritance(ctx context.Context, r *adminv1.RoleInheritanceRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.AddRoleInheritance(ctx, int64(r.AppId), r.ChildRoleId, r.ParentRoleId))
+}
+func (s *AdminServer) RemoveRoleInheritance(ctx context.Context, r *adminv1.RoleInheritanceRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.RemoveRoleInheritance(ctx, int64(r.AppId), r.ChildRoleId, r.ParentRoleId))
+}
+func (s *AdminServer) BindUserRole(ctx context.Context, r *adminv1.UserRoleRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.BindUserRole(ctx, int64(r.AppId), r.UserId, r.RoleId))
+}
+func (s *AdminServer) UnbindUserRole(ctx context.Context, r *adminv1.UserRoleRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.UnbindUserRole(ctx, int64(r.AppId), r.UserId, r.RoleId))
+}
+func (s *AdminServer) UpsertDataPolicy(ctx context.Context, r *adminv1.UpsertDataPolicyRequest) (*adminv1.UpsertDataPolicyResponse, error) {
+	d, err := s.mgr.UpsertDataPolicy(ctx, int64(r.AppId), cp.DataPolicy{
+		ID: r.Id, SubjectType: r.SubjectType, SubjectID: r.SubjectId, Resource: r.Resource, Condition: r.Condition,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "upsert data policy: %v", err)
+	}
+	resp := &adminv1.UpsertDataPolicyResponse{}
+	if d != nil && len(d.DataChanges) > 0 {
+		resp.DataPolicyId = d.DataChanges[0].Policy.ID
+		resp.Version, resp.Changed = uint64(d.Version), true
+	}
+	return resp, nil
+}
+func (s *AdminServer) DeleteDataPolicy(ctx context.Context, r *adminv1.DeleteDataPolicyRequest) (*adminv1.WriteResponse, error) {
+	return writeResp(s.mgr.DeleteDataPolicy(ctx, int64(r.AppId), r.DataPolicyId))
+}
+
+// NewGRPCServer 装配认证→鉴权→status 三拦截器（按序）并注册 AdminService。
+func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB) *grpc.Server {
+	chain := grpc.ChainUnaryInterceptor(
+		auth.UnaryServerInterceptor(resolver), // 1. HMAC 认证 → 注入 principal（auth.AppIDFromContext）
+		AuthzUnaryInterceptor(enf),            // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
+		StatusWriteUnaryInterceptor(db),       // 3. status 写拦截
+	)
+	g := grpc.NewServer(grpc.MaxRecvMsgSize(maxMsgSize), grpc.MaxSendMsgSize(maxMsgSize), chain)
+	adminv1.RegisterAdminServiceServer(g, srv)
+	return g
+}
