@@ -185,3 +185,34 @@ func (e *Engine) removeRule(r Rule) error {
 		return nil
 	}
 }
+
+// GetImplicitRolesForUser 把 user 展开为隐式角色集（含继承），供 ④-2 数据权限主体解析。
+// GetImplicitRolesForUser 提升自 *Enforcer（SyncedEnforcer 未重写、无锁），故自取读锁防与 apply 竞争。
+func (e *Engine) GetImplicitRolesForUser(user, dom string) ([]string, error) {
+	if !e.ready.Load() {
+		return nil, ErrNotReady
+	}
+	if dom != e.domain {
+		return nil, ErrForeignDomain
+	}
+	lock := e.ce.GetLock()
+	lock.RLock()
+	defer lock.RUnlock()
+	return e.ce.GetImplicitRolesForUser(user, dom)
+}
+
+// BatchEnforce 批量鉴权。未就绪 fail-close。外域请求经 matcher 自然不命中任何策略→false（fail-close）。
+func (e *Engine) BatchEnforce(reqs [][]string) ([]bool, error) {
+	if !e.ready.Load() {
+		return nil, ErrNotReady
+	}
+	casReqs := make([][]interface{}, len(reqs))
+	for i, r := range reqs {
+		row := make([]interface{}, len(r))
+		for j, v := range r {
+			row[j] = v
+		}
+		casReqs[i] = row
+	}
+	return e.ce.BatchEnforce(casReqs)
+}

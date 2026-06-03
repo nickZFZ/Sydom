@@ -178,3 +178,41 @@ func TestEngine_ApplyDelta_RoutesDataChanges(t *testing.T) {
 	require.Equal(t, ChangeAdd, spy.changes[0].Op)
 	require.Equal(t, uint64(10), spy.changes[0].Policy.ID)
 }
+
+func TestEngine_GetImplicitRolesForUser_Hierarchy(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	// admin > manager > viewer（角色继承），alice 绑 admin
+	s := Snapshot{Version: 1, Rules: []Rule{
+		{Ptype: "g", V: [6]string{"alice", "admin", "dom1", "", "", ""}},
+		{Ptype: "g", V: [6]string{"admin", "manager", "dom1", "", "", ""}},
+		{Ptype: "g", V: [6]string{"manager", "viewer", "dom1", "", "", ""}},
+	}}
+	require.NoError(t, e.ApplySnapshot(s))
+
+	roles, err := e.GetImplicitRolesForUser("alice", "dom1")
+	require.NoError(t, err)
+	require.Subset(t, roles, []string{"admin", "manager", "viewer"})
+}
+
+func TestEngine_GetImplicitRolesForUser_NotReady(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	_, err := e.GetImplicitRolesForUser("alice", "dom1")
+	require.ErrorIs(t, err, ErrNotReady)
+}
+
+func TestEngine_BatchEnforce(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+	res, err := e.BatchEnforce([][]string{
+		{"alice", "dom1", "order", "read"},   // true（经 manager）
+		{"alice", "dom1", "order", "delete"}, // false
+	})
+	require.NoError(t, err)
+	require.Equal(t, []bool{true, false}, res)
+}
+
+func TestEngine_BatchEnforce_NotReady(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	_, err := e.BatchEnforce([][]string{{"a", "dom1", "o", "r"}})
+	require.ErrorIs(t, err, ErrNotReady)
+}
