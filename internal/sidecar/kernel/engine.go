@@ -106,3 +106,82 @@ func (e *Engine) ApplySnapshot(s Snapshot) error {
 	e.ready.Store(true)
 	return nil
 }
+
+// ApplyDelta 增量应用一条变更：版本单调校验→越域校验→逐 PolicyChange 改 casbin→路由数据策略→
+// 全量清缓存→记版本。版本未严格大于当前→ErrStaleVersion（拒重放/乱序）；越域→ErrForeignDomain（状态不变）；
+// 进入变更后任何失败 fail-close（ready=false）。
+func (e *Engine) ApplyDelta(d Delta) error {
+	e.applyMu.Lock()
+	defer e.applyMu.Unlock()
+
+	if d.Version <= e.version.Load() {
+		return ErrStaleVersion
+	}
+	for _, pc := range d.PolicyChanges { // 越域校验（pre-mutation）
+		if pc.Rule.domainValue() != e.domain {
+			return ErrForeignDomain
+		}
+		if pc.Op == ChangeUpdate && pc.OldRule.domainValue() != e.domain {
+			return ErrForeignDomain
+		}
+	}
+
+	for _, pc := range d.PolicyChanges { // 进入变更——失败 fail-close
+		if err := e.applyPolicyChange(pc); err != nil {
+			e.ready.Store(false)
+			return err
+		}
+	}
+	for _, dc := range d.DataChanges {
+		e.applier.ApplyChange(dc.Op, dc.Policy)
+	}
+	if err := e.ce.InvalidateCache(); err != nil {
+		e.ready.Store(false)
+		return err
+	}
+	e.version.Store(d.Version)
+	return nil
+}
+
+func (e *Engine) applyPolicyChange(pc PolicyChange) error {
+	switch pc.Op {
+	case ChangeAdd:
+		return e.addRule(pc.Rule)
+	case ChangeRemove:
+		return e.removeRule(pc.Rule)
+	case ChangeUpdate: // 防御性：删旧+加新（section-correct）。③ 不对功能行发 UPDATE，但内核兜住。
+		if err := e.removeRule(pc.OldRule); err != nil {
+			return err
+		}
+		return e.addRule(pc.Rule)
+	default:
+		return nil
+	}
+}
+
+// addRule/removeRule 按 ptype 走 section-correct 的 casbin 高层 API（g 段自动 BuildIncrementalRoleLinks）。
+func (e *Engine) addRule(r Rule) error {
+	switch r.Ptype {
+	case "p":
+		_, err := e.ce.AddNamedPolicies("p", [][]string{r.values()})
+		return err
+	case "g":
+		_, err := e.ce.AddNamedGroupingPolicies("g", [][]string{r.values()})
+		return err
+	default:
+		return nil
+	}
+}
+
+func (e *Engine) removeRule(r Rule) error {
+	switch r.Ptype {
+	case "p":
+		_, err := e.ce.RemoveNamedPolicies("p", [][]string{r.values()})
+		return err
+	case "g":
+		_, err := e.ce.RemoveNamedGroupingPolicies("g", [][]string{r.values()})
+		return err
+	default:
+		return nil
+	}
+}

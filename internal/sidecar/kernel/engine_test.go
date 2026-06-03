@@ -85,3 +85,96 @@ func TestEngine_ApplySnapshot_RebuildNoResidue(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, deny, "ClearPolicy 后旧策略不得残留")
 }
+
+// spyApplier 记录收到的数据策略变更，验证路由。
+type spyApplier struct {
+	snapshots [][]DataPolicy
+	changes   []DataPolicyChange
+}
+
+func (s *spyApplier) ApplySnapshot(p []DataPolicy) { s.snapshots = append(s.snapshots, p) }
+func (s *spyApplier) ApplyChange(op ChangeOp, p DataPolicy) {
+	s.changes = append(s.changes, DataPolicyChange{Op: op, Policy: p})
+}
+
+// 缓存铁律守门：撤权必须即时生效（按 key 删在角色间接性下会漏，全量清才正确）。
+func TestEngine_ApplyDelta_RevokeTakesEffectImmediately(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+
+	allow, err := e.Enforce("alice", "dom1", "order", "read") // 命中并入缓存 true
+	require.NoError(t, err)
+	require.True(t, allow)
+
+	// 撤掉 manager 的 order:read 权限（delta REMOVE p）
+	d := Delta{Version: 2, PolicyChanges: []PolicyChange{
+		{Op: ChangeRemove, Rule: Rule{Ptype: "p", V: [6]string{"manager", "dom1", "order", "read", "allow", ""}}},
+	}}
+	require.NoError(t, e.ApplyDelta(d))
+	require.Equal(t, uint64(2), e.Version())
+
+	deny, err := e.Enforce("alice", "dom1", "order", "read")
+	require.NoError(t, err)
+	require.False(t, deny, "撤权后 alice（经 manager）必须立即被拒——证明全量清生效")
+}
+
+func TestEngine_ApplyDelta_AddGrant(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+	d := Delta{Version: 2, PolicyChanges: []PolicyChange{
+		{Op: ChangeAdd, Rule: Rule{Ptype: "p", V: [6]string{"manager", "dom1", "order", "delete", "allow", ""}}},
+	}}
+	require.NoError(t, e.ApplyDelta(d))
+	allow, err := e.Enforce("alice", "dom1", "order", "delete")
+	require.NoError(t, err)
+	require.True(t, allow)
+}
+
+func TestEngine_ApplyDelta_UpdateRule(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+	d := Delta{Version: 2, PolicyChanges: []PolicyChange{{
+		Op:      ChangeUpdate,
+		OldRule: Rule{Ptype: "p", V: [6]string{"manager", "dom1", "order", "read", "allow", ""}},
+		Rule:    Rule{Ptype: "p", V: [6]string{"manager", "dom1", "invoice", "read", "allow", ""}},
+	}}}
+	require.NoError(t, e.ApplyDelta(d))
+	old, _ := e.Enforce("alice", "dom1", "order", "read")
+	require.False(t, old, "旧权限应被移除")
+	neu, _ := e.Enforce("alice", "dom1", "invoice", "read")
+	require.True(t, neu, "新权限应生效")
+}
+
+func TestEngine_ApplyDelta_StaleVersionRejected(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(5)))
+	d := Delta{Version: 5} // 非严格大于当前 5
+	require.ErrorIs(t, e.ApplyDelta(d), ErrStaleVersion)
+	require.Equal(t, uint64(5), e.Version(), "拒绝后版本不变")
+}
+
+func TestEngine_ApplyDelta_ForeignDomainRejected(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+	d := Delta{Version: 2, PolicyChanges: []PolicyChange{
+		{Op: ChangeAdd, Rule: Rule{Ptype: "p", V: [6]string{"manager", "dom2", "x", "y", "allow", ""}}},
+	}}
+	require.ErrorIs(t, e.ApplyDelta(d), ErrForeignDomain)
+	require.Equal(t, uint64(1), e.Version())
+}
+
+func TestEngine_ApplyDelta_RoutesDataChanges(t *testing.T) {
+	spy := &spyApplier{}
+	e, _ := New("dom1", nil, spy)
+	require.NoError(t, e.ApplySnapshot(Snapshot{Version: 1, DataPolicies: []DataPolicy{{ID: 9}}}))
+	require.Len(t, spy.snapshots, 1)
+	require.Equal(t, uint64(9), spy.snapshots[0][0].ID)
+
+	d := Delta{Version: 2, DataChanges: []DataPolicyChange{
+		{Op: ChangeAdd, Policy: DataPolicy{ID: 10, Resource: "order"}},
+	}}
+	require.NoError(t, e.ApplyDelta(d))
+	require.Len(t, spy.changes, 1)
+	require.Equal(t, ChangeAdd, spy.changes[0].Op)
+	require.Equal(t, uint64(10), spy.changes[0].Policy.ID)
+}
