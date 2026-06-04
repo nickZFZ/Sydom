@@ -40,3 +40,14 @@ func TestParseCondition_RejectsBadJSON(t *testing.T) {
 	_, err := parseCondition(`{not json`)
 	require.ErrorIs(t, err, ErrInvalidPolicy)
 }
+
+func TestParseCondition_RejectsLogicalNodeWithLeafFields(t *testing.T) {
+	_, err := parseCondition(`{"op":"AND","field":"injected","children":[
+		{"field":"a","op":"EQ","value":1}
+	]}`)
+	require.ErrorIs(t, err, ErrInvalidPolicy)
+	_, err = parseCondition(`{"op":"NOT","value":"x","children":[
+		{"field":"a","op":"EQ","value":1}
+	]}`)
+	require.ErrorIs(t, err, ErrInvalidPolicy)
+}

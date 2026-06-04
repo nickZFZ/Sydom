@@ -66,6 +66,9 @@ func parseCondition(raw string) (*Condition, error) {
 func validate(c *Condition) error {
 	switch {
 	case isLogicalOp(c.Op):
+		if c.Field != "" || c.Value != nil {
+			return fmt.Errorf("%w: 逻辑节点 %s 不应含 field/value", ErrInvalidPolicy, c.Op)
+		}
 		if c.Op == OpNot {
 			if len(c.Children) != 1 {
 				return fmt.Errorf("%w: NOT 必须恰好 1 个子节点", ErrInvalidPolicy)
@@ -103,7 +106,7 @@ func validateLeaf(c *Condition) error {
 	case OpBetween:
 		arr, ok := c.Value.([]any)
 		if !ok || len(arr) != 2 {
-			return fmt.Errorf("%w: BETWEEN 需 2 元数组 value", ErrInvalidPolicy)
+			return fmt.Errorf("%w: %s 需 2 元数组 value", ErrInvalidPolicy, c.Op)
 		}
 	default: // 标量比较 / LIKE
 		if c.Value == nil {
