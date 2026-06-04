@@ -212,6 +212,11 @@ func (m *PolicyManager) UnbindUserRole(ctx context.Context, appID int64, userID 
 
 // UpsertDataPolicy 新增/更新一条数据策略（不参与投影，只 bump 版本 + 更新 data_policy.version）。
 func (m *PolicyManager) UpsertDataPolicy(ctx context.Context, appID int64, p cp.DataPolicy) (*cp.Delta, error) {
+	// 写路径锚点归一：空串 effect 统一为 "allow"，确保 Delta 回显与落库真相值严格一致。
+	// store 层既有的归一保留不动（对其它直接调用方的防御深度）。
+	if p.Effect == "" {
+		p.Effect = cp.EffectAllow
+	}
 	return m.runVersionedWriteData(ctx, appID, writeOpData{
 		action: "upsert_data_policy", entityType: "data_policy", entityID: p.SubjectID,
 		apply: func(ctx context.Context, tx *sql.Tx, vNew int64) ([]cp.DataPolicyChange, error) {
