@@ -36,7 +36,7 @@ func NewTable() *Table {
 
 func normalizeEffect(e string) (string, bool) {
 	switch e {
-	case "", "allow":
+	case "", "allow": // 空 Effect 按 DB 默认语义视为 allow
 		return "allow", true
 	case "deny":
 		return "deny", true

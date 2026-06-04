@@ -1,6 +1,7 @@
 package dataperm
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/nickZFZ/Sydom/internal/sidecar/kernel"
@@ -57,4 +58,29 @@ func TestTable_PoisonsBadPolicy(t *testing.T) {
 	require.Len(t, got, 2)
 	require.Error(t, got[0].parseErr, "非法 JSON 应中毒")
 	require.Error(t, got[1].parseErr, "非法 effect 应中毒")
+}
+
+// TestTable_ConcurrentReadWrite 验证并发读写无数据竞争 / 不 panic。
+// 表内容在并发下不确定，不做断言，仅靠 -race 检测。
+func TestTable_ConcurrentReadWrite(t *testing.T) {
+	tbl := NewTable()
+	tbl.ApplySnapshot([]kernel.DataPolicy{
+		dp(1, "role", "manager", "order", `{"field":"a","op":"EQ","value":1}`, "allow"),
+	})
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(3)
+		go func() { defer wg.Done(); tbl.Lookup("order") }()
+		go func(n int) {
+			defer wg.Done()
+			tbl.ApplyChange(kernel.ChangeAdd, dp(uint64(100+n), "role", "viewer", "order", `{"field":"b","op":"EQ","value":2}`, "deny"))
+		}(i)
+		go func() {
+			defer wg.Done()
+			tbl.ApplySnapshot([]kernel.DataPolicy{
+				dp(1, "role", "manager", "order", `{"field":"a","op":"EQ","value":1}`, "allow"),
+			})
+		}()
+	}
+	wg.Wait()
 }
