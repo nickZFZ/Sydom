@@ -43,3 +43,36 @@ func TestFilterSQL_Operators(t *testing.T) {
 	require.Equal(t, "(amount BETWEEN ? AND ? OR note IS NULL)", res.SQL)
 	require.Equal(t, []any{float64(10), float64(20)}, res.Args)
 }
+
+func TestFilterSQL_AllOperators(t *testing.T) {
+	cases := []struct {
+		name string
+		cond string
+		want string
+		args []any
+	}{
+		{"NE", `{"field":"a","op":"NE","value":1}`, "a <> ?", []any{float64(1)}},
+		{"GT", `{"field":"a","op":"GT","value":1}`, "a > ?", []any{float64(1)}},
+		{"GE", `{"field":"a","op":"GE","value":1}`, "a >= ?", []any{float64(1)}},
+		{"LT", `{"field":"a","op":"LT","value":1}`, "a < ?", []any{float64(1)}},
+		{"LE", `{"field":"a","op":"LE","value":1}`, "a <= ?", []any{float64(1)}},
+		{"LIKE", `{"field":"a","op":"LIKE","value":"%x%"}`, "a LIKE ?", []any{"%x%"}},
+		{"NOT_LIKE", `{"field":"a","op":"NOT_LIKE","value":"%x%"}`, "a NOT LIKE ?", []any{"%x%"}},
+		{"NOT_IN", `{"field":"a","op":"NOT_IN","value":[1,2]}`, "a NOT IN (?, ?)", []any{float64(1), float64(2)}},
+		{"IS_NOT_NULL", `{"field":"a","op":"IS_NOT_NULL"}`, "a IS NOT NULL", nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFilter(map[string][]string{"alice": {"manager"}},
+				dp(1, "role", "manager", "order", tc.cond, "allow"))
+			res, err := f.FilterSQL("alice", "dom1", "order", nil)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, res.SQL)
+			if tc.args == nil {
+				require.Empty(t, res.Args)
+			} else {
+				require.Equal(t, tc.args, res.Args)
+			}
+		})
+	}
+}

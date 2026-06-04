@@ -25,13 +25,16 @@ func (f *Filter) FilterSQL(user, dom, resource string, attrs map[string]any) (SQ
 	default:
 		var b strings.Builder
 		var args []any
-		renderSQL(p.tree, &b, &args)
+		if err := renderSQL(p.tree, &b, &args); err != nil {
+			return SQLResult{}, err
+		}
 		return SQLResult{SQL: b.String(), Args: args}, nil
 	}
 }
 
 // renderSQL 递归渲染已解析条件树为参数化 SQL。字段名已在解析期白名单校验，可安全内联。
-func renderSQL(c *Condition, b *strings.Builder, args *[]any) {
+// 防御性返回 error：正常调用链下树必来自 parseCondition，类型已校验；此处 error 仅在不变量被破坏时兜底，绝不 panic。
+func renderSQL(c *Condition, b *strings.Builder, args *[]any) error {
 	switch c.Op {
 	case OpAnd, OpOr:
 		sep := " AND "
@@ -43,26 +46,35 @@ func renderSQL(c *Condition, b *strings.Builder, args *[]any) {
 			if i > 0 {
 				b.WriteString(sep)
 			}
-			renderSQL(ch, b, args)
+			if err := renderSQL(ch, b, args); err != nil {
+				return err
+			}
 		}
 		b.WriteByte(')')
+		return nil
 	case OpNot:
 		b.WriteString("NOT (")
-		renderSQL(c.Children[0], b, args)
+		if err := renderSQL(c.Children[0], b, args); err != nil {
+			return err
+		}
 		b.WriteByte(')')
+		return nil
 	default:
-		renderLeaf(c, b, args)
+		return renderLeaf(c, b, args)
 	}
 }
 
-func renderLeaf(c *Condition, b *strings.Builder, args *[]any) {
+func renderLeaf(c *Condition, b *strings.Builder, args *[]any) error {
 	switch c.Op {
 	case OpIsNull:
 		fmt.Fprintf(b, "%s IS NULL", c.Field)
 	case OpIsNotNull:
 		fmt.Fprintf(b, "%s IS NOT NULL", c.Field)
 	case OpIN, OpNotIn:
-		arr := c.Value.([]any)
+		arr, ok := c.Value.([]any)
+		if !ok {
+			return fmt.Errorf("%w: %s value 非数组", ErrInvalidPolicy, c.Op)
+		}
 		kw := "IN"
 		if c.Op == OpNotIn {
 			kw = "NOT IN"
@@ -74,13 +86,17 @@ func renderLeaf(c *Condition, b *strings.Builder, args *[]any) {
 		}
 		fmt.Fprintf(b, "%s %s (%s)", c.Field, kw, strings.Join(ph, ", "))
 	case OpBetween:
-		arr := c.Value.([]any)
+		arr, ok := c.Value.([]any)
+		if !ok || len(arr) != 2 {
+			return fmt.Errorf("%w: BETWEEN value 非 2 元数组", ErrInvalidPolicy)
+		}
 		fmt.Fprintf(b, "%s BETWEEN ? AND ?", c.Field)
 		*args = append(*args, arr[0], arr[1])
 	default: // 标量比较 / LIKE
 		fmt.Fprintf(b, "%s %s ?", c.Field, sqlComparator(c.Op))
 		*args = append(*args, c.Value)
 	}
+	return nil
 }
 
 func sqlComparator(op string) string {
