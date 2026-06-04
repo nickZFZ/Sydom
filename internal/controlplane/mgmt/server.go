@@ -93,8 +93,15 @@ func (s *AdminServer) UnbindUserRole(ctx context.Context, r *adminv1.UserRoleReq
 	return writeResp(s.mgr.UnbindUserRole(ctx, int64(r.AppId), r.UserId, r.RoleId))
 }
 func (s *AdminServer) UpsertDataPolicy(ctx context.Context, r *adminv1.UpsertDataPolicyRequest) (*adminv1.UpsertDataPolicyResponse, error) {
+	eff := r.Effect
+	if eff == "" {
+		eff = "allow"
+	}
+	if eff != "allow" && eff != "deny" {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid effect %q (want allow|deny)", r.Effect)
+	}
 	d, err := s.mgr.UpsertDataPolicy(ctx, int64(r.AppId), cp.DataPolicy{
-		ID: r.Id, SubjectType: r.SubjectType, SubjectID: r.SubjectId, Resource: r.Resource, Condition: r.Condition,
+		ID: r.Id, SubjectType: r.SubjectType, SubjectID: r.SubjectId, Resource: r.Resource, Condition: r.Condition, Effect: eff,
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "upsert data policy: %v", err)
