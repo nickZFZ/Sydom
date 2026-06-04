@@ -12,6 +12,8 @@ import (
 	"github.com/nickZFZ/Sydom/internal/sidecar/kernel"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -283,4 +285,32 @@ func TestSyncClient_ReplayDelta_Discarded(t *testing.T) {
 
 	require.Eventually(t, func() bool { return engine.Version() == 7 }, time.Second, 5*time.Millisecond)
 	require.Equal(t, 1, f.pullCount(), "重放/重复 delta 必须静默丢弃，绝不重拉")
+}
+
+func TestSyncClient_StreamError_ReconnectsAndRebootstraps(t *testing.T) {
+	addP := &syncv1.PolicyChange{
+		Op:   syncv1.ChangeOp_CHANGE_OP_ADD,
+		Rule: &syncv1.PolicyRule{Ptype: "p", Values: []string{"manager", "dom1", "order", "read", "allow"}},
+	}
+	f := &fakeServer{
+		snapFn: func(int) (*syncv1.Snapshot, error) { return snapV5(), nil },
+		subscribeFn: func(call int, s syncv1.PolicySync_SubscribeServer) error {
+			if call == 1 {
+				return status.Error(codes.Unavailable, "boom") // 首连立即断
+			}
+			// 重连后正常推送一条连续 delta，然后保持
+			if err := s.Send(deltaEv(&syncv1.Delta{Version: 6, PolicyChanges: []*syncv1.PolicyChange{addP}})); err != nil {
+				return err
+			}
+			<-s.Context().Done()
+			return s.Context().Err()
+		},
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 6 }, 2*time.Second, 5*time.Millisecond,
+		"重连后应重新引导并消费新流 delta")
+	require.GreaterOrEqual(t, f.pullCount(), 2, "重连必然重新 PullSnapshot 引导")
+	require.True(t, c.Connected(), "稳态后 Connected 应为 true")
 }
