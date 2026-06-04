@@ -218,6 +218,17 @@ func TestEngine_BatchEnforce_NotReady(t *testing.T) {
 	require.ErrorIs(t, err, ErrNotReady)
 }
 
+// TestEngine_ApplySnapshot_RoutesDataPolicyEffect 验证 DataPolicy.Effect 经 ApplySnapshot 原样透传给 applier。
+func TestEngine_ApplySnapshot_RoutesDataPolicyEffect(t *testing.T) {
+	spy := &spyApplier{}
+	e, _ := New("dom1", nil, spy)
+	require.NoError(t, e.ApplySnapshot(Snapshot{Version: 1, DataPolicies: []DataPolicy{
+		{ID: 1, SubjectType: "role", SubjectID: "manager", Resource: "order", Condition: "{}", Effect: "deny"},
+	}}))
+	require.Len(t, spy.snapshots, 1)
+	require.Equal(t, "deny", spy.snapshots[0][0].Effect)
+}
+
 // TestEngine_ConcurrentApplyAndRead 在 apply（写）与读路径并发下运行，由 -race 守护：
 // 既证明读写经同一把 RWMutex 安全协作，也守护 GetImplicitRolesForUser 不得在外层叠加读锁
 // （否则写者夹在内外两次 RLock 之间会触发 Go RWMutex 递归读锁死锁）。run with -race。
