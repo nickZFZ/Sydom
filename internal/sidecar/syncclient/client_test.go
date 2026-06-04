@@ -140,3 +140,58 @@ func TestSyncClient_Bootstrap_EmptySnapshotStillReady(t *testing.T) {
 		return engine.Ready() && engine.Version() == 0
 	}, time.Second, 5*time.Millisecond, "空快照也应 Ready=true、Version=0")
 }
+
+func TestSyncClient_SteadyDeltas_AppliedMonotonically(t *testing.T) {
+	addP := func(act string) *syncv1.PolicyChange {
+		return &syncv1.PolicyChange{
+			Op:   syncv1.ChangeOp_CHANGE_OP_ADD,
+			Rule: &syncv1.PolicyRule{Ptype: "p", Values: []string{"manager", "dom1", "order", act, "allow"}},
+		}
+	}
+	f := &fakeServer{
+		snapFn: func(int) (*syncv1.Snapshot, error) { return snapV5(), nil },
+		subscribeFn: sendThenBlock(
+			deltaEv(&syncv1.Delta{Version: 6, PolicyChanges: []*syncv1.PolicyChange{addP("read")}}),
+			deltaEv(&syncv1.Delta{Version: 7, PolicyChanges: []*syncv1.PolicyChange{addP("write")}}),
+			deltaEv(&syncv1.Delta{Version: 8, PolicyChanges: []*syncv1.PolicyChange{addP("delete")}}),
+		),
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 8 }, time.Second, 5*time.Millisecond)
+	require.Equal(t, 1, f.pullCount(), "连续 delta 不应触发任何重拉")
+
+	allow, err := engine.Enforce("alice", "dom1", "order", "write") // 经 manager 角色
+	require.NoError(t, err)
+	require.True(t, allow)
+}
+
+// REMOVE delta 端到端：内核读 pc.Rule 删行，证明翻译层把 old_rule 搬进了 Rule。
+func TestSyncClient_RemoveDelta_RevokesGrant(t *testing.T) {
+	snap := &syncv1.Snapshot{
+		Version: 5,
+		Rules: []*syncv1.PolicyRule{
+			{Ptype: "g", Values: []string{"alice", "manager", "dom1"}},
+			{Ptype: "p", Values: []string{"manager", "dom1", "order", "read", "allow"}},
+		},
+	}
+	f := &fakeServer{
+		snapFn: func(int) (*syncv1.Snapshot, error) { return snap, nil },
+		subscribeFn: sendThenBlock(
+			deltaEv(&syncv1.Delta{Version: 6, PolicyChanges: []*syncv1.PolicyChange{{
+				Op:      syncv1.ChangeOp_CHANGE_OP_REMOVE,
+				OldRule: &syncv1.PolicyRule{Ptype: "p", Values: []string{"manager", "dom1", "order", "read", "allow"}},
+			}}}),
+		),
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 6 }, time.Second, 5*time.Millisecond)
+	require.Equal(t, 1, f.pullCount(), "REMOVE 不应被误判越域而触发重拉")
+
+	allow, err := engine.Enforce("alice", "dom1", "order", "read")
+	require.NoError(t, err)
+	require.False(t, allow, "REMOVE 后该授权必须被真正撤销")
+}

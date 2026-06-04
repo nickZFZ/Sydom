@@ -133,9 +133,31 @@ func (c *SyncClient) resync(ctx context.Context) error {
 	return nil
 }
 
-// handleEvent 按事件类型分派；后续任务逐类型填充。
-func (c *SyncClient) handleEvent(_ context.Context, _ *syncv1.SyncEvent) error {
-	return nil
+// handleEvent 按事件类型分派。
+func (c *SyncClient) handleEvent(ctx context.Context, ev *syncv1.SyncEvent) error {
+	switch e := ev.GetEvent().(type) {
+	case *syncv1.SyncEvent_Delta:
+		return c.handleDelta(ctx, e.Delta)
+	default:
+		return nil // 其它事件类型在后续任务填充
+	}
+}
+
+// handleDelta 仅当版本连续（==Version()+1）才增量 apply；非连续 → 重拉（gap 兜底）。
+// 落后/重放（≤Version()）与 ErrStaleVersion 的精细处理见 Task 7。
+func (c *SyncClient) handleDelta(ctx context.Context, d *syncv1.Delta) error {
+	if d.GetVersion() == c.engine.Version()+1 {
+		kd, err := deltaFromProto(d)
+		if err != nil {
+			return c.resync(ctx) // 翻译失败 → 重拉，绝不部分应用
+		}
+		if err := c.engine.ApplyDelta(kd); err != nil {
+			return c.resync(ctx) // apply 失败 → 重拉
+		}
+		c.markSync()
+		return nil
+	}
+	return c.resync(ctx) // 非连续（含 gap） → 重拉
 }
 
 // sleep 睡 d，期间 ctx 取消则返回 false（应退出）。
