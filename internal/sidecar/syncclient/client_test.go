@@ -314,3 +314,32 @@ func TestSyncClient_StreamError_ReconnectsAndRebootstraps(t *testing.T) {
 	require.GreaterOrEqual(t, f.pullCount(), 2, "重连必然重新 PullSnapshot 引导")
 	require.True(t, c.Connected(), "稳态后 Connected 应为 true")
 }
+
+func TestSyncClient_EndToEnd_DenyEffectReachesFilterSQL(t *testing.T) {
+	snap := &syncv1.Snapshot{
+		Version: 5,
+		Rules:   []*syncv1.PolicyRule{{Ptype: "g", Values: []string{"alice", "manager", "dom1"}}},
+		DataPolicies: []*syncv1.DataPolicy{
+			{Id: 1, SubjectType: "role", SubjectId: "manager", Resource: "order",
+				Condition: `{"field":"dept","op":"EQ","value":"$user.department"}`, Effect: "allow"},
+			{Id: 2, SubjectType: "role", SubjectId: "manager", Resource: "order",
+				Condition: `{"field":"status","op":"IN","value":["locked","void"]}`, Effect: "deny"},
+		},
+	}
+	f := &fakeServer{
+		snapFn:      func(int) (*syncv1.Snapshot, error) { return snap, nil },
+		subscribeFn: sendThenBlock(),
+	}
+	c, engine, table := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Ready() && engine.Version() == 5 },
+		time.Second, 5*time.Millisecond)
+
+	filter := dataperm.NewFilter(engine, table)
+	res, err := filter.FilterSQL("alice", "dom1", "order", map[string]any{"department": "HR"})
+	require.NoError(t, err)
+	require.Equal(t, "(dept = ? AND NOT (status IN (?, ?)))", res.SQL,
+		"effect=deny 必须经内核 fan-out 反映为 FilterSQL 的 NOT 段")
+	require.Equal(t, []any{"HR", "locked", "void"}, res.Args)
+}
