@@ -176,7 +176,7 @@ func DeleteUserRoleBinding(ctx context.Context, ex cp.DBTX, appID int64, userID 
 func UpsertDataPolicy(ctx context.Context, ex cp.DBTX, appID int64, p cp.DataPolicy, version int64) (id int64, created bool, err error) {
 	effect := p.Effect
 	if effect == "" {
-		effect = "allow"
+		effect = cp.EffectAllow
 	}
 	if p.ID == 0 {
 		err = ex.QueryRowContext(ctx, `
