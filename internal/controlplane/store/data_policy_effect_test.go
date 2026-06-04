@@ -74,7 +74,8 @@ func TestUpsertDataPolicy_EffectRoundTrip(t *testing.T) {
 		ID: denyID, SubjectType: "role", SubjectID: "manager", Resource: "order", Condition: "{}", Effect: "allow",
 	}, 3)
 	require.NoError(t, err)
-	got2, _ := store.ReadAppDataPolicies(ctx, db, appID)
+	got2, err := store.ReadAppDataPolicies(ctx, db, appID)
+	require.NoError(t, err)
 	for _, p := range got2 {
 		if p.ID == denyID {
 			require.Equal(t, "allow", p.Effect)
