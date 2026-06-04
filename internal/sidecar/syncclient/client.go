@@ -138,8 +138,16 @@ func (c *SyncClient) handleEvent(ctx context.Context, ev *syncv1.SyncEvent) erro
 	switch e := ev.GetEvent().(type) {
 	case *syncv1.SyncEvent_Delta:
 		return c.handleDelta(ctx, e.Delta)
+	case *syncv1.SyncEvent_Heartbeat:
+		if e.Heartbeat.GetCurrentVersion() > c.engine.Version() {
+			return c.resync(ctx) // 漏包 → 重拉
+		}
+		c.markSync() // 流活性证明
+		return nil
+	case *syncv1.SyncEvent_SnapshotRequired:
+		return c.resync(ctx)
 	default:
-		return nil // 其它事件类型在后续任务填充
+		return nil // 未知事件忽略（前向兼容）
 	}
 }
 

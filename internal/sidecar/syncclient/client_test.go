@@ -195,3 +195,68 @@ func TestSyncClient_RemoveDelta_RevokesGrant(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, allow, "REMOVE 后该授权必须被真正撤销")
 }
+
+// snapStep 第 1 次 PullSnapshot 返回 v5，第 2 次起返回 vHi（模拟重拉对齐到更高版本）。
+func snapStep(hi uint64) func(int) (*syncv1.Snapshot, error) {
+	return func(call int) (*syncv1.Snapshot, error) {
+		if call == 1 {
+			return snapV5(), nil
+		}
+		return &syncv1.Snapshot{Version: hi, Rules: snapV5().Rules}, nil
+	}
+}
+
+func TestSyncClient_HeartbeatAhead_TriggersResync(t *testing.T) {
+	f := &fakeServer{
+		snapFn:      snapStep(9),
+		subscribeFn: sendThenBlock(heartbeatEv(9)), // 9 > 引导版本 5 → 漏包
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 9 }, time.Second, 5*time.Millisecond)
+	require.GreaterOrEqual(t, f.pullCount(), 2, "心跳超前应触发重拉")
+}
+
+func TestSyncClient_HeartbeatLevel_NoResync(t *testing.T) {
+	addP := &syncv1.PolicyChange{
+		Op:   syncv1.ChangeOp_CHANGE_OP_ADD,
+		Rule: &syncv1.PolicyRule{Ptype: "p", Values: []string{"manager", "dom1", "order", "read", "allow"}},
+	}
+	f := &fakeServer{
+		snapFn: func(int) (*syncv1.Snapshot, error) { return snapV5(), nil },
+		subscribeFn: sendThenBlock(
+			heartbeatEv(5), // 持平，不重拉
+			deltaEv(&syncv1.Delta{Version: 6, PolicyChanges: []*syncv1.PolicyChange{addP}}),
+		),
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 6 }, time.Second, 5*time.Millisecond)
+	require.Equal(t, 1, f.pullCount(), "持平心跳不应触发重拉，流照常消费后续 delta")
+}
+
+func TestSyncClient_SnapshotRequired_TriggersResync(t *testing.T) {
+	f := &fakeServer{
+		snapFn:      snapStep(8),
+		subscribeFn: sendThenBlock(snapshotRequiredEv()),
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 8 }, time.Second, 5*time.Millisecond)
+	require.GreaterOrEqual(t, f.pullCount(), 2, "SnapshotRequired 应触发重拉")
+}
+
+func TestSyncClient_GapDelta_TriggersResync(t *testing.T) {
+	f := &fakeServer{
+		snapFn:      snapStep(10),
+		subscribeFn: sendThenBlock(deltaEv(&syncv1.Delta{Version: 12})), // 12 > 5+1 → gap
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 10 }, time.Second, 5*time.Millisecond)
+	require.GreaterOrEqual(t, f.pullCount(), 2, "非连续 delta 必须重拉，绝不 apply 跳版变更")
+}
