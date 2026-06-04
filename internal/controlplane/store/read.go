@@ -38,7 +38,7 @@ func ReadCurrentVersion(ctx context.Context, q cp.DBTX, appID int64) (int64, err
 // ReadAppDataPolicies 读取某 app 全部数据策略（供全量快照）。
 func ReadAppDataPolicies(ctx context.Context, q cp.DBTX, appID int64) ([]cp.DataPolicy, error) {
 	rows, err := q.QueryContext(ctx,
-		`SELECT id, subject_type, subject_id, resource, condition FROM data_policy WHERE app_id=$1`, appID)
+		`SELECT id, subject_type, subject_id, resource, condition, effect FROM data_policy WHERE app_id=$1`, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func ReadAppDataPolicies(ctx context.Context, q cp.DBTX, appID int64) ([]cp.Data
 	var out []cp.DataPolicy
 	for rows.Next() {
 		var p cp.DataPolicy
-		if err := rows.Scan(&p.ID, &p.SubjectType, &p.SubjectID, &p.Resource, &p.Condition); err != nil {
+		if err := rows.Scan(&p.ID, &p.SubjectType, &p.SubjectID, &p.Resource, &p.Condition, &p.Effect); err != nil {
 			return nil, fmt.Errorf("scan data_policy: %w", err)
 		}
 		out = append(out, p)

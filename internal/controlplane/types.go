@@ -28,6 +28,7 @@ type DataPolicy struct {
 	SubjectID   string
 	Resource    string
 	Condition   string // 条件树 JSON
+	Effect      string // "allow" | "deny"；空串按 "allow"（对齐 DB 默认）
 }
 
 // DataPolicyChange 是一次 data_policy 变更。
