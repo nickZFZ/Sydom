@@ -343,3 +343,25 @@ func TestSyncClient_EndToEnd_DenyEffectReachesFilterSQL(t *testing.T) {
 		"effect=deny 必须经内核 fan-out 反映为 FilterSQL 的 NOT 段")
 	require.Equal(t, []any{"HR", "locked", "void"}, res.Args)
 }
+
+func TestSyncClient_ContextCancel_RunReturnsNil(t *testing.T) {
+	f := &fakeServer{
+		snapFn:      func(int) (*syncv1.Snapshot, error) { return snapV5(), nil },
+		subscribeFn: sendThenBlock(), // 引导后长连保持
+	}
+	c, engine, _ := startFake(t, f)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- c.Run(ctx) }()
+
+	require.Eventually(t, func() bool { return engine.Ready() }, time.Second, 5*time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-done:
+		require.NoError(t, err, "ctx 取消应使 Run 干净返回 nil")
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run 未在 ctx 取消后及时退出")
+	}
+}
