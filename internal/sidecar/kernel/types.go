@@ -55,6 +55,7 @@ type DataPolicy struct {
 	SubjectID   string
 	Resource    string
 	Condition   string
+	Effect      string // "allow" | "deny"；空串按 "allow"（对齐 DB 默认）。内核不解读，仅透传给 applier。
 }
 
 // DataPolicyChange 是一条数据权限变更。
