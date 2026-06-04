@@ -13,6 +13,12 @@ const (
 	SubjectRole = "role"
 )
 
+// effect 取值（与控制面 data_policy.effect 对齐）。
+const (
+	effectAllow = "allow"
+	effectDeny  = "deny"
+)
+
 // stored 是一条已解析（或中毒）的数据策略。
 type stored struct {
 	id          uint64
@@ -36,10 +42,10 @@ func NewTable() *Table {
 
 func normalizeEffect(e string) (string, bool) {
 	switch e {
-	case "", "allow": // 空 Effect 按 DB 默认语义视为 allow
-		return "allow", true
-	case "deny":
-		return "deny", true
+	case "", effectAllow: // 空 Effect 按 DB 默认语义视为 allow
+		return effectAllow, true
+	case effectDeny:
+		return effectDeny, true
 	default:
 		return "", false
 	}

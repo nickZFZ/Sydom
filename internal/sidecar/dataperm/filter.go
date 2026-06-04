@@ -35,7 +35,7 @@ type plan struct {
 }
 
 // buildPlan 跑规格 §5 流水线（除最终方言渲染外）：
-// tier-1 守卫 → 主体展开 → 收集拆分 allow/deny → 空 allow 守卫 → 合并 → 变量解析。
+// tier-1 守卫 → 主体展开 → 遍历命中（中毒 fail-close + 变量解析）拆 allow/deny → 空 allow 守卫 → 合并。
 func (f *Filter) buildPlan(user, dom, resource string, attrs map[string]any) (plan, error) {
 	bucket, configured := f.table.Lookup(resource)
 	if !configured {
@@ -62,7 +62,7 @@ func (f *Filter) buildPlan(user, dom, resource string, attrs map[string]any) (pl
 		if err != nil {
 			return plan{}, err // ErrMissingVar
 		}
-		if s.effect == "deny" {
+		if s.effect == effectDeny {
 			deny = append(deny, resolved)
 		} else {
 			allow = append(allow, resolved)
@@ -158,10 +158,17 @@ func userVarName(s string) (string, bool) {
 	return "", false
 }
 
-// RawResult 是 raw 方言结果：Match 表达整体语义，Tree 为变量已解析的合并树（仅 conditional）。
+// Match 取值：整体过滤语义。
+const (
+	MatchAll         = "all"         // resource 未配置，无行过滤
+	MatchNone        = "none"        // 配了但无 allow 命中，全拒
+	MatchConditional = "conditional" // 命中合并条件树
+)
+
+// RawResult 是 raw 方言结果：Match 表达整体语义，Tree 为变量已解析的合并树（仅 MatchConditional）。
 type RawResult struct {
-	Match string     // "all"（无限制）| "none"（deny-all）| "conditional"
-	Tree  *Condition // 仅 Match=="conditional"
+	Match string     // MatchAll | MatchNone | MatchConditional
+	Tree  *Condition // 仅 Match==MatchConditional
 }
 
 // FilterRaw 返回合并后的条件树（变量已解析），交 SDK 自渲染参数化语句。
@@ -172,10 +179,10 @@ func (f *Filter) FilterRaw(user, dom, resource string, attrs map[string]any) (Ra
 	}
 	switch p.mode {
 	case modeNoFilter:
-		return RawResult{Match: "all"}, nil
+		return RawResult{Match: MatchAll}, nil
 	case modeDenyAll:
-		return RawResult{Match: "none"}, nil
+		return RawResult{Match: MatchNone}, nil
 	default:
-		return RawResult{Match: "conditional", Tree: p.tree}, nil
+		return RawResult{Match: MatchConditional, Tree: p.tree}, nil
 	}
 }

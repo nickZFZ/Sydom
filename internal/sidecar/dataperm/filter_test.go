@@ -51,6 +51,8 @@ func TestFilterRaw_DenyOverrides(t *testing.T) {
 	require.Equal(t, "conditional", res.Match)
 	require.Equal(t, OpAnd, res.Tree.Op)
 	require.Equal(t, OpNot, res.Tree.Children[1].Op)
+	require.Equal(t, "dept", res.Tree.Children[0].Field)
+	require.Equal(t, "status", res.Tree.Children[1].Children[0].Field)
 }
 
 func TestFilter_MissingVar_FailClose(t *testing.T) {
@@ -81,4 +83,16 @@ func TestFilter_UserSubjectMatch(t *testing.T) {
 	res, err := f.FilterRaw("alice", "dom1", "order", map[string]any{"id": "alice"})
 	require.NoError(t, err)
 	require.Equal(t, "conditional", res.Match)
+	require.Equal(t, "alice", res.Tree.Value)
+}
+
+func TestFilterRaw_MultiAllow_OrFold(t *testing.T) {
+	f := newFilter(map[string][]string{"alice": {"manager"}},
+		dp(1, "role", "manager", "order", `{"field":"a","op":"EQ","value":1}`, "allow"),
+		dp(2, "role", "manager", "order", `{"field":"b","op":"EQ","value":2}`, "allow"))
+	res, err := f.FilterRaw("alice", "dom1", "order", nil)
+	require.NoError(t, err)
+	require.Equal(t, "conditional", res.Match)
+	require.Equal(t, OpOr, res.Tree.Op)
+	require.Len(t, res.Tree.Children, 2)
 }
