@@ -260,3 +260,27 @@ func TestSyncClient_GapDelta_TriggersResync(t *testing.T) {
 	require.Eventually(t, func() bool { return engine.Version() == 10 }, time.Second, 5*time.Millisecond)
 	require.GreaterOrEqual(t, f.pullCount(), 2, "非连续 delta 必须重拉，绝不 apply 跳版变更")
 }
+
+// 重放/重复 delta（version ≤ 当前）必须丢弃，绝不触发重拉。
+func TestSyncClient_ReplayDelta_Discarded(t *testing.T) {
+	addP := func(act string) *syncv1.PolicyChange {
+		return &syncv1.PolicyChange{
+			Op:   syncv1.ChangeOp_CHANGE_OP_ADD,
+			Rule: &syncv1.PolicyRule{Ptype: "p", Values: []string{"manager", "dom1", "order", act, "allow"}},
+		}
+	}
+	f := &fakeServer{
+		snapFn: func(int) (*syncv1.Snapshot, error) { return snapV5(), nil },
+		subscribeFn: sendThenBlock(
+			deltaEv(&syncv1.Delta{Version: 6, PolicyChanges: []*syncv1.PolicyChange{addP("read")}}),
+			deltaEv(&syncv1.Delta{Version: 5}),                                                       // 重放（==引导版本）
+			deltaEv(&syncv1.Delta{Version: 6}),                                                       // 重复（==当前）
+			deltaEv(&syncv1.Delta{Version: 7, PolicyChanges: []*syncv1.PolicyChange{addP("write")}}), // 继续推进
+		),
+	}
+	c, engine, _ := startFake(t, f)
+	runClient(t, c)
+
+	require.Eventually(t, func() bool { return engine.Version() == 7 }, time.Second, 5*time.Millisecond)
+	require.Equal(t, 1, f.pullCount(), "重放/重复 delta 必须静默丢弃，绝不重拉")
+}

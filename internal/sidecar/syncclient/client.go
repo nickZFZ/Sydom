@@ -2,6 +2,7 @@ package syncclient
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 	"time"
 
@@ -151,21 +152,34 @@ func (c *SyncClient) handleEvent(ctx context.Context, ev *syncv1.SyncEvent) erro
 	}
 }
 
-// handleDelta 仅当版本连续（==Version()+1）才增量 apply；非连续 → 重拉（gap 兜底）。
-// 落后/重放（≤Version()）与 ErrStaleVersion 的精细处理见 Task 7。
+// handleDelta 按版本关系分派：
+//
+//	≤Version()    → 重放/重复，丢弃刷新活性（非错误）
+//	==Version()+1 → 翻译 + ApplyDelta；ErrStaleVersion（并发竞态）→ 丢弃；其它错误 → 重拉
+//	>Version()+1  → gap → 重拉（绝不 apply 跳版变更）
 func (c *SyncClient) handleDelta(ctx context.Context, d *syncv1.Delta) error {
-	if d.GetVersion() == c.engine.Version()+1 {
+	cur := c.engine.Version()
+	switch {
+	case d.GetVersion() <= cur:
+		c.markSync()
+		return nil
+	case d.GetVersion() == cur+1:
 		kd, err := deltaFromProto(d)
 		if err != nil {
 			return c.resync(ctx) // 翻译失败 → 重拉，绝不部分应用
 		}
 		if err := c.engine.ApplyDelta(kd); err != nil {
+			if errors.Is(err, kernel.ErrStaleVersion) {
+				c.markSync() // 已被并发重拉推进，丢弃非错误
+				return nil
+			}
 			return c.resync(ctx) // apply 失败 → 重拉
 		}
 		c.markSync()
 		return nil
+	default:
+		return c.resync(ctx) // gap → 重拉
 	}
-	return c.resync(ctx) // 非连续（含 gap） → 重拉
 }
 
 // sleep 睡 d，期间 ctx 取消则返回 false（应退出）。
