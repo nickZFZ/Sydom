@@ -109,6 +109,7 @@ erDiagram
         varchar subject_id
         varchar resource
         json condition "条件树"
+        varchar effect "allow/deny"
         bigint version
     }
     casbin_rule {
@@ -237,6 +238,7 @@ data_policy
   subject_id    varchar(128) NOT NULL   -- role.code 或 user_id
   resource      varchar(128) NOT NULL   -- 资源类型，如 order
   condition     json         NOT NULL   -- 条件树，见 4.3.1
+  effect        varchar(8)   NOT NULL DEFAULT 'allow'   -- 策略效果：'allow'（放行）/ 'deny'（拒绝）；具名 CHECK data_policy_effect_chk
   description   varchar(512)
   version       bigint       NOT NULL   -- 纳入 app 同一条版本号序列（架构 6.4）
   created_at, updated_at
