@@ -27,7 +27,7 @@
 | ① DB | `db/migrations/000015_data_policy_effect.{up,down}.sql` | 新 migration：ALTER ADD COLUMN effect + CHECK 约束 |
 | ① DB spec | `docs/superpowers/specs/2026-05-31-sydom-database-schema-design.md` | §data_policy 同步加 effect 列说明 |
 | ③-1 域类型 | `internal/controlplane/types.go` | `cp.DataPolicy` 加 `Effect string` |
-| ③-1 写 | `internal/controlplane/store/write.go`（UpsertDataPolicy） | INSERT/UPDATE 带 effect 列 |
+| ③-1 写 | `internal/controlplane/store/store.go`（UpsertDataPolicy） | INSERT/UPDATE 带 effect 列 |
 | ③-2 读 | `internal/controlplane/store/read.go`（ReadAppDataPolicies） | SELECT 加 effect |
 | ②/③-2 同步 proto | `api/proto/sydom/sync/v1/policy_sync.proto` | `DataPolicy` 加 `string effect = 6` + regenerate |
 | ③-2 翻译 | `internal/controlplane/translate/translate.go`（dataPolicyToProto） | 带 `Effect`（增量 DeltaToProto 随之自动带上） |
