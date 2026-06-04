@@ -172,19 +172,24 @@ func DeleteUserRoleBinding(ctx context.Context, ex cp.DBTX, appID int64, userID 
 // data_policy 无唯一约束，INSERT/UPDATE 依据 p.ID==0 区分。
 // UPDATE 命中 0 行（id 不存在或不属于本 app）即报错——fail-close：宁可拒绝也不让
 // 版本号在 DB 无实际变更时跳变、不让下游收到描述不存在策略的 Delta（权限一致性铁律）。
+// effect 空串归一为 "allow"，对齐 DB DEFAULT。
 func UpsertDataPolicy(ctx context.Context, ex cp.DBTX, appID int64, p cp.DataPolicy, version int64) (id int64, created bool, err error) {
+	effect := p.Effect
+	if effect == "" {
+		effect = cp.EffectAllow
+	}
 	if p.ID == 0 {
 		err = ex.QueryRowContext(ctx, `
-			INSERT INTO data_policy (app_id, subject_type, subject_id, resource, condition, version)
-			VALUES ($1,$2,$3,$4,$5::jsonb,$6) RETURNING id`,
-			appID, p.SubjectType, p.SubjectID, p.Resource, p.Condition, version).Scan(&id)
+			INSERT INTO data_policy (app_id, subject_type, subject_id, resource, condition, effect, version)
+			VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7) RETURNING id`,
+			appID, p.SubjectType, p.SubjectID, p.Resource, p.Condition, effect, version).Scan(&id)
 		return id, true, err
 	}
 	res, err := ex.ExecContext(ctx, `
 		UPDATE data_policy SET subject_type=$1, subject_id=$2, resource=$3, condition=$4::jsonb,
-		       version=$5, updated_at=now()
-		WHERE app_id=$6 AND id=$7`,
-		p.SubjectType, p.SubjectID, p.Resource, p.Condition, version, appID, p.ID)
+		       effect=$5, version=$6, updated_at=now()
+		WHERE app_id=$7 AND id=$8`,
+		p.SubjectType, p.SubjectID, p.Resource, p.Condition, effect, version, appID, p.ID)
 	if err != nil {
 		return p.ID, false, err
 	}

@@ -77,6 +77,7 @@ message DataPolicy {
   string subject_id = 3;
   string resource = 4;
   string condition = 5;    // 条件树 JSON 字符串（协议层不透明传输）
+  string effect = 6;       // "allow" / "deny"；空串按 "allow"（协议层不约束，DB/dataperm 兜底）
 }
 
 // Heartbeat 是反熵心跳，携带该 app 当前 max 版本号。

@@ -68,6 +68,7 @@ func dataPolicyToProto(p cp.DataPolicy) *syncv1.DataPolicy {
 		SubjectId:   p.SubjectID,
 		Resource:    p.Resource,
 		Condition:   p.Condition,
+		Effect:      p.Effect,
 	}
 }
 

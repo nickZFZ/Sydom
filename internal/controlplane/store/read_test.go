@@ -50,6 +50,6 @@ func TestReadAppDataPolicies(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 	require.Equal(t, cp.DataPolicy{
-		ID: id, SubjectType: "role", SubjectID: "manager", Resource: "order", Condition: `{"op": "ALL"}`,
+		ID: id, SubjectType: "role", SubjectID: "manager", Resource: "order", Condition: `{"op": "ALL"}`, Effect: "allow",
 	}, got[0])
 }

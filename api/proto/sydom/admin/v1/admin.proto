@@ -95,6 +95,7 @@ message UpsertDataPolicyRequest {
   string subject_id = 4;
   string resource = 5;
   string condition = 6; // 条件树 JSON
+  string effect = 7;    // "allow" / "deny"；空串按 "allow"
 }
 message UpsertDataPolicyResponse {
   int64 data_policy_id = 1;

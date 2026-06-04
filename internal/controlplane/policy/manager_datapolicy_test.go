@@ -85,6 +85,32 @@ func TestDataPolicy_NotFoundFailClose(t *testing.T) {
 	require.Equal(t, 0, ver)
 }
 
+// TestUpsertDataPolicy_EmptyEffectNormalized 验证写路径锚点归一收口：
+// 调用方传 Effect:"" 时，Delta 回显与落库值应均为 "allow"，而非原始空串。
+func TestUpsertDataPolicy_EmptyEffectNormalized(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	m := policy.NewPolicyManager(db, nil)
+
+	d, err := m.UpsertDataPolicy(context.Background(), appID, cp.DataPolicy{
+		SubjectType: "role", SubjectID: "ops", Resource: "invoice",
+		Condition: `{"op":"ALL"}`,
+		Effect:    "", // 故意传空串，模拟绕过 mgmt 的调用方
+	})
+	require.NoError(t, err)
+	require.NotNil(t, d)
+	require.Len(t, d.DataChanges, 1)
+
+	// Delta 回显必须归一为 "allow"，不能是空串
+	require.Equal(t, cp.EffectAllow, d.DataChanges[0].Policy.Effect,
+		"Delta 回显 effect 应为 allow，而非空串")
+
+	// 落库值也应为 "allow"
+	var dbEffect string
+	require.NoError(t, db.QueryRow(`SELECT effect FROM data_policy WHERE app_id=$1`, appID).Scan(&dbEffect))
+	require.Equal(t, cp.EffectAllow, dbEffect, "DB 落库 effect 应为 allow")
+}
+
 func errFromDelete(t *testing.T, m *policy.PolicyManager, appID, id int64) error {
 	t.Helper()
 	_, err := m.DeleteDataPolicy(context.Background(), appID, id)

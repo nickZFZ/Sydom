@@ -21,6 +21,12 @@ const (
 	ChangeRemove
 )
 
+// data_policy.effect 取值（空串按 EffectAllow，对齐 DB 默认）。
+const (
+	EffectAllow = "allow"
+	EffectDeny  = "deny"
+)
+
 // DataPolicy 是一条数据权限规则（条件树以 JSON 字符串承载，协议层不透明）。
 type DataPolicy struct {
 	ID          int64
@@ -28,6 +34,7 @@ type DataPolicy struct {
 	SubjectID   string
 	Resource    string
 	Condition   string // 条件树 JSON
+	Effect      string // "allow" | "deny"；空串按 "allow"（对齐 DB 默认）
 }
 
 // DataPolicyChange 是一次 data_policy 变更。
