@@ -261,3 +261,9 @@ func TestEngine_ConcurrentApplyAndRead(t *testing.T) {
 
 	wg.Wait() // 不死锁、-race 干净即通过
 }
+
+func TestEngine_Domain_ReturnsPinnedDomain(t *testing.T) {
+	e, err := New("dom1", nil, nil)
+	require.NoError(t, err)
+	require.Equal(t, "dom1", e.Domain(), "Domain() 应返回构造时 pin 的域")
+}
