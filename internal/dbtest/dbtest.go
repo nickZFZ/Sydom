@@ -71,6 +71,14 @@ func SetupSchema(t *testing.T) *sql.DB {
 	return conn
 }
 
+// MigratedDSN 起 PG 容器、跑全量迁移，返回 DSN（供需按 DSN 自开连接池的被测代码，如 cmd 装配）。
+func MigratedDSN(t *testing.T) string {
+	t.Helper()
+	dsn := StartPostgres(t)
+	require.NoError(t, db.RunMigrations(dsn, migrationsSource()))
+	return dsn
+}
+
 // StartRedis 起一个临时 Redis 容器，返回 host:port 地址（无密码）。
 func StartRedis(t *testing.T) string {
 	t.Helper()
