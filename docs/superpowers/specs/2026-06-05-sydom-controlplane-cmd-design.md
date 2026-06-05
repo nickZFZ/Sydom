@@ -12,7 +12,7 @@
 - `internal/controlplane/secret`：`NewResolver(db, masterKey) (*Resolver, error)`（实现 `auth.SecretResolver`）。
 - `internal/controlplane/policy`：`NewPolicyManager(db, sink DeltaSink) *PolicyManager`。
 - `internal/controlplane/outbox`：`NewSink() *Sink`（实现 `policy.DeltaSink`）；`RunRelayLoop(ctx, db, pub broadcast.Publisher, poll time.Duration) error`。
-- `internal/controlplane/adminauthz`：`NewEnforcer(db) (*Enforcer, error)`；`EnsureRootOperator(ctx, db, masterKey, principal string, secret []byte) error`。
+- `internal/controlplane/adminauthz`：`NewEnforcer(db) (*Enforcer, error)`；`NewOperatorResolver(db, masterKey) (*OperatorResolver, error)`（实现 `auth.SecretResolver`，解 operator 凭据）；`EnsureRootOperator(ctx, db, masterKey, principal string, secret []byte) error`。
 - `internal/controlplane/mgmt`：`NewAdminServer(db, mgr *policy.PolicyManager, masterKey []byte) *AdminServer`；`NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB) *grpc.Server`。
 - `internal/controlplane/policysync`：`NewServer(db, Config{HeartbeatInterval, BufSize}) *Server`；`NewGRPCServer(srv *Server, res auth.SecretResolver) *grpc.Server`；`(*Server).RunDispatchLoop(ctx, sub broadcast.Subscriber) error`。
 - `internal/controlplane/broadcast`：`NewRedisPublisher(*redis.Client) *RedisPublisher`；`NewRedisSubscriber(*redis.Client) *RedisSubscriber`。
@@ -75,32 +75,33 @@ relay_poll_interval: "1s"
 ```
 1.  db, _ = sql.Open("postgres", cfg.DatabaseDSN); db.PingContext(ctx)        // 失败→返错（fail-close）
 2.  rdb = redis.NewClient(&redis.Options{Addr: cfg.RedisAddr}); rdb.Ping(ctx) // 失败→返错
-3.  resolver, _ = secret.NewResolver(db, cfg.MasterKey)                       // auth.SecretResolver
-4.  mgr = policy.NewPolicyManager(db, outbox.NewSink())                       // 写事务内落 outbox
-5.  enforcer, _ = adminauthz.NewEnforcer(db)
-6.  adminauthz.EnsureRootOperator(ctx, db, cfg.MasterKey, cfg.RootPrincipal, cfg.RootSecret) // 幂等
-7.  adminSrv = mgmt.NewGRPCServer(mgmt.NewAdminServer(db, mgr, cfg.MasterKey), resolver, enforcer, db)
-8.  syncCore = policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval})
-    syncSrv  = policysync.NewGRPCServer(syncCore, resolver)
-9.  pub = broadcast.NewRedisPublisher(rdb); sub = broadcast.NewRedisSubscriber(rdb)
-10. 后台协程（errgroup，ctx 派生）：
+3.  appResolver, _ = secret.NewResolver(db, cfg.MasterKey)                     // PolicySync 用：解 app HMAC 凭据
+4.  EnsureRootOperator(ctx, db, cfg.MasterKey, cfg.RootPrincipal, cfg.RootSecret) // 幂等播种 + bump version
+                                                                              // 必须在 NewEnforcer 之前（否则 enforcer 加载不到 root 的 super-admin 绑定→root 调 RPC 被拒）
+5.  operatorResolver, _ = adminauthz.NewOperatorResolver(db, cfg.MasterKey)    // AdminService 用：解 operator HMAC 凭据
+6.  enforcer, _ = adminauthz.NewEnforcer(db)                                   // 构造期加载策略（含上一步 root 绑定）
+7.  mgr = policy.NewPolicyManager(db, outbox.NewSink())                        // 写事务内落 outbox
+8.  adminSrv = mgmt.NewGRPCServer(mgmt.NewAdminServer(db, mgr, cfg.MasterKey), operatorResolver, enforcer, db)
+9.  syncCore = policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval})
+    syncSrv  = policysync.NewGRPCServer(syncCore, appResolver)
+10. pub = broadcast.NewRedisPublisher(rdb); sub = broadcast.NewRedisSubscriber(rdb)
+11. 后台协程（ctx 派生）：
       - adminSrv.Serve(adminLis)
       - syncSrv.Serve(syncLis)
-      - outbox.RunRelayLoop(ctx, db, pub, cfg.RelayPollInterval)   // outbox → Redis
-      - syncCore.RunDispatchLoop(ctx, sub)                          // Redis → Hub → Sidecar 流
-11. 阻塞等 ctx.Done()，随后优雅关闭（§6）
+      - outbox.RunRelayLoop(runCtx, db, pub, cfg.RelayPollInterval)   // outbox → Redis
+      - syncCore.RunDispatchLoop(runCtx, sub)                          // Redis → Hub → Sidecar 流
+12. 阻塞等 ctx.Done()，随后优雅关闭（§6）
 ```
 
-两服务复用同一 `resolver`（`auth.SecretResolver` 无状态，按 app_key 解密）。`db`/`rdb` 由 Run 拥有并在关闭时 Close。
+**两个不同的 resolver**（关键，回源核实修正）：AdminService 走 `adminauthz.NewOperatorResolver`（解 **operator** 凭据），PolicySync 走 `secret.NewResolver`（解 **app** 凭据）——二者都实现 `auth.SecretResolver` 但解不同主体，绝不可复用同一个。`db`/`rdb` 由 Run 拥有并在关闭时 Close。
 
 ## 6. 优雅关闭
 
-`Main` 用 `signal.NotifyContext(context.Background(), SIGINT, SIGTERM)` 建可取消 ctx 传给 `Run`。ctx 取消时：
-- `adminSrv.GracefulStop()` + `syncSrv.GracefulStop()`（停收新请求、放完在途流；放在 ctx.Done() 后触发，需在独立 goroutine 调以免与 `Serve` 死锁）。
-- relay/dispatch 协程因 ctx 取消自然返回。
-- `errgroup.Wait()` 收敛所有协程；`grpc.ErrServerStopped` 视为正常关闭、不算错误。
-- `db.Close()` + `rdb.Close()`。
-- 全部收敛后 `Run` 返回 nil（关闭中出错则返该错）。
+`Main` 用 `signal.NotifyContext(context.Background(), SIGINT, SIGTERM)` 建可取消 ctx 传给 `Run`。`Run` 内派生 `runCtx`（任一协程结束即 `cancel()`，实现「一个挂→全收敛」级联）。协程用 `sync.WaitGroup` 收敛（不引入 errgroup，零新依赖）。ctx（或 runCtx）取消后：
+- `adminSrv.GracefulStop()` + `syncSrv.GracefulStop()`（停收新请求、放完在途流；在 `<-runCtx.Done()` 之后主流程调用）。`grpc.Server.Serve` 在 `GracefulStop` 后返回 `nil`。
+- relay/dispatch 因 `runCtx` 取消返回 `context.Canceled`——**优雅关闭的预期值，需过滤**（`errors.Is(err, context.Canceled)` 不计入致命错）。
+- `wg.Wait()` 收敛全部协程后 `db.Close()` + `rdb.Close()`。
+- 返回首个非 `context.Canceled` 的协程错误（有则返，无则 nil）。
 
 ## 7. 日志（结构化，stdlib slog）
 
@@ -109,8 +110,8 @@ relay_poll_interval: "1s"
 ## 8. 测试策略
 
 - **LoadConfig 纯单测**（`config_test.go`，注入 fake `getenv` + 临时 YAML 文件）：完整解析 + env 覆盖密钥；主密钥非 32 字节 / 缺失 → 错；`RootSecret` 缺失 → 错；关键地址缺失 → 错；间隔零值落默认。
-- **Run 集成测试**（`run_test.go`，testcontainers PG+Redis，复用 `dbtest.StartPostgres/StartRedis/SetupSchema`）：
-  - 用 `net.Listen("tcp", "127.0.0.1:0")` 建两监听器，后台 `go Run(ctx, cfg, adminLis, syncLis, logger)`；cfg 的 DSN/RedisAddr 指向容器，MasterKey 32 字节、RootPrincipal/RootSecret 设定。
+- **Run 集成测试**（`run_test.go`，testcontainers PG+Redis）：需给 `dbtest` 加 `MigratedDSN(t) string`（起 PG 容器 + 跑迁移 + 返回 DSN，复用其内部 `db.RunMigrations`/`migrationsSource`）——现有 `SetupSchema` 只返回 `*sql.DB` 不暴露 DSN，而 Run 要按 DSN 自开连接池。
+  - 用 `net.Listen("tcp", "127.0.0.1:0")` 建两监听器，后台 `go Run(ctx, cfg, adminLis, syncLis, logger)`；cfg.DatabaseDSN = `MigratedDSN(t)`、cfg.RedisAddr = `StartRedis(t)`，MasterKey 32 字节、RootPrincipal/RootSecret 设定。
   - 拨 `adminLis.Addr()`，以播种的 root operator 凭据（`auth.NewPerRPCCredentials(RootPrincipal, RootSecret, false)`）调一个 AdminService RPC（如 `ListApplications`），`require.NoError` —— **验证装配链贯通**：配置→DB/Redis→secret/enforcer/EnsureRootOperator→认证→元-RBAC→服务。
   - 断言 `cancel()` 后 `Run` 在超时（如 5s）内干净返回 nil（优雅关闭）。
   - 不重测 mgmt/policysync 业务逻辑（各层已有 bufconn+testcontainer 测试）；本测试只证「装配正确」。
@@ -124,7 +125,7 @@ relay_poll_interval: "1s"
 ## 10. 自检结果
 
 - **占位符扫描**：无 TODO/待定；Config 字段、装配步骤、关闭序列、测试断言均具体。
-- **内部一致性**：决策 2（文件+env 密钥）贯穿 §4；决策 3（两端口）贯穿 §5 步骤 7-10；决策 4（注入监听器）贯穿 §3/§5/§8；决策 6（fail-close 启动）贯穿 §5 步骤 1-6 与 §8 LoadConfig 校验。
+- **内部一致性**：决策 2（文件+env 密钥）贯穿 §4；决策 3（两端口）贯穿 §5 步骤 8-11；决策 4（注入监听器）贯穿 §3/§5/§8；决策 6（fail-close 启动）贯穿 §5 步骤 1-6 与 §8 LoadConfig 校验。**两个不同 resolver（operator vs app）+ EnsureRootOperator 先于 NewEnforcer**：回源核实修正，贯穿 §1 依赖/§5 步骤 3-9。
 - **范围检查**：单一关注点（控制面装配），单计划可覆盖；sidecar/迁移/可观测扩展明确划出。
 - **模糊性检查**：密钥编码（主密钥 base64、root secret 原始字节）、监听器注入点、GracefulStop 触发时机（ctx.Done 后独立 goroutine）、relay/dispatch 退出（随 ctx）均已明确。
 
