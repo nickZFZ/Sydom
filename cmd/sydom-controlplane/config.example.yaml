@@ -1,0 +1,11 @@
+database_dsn: "postgres://sydom:sydom@localhost:5432/sydom?sslmode=disable"
+redis_addr: "localhost:6379"
+admin_addr: ":8081"
+sync_addr: ":8082"
+root_principal: "root@sydom"
+heartbeat_interval: "30s"
+relay_poll_interval: "1s"
+# 敏感项只走环境变量（不写本文件）：
+#   SYDOM_MASTER_KEY  = base64(32 字节 AES-256 主密钥)
+#   SYDOM_ROOT_SECRET = root operator 初始 HMAC 密钥
+# DB 须先 make migrate-up
