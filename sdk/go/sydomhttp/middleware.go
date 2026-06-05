@@ -31,7 +31,7 @@ func New(checker Checker, resolver Resolver, opts ...Option) func(http.Handler) 
 					return
 				}
 				cfg.errorLog(r, err)
-				cfg.denyHandler.ServeHTTP(w, r) // 无法识别请求/身份：与判定为拒同归一类（fail-close）
+				cfg.denyHandler.ServeHTTP(w, r) // resolver 非 skip 错误：记日志 + fail-close 拒绝（与纯 deny 共用 denyHandler，但纯 deny 不记日志）
 				return
 			}
 

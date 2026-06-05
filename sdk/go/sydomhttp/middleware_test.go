@@ -84,8 +84,14 @@ func TestMiddleware_Unavailable_DefaultFailClose_503(t *testing.T) {
 func TestMiddleware_Unavailable_FailOpen_CallsNext(t *testing.T) {
 	chk := &mockChecker{err: sydom.ErrUnavailable}
 	var nextCalled bool
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+		_, ok := sydomhttp.FromContext(r.Context())
+		require.False(t, ok) // fail-open 放行但不注入 Decision（放行≠已鉴权）
+		w.WriteHeader(http.StatusOK)
+	})
 
-	rec := serve(sydomhttp.New(chk, fixedResolver, sydomhttp.WithFailOpen()), nextRecorder(&nextCalled), httptest.NewRequest(http.MethodGet, "/x", nil))
+	rec := serve(sydomhttp.New(chk, fixedResolver, sydomhttp.WithFailOpen()), next, httptest.NewRequest(http.MethodGet, "/x", nil))
 
 	require.Equal(t, http.StatusOK, rec.Code)
 	require.True(t, nextCalled)

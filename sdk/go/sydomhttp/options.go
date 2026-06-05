@@ -17,7 +17,8 @@ type Option func(*config)
 // 作用域为该实例——不同路由组挂不同实例即实现「每路由 opt-in」。硬错误不受此影响。
 func WithFailOpen() Option { return func(c *config) { c.failOpen = true } }
 
-// WithDenyHandler 自定义「判定为拒 或 resolver 非 skip 错误」的响应（默认 403）。
+// WithDenyHandler 自定义「判定为拒」或「resolver 非 skip 错误（fail-close）」的响应（默认 403）。
+// 注：resolver 非 skip 错误会额外触发 errorLog；纯 deny（allowed=false）不触发。
 func WithDenyHandler(h http.Handler) Option { return func(c *config) { c.denyHandler = h } }
 
 // WithUnavailableHandler 自定义「无法判定且 fail-close」的响应（默认 503）。
