@@ -75,6 +75,7 @@ func TestRun_WiringEndToEnd(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // 失败路径安全网：断言提前 FailNow 时也取消 Run，避免后台协程泄漏
 	done := make(chan error, 1)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	go func() { done <- app.Run(ctx, cfg, authLis, logger) }()
