@@ -117,3 +117,31 @@ func TestAuthorizer_BatchCheck_NotReady_FailClose(t *testing.T) {
 	require.ErrorIs(t, err, kernel.ErrNotReady)
 	require.Nil(t, got)
 }
+
+func TestAuthorizer_FilterSQL_DenyOverride(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	res, err := a.FilterSQL("alice", "order", map[string]any{"department": "HR"})
+	require.NoError(t, err)
+	require.Equal(t, "(dept = ? AND NOT (status IN (?, ?)))", res.SQL)
+	require.Equal(t, []any{"HR", "locked", "void"}, res.Args)
+}
+
+func TestAuthorizer_FilterSQL_MissingVar(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	_, err := a.FilterSQL("alice", "order", map[string]any{}) // 缺 department
+	require.ErrorIs(t, err, dataperm.ErrMissingVar)
+}
+
+func TestAuthorizer_FilterSQL_NotReady_FailClose(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: false})
+	_, err := a.FilterSQL("alice", "order", map[string]any{"department": "HR"})
+	require.ErrorIs(t, err, kernel.ErrNotReady)
+}
+
+func TestAuthorizer_FilterRaw_MergedTree(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	res, err := a.FilterRaw("alice", "order", map[string]any{"department": "HR"})
+	require.NoError(t, err)
+	require.Equal(t, dataperm.MatchConditional, res.Match)
+	require.NotNil(t, res.Tree, "命中应返回合并条件树")
+}

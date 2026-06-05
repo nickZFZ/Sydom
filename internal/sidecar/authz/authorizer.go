@@ -81,3 +81,19 @@ func (a *Authorizer) BatchCheck(reqs []CheckReq) ([]bool, error) {
 	}
 	return a.engine.BatchEnforce(rows)
 }
+
+// FilterSQL 渲染数据权限的参数化 SQL 片段（值全进 Args）。守卫不通过即 fail-close。
+func (a *Authorizer) FilterSQL(subject, resource string, attrs map[string]any) (dataperm.SQLResult, error) {
+	if err := a.checkFresh(); err != nil {
+		return dataperm.SQLResult{}, err
+	}
+	return a.filter.FilterSQL(subject, a.domain, resource, attrs)
+}
+
+// FilterRaw 返回变量已解析的合并条件树，交 ORM/SDK 自渲染。守卫不通过即 fail-close。
+func (a *Authorizer) FilterRaw(subject, resource string, attrs map[string]any) (dataperm.RawResult, error) {
+	if err := a.checkFresh(); err != nil {
+		return dataperm.RawResult{}, err
+	}
+	return a.filter.FilterRaw(subject, a.domain, resource, attrs)
+}
