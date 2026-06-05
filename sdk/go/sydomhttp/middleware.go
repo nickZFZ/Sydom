@@ -50,8 +50,12 @@ func New(checker Checker, resolver Resolver, opts ...Option) func(http.Handler) 
 				}
 				cfg.unavailableHandler.ServeHTTP(w, r)
 			default:
+				// 硬错误：fail-open 不豁免。Check 路径正常仅产生 Unavailable（未就绪/陈旧/断线）
+				// 或 Internal（未预期）——确定性错误码（InvalidArgument/FailedPrecondition）只来自
+				// FilterSQL 路径，Check 因服务端自 pin 域、不碰 dataperm 而不可达；若出现即视为
+				// 服务端误用，按 fail-close 500 兜底。
 				cfg.errorLog(r, err)
-				cfg.errorHandler.ServeHTTP(w, r) // 硬错误：fail-open 不豁免
+				cfg.errorHandler.ServeHTTP(w, r)
 			}
 		})
 	}
