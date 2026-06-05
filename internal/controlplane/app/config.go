@@ -1,0 +1,104 @@
+// Package app 装配控制面进程：加载配置、连 DB/Redis、起 AdminService/PolicySync、跑 relay/dispatch、优雅关闭。
+package app
+
+import (
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/nickZFZ/Sydom/internal/crypto"
+	"gopkg.in/yaml.v3"
+)
+
+// Config 是控制面进程运行参数。非敏感项来自 YAML，敏感项（MasterKey/RootSecret）只来自 env。
+type Config struct {
+	DatabaseDSN       string
+	RedisAddr         string
+	AdminAddr         string
+	SyncAddr          string
+	RootPrincipal     string
+	HeartbeatInterval time.Duration
+	RelayPollInterval time.Duration
+
+	MasterKey  []byte // env SYDOM_MASTER_KEY（base64，解码须 32 字节）
+	RootSecret []byte // env SYDOM_ROOT_SECRET（原始字节）
+}
+
+type fileConfig struct {
+	DatabaseDSN       string `yaml:"database_dsn"`
+	RedisAddr         string `yaml:"redis_addr"`
+	AdminAddr         string `yaml:"admin_addr"`
+	SyncAddr          string `yaml:"sync_addr"`
+	RootPrincipal     string `yaml:"root_principal"`
+	HeartbeatInterval string `yaml:"heartbeat_interval"`
+	RelayPollInterval string `yaml:"relay_poll_interval"`
+}
+
+// LoadConfig 读 YAML + env 覆盖密钥/可选项 + 校验（任一不满足 fail-close 返错）。
+// getenv 注入便于测试（生产传 os.Getenv）。
+func LoadConfig(path string, getenv func(string) string) (Config, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return Config{}, fmt.Errorf("read config: %w", err)
+	}
+	var fc fileConfig
+	if err := yaml.Unmarshal(raw, &fc); err != nil {
+		return Config{}, fmt.Errorf("parse config: %w", err)
+	}
+
+	cfg := Config{
+		DatabaseDSN:   firstNonEmpty(getenv("SYDOM_DATABASE_DSN"), fc.DatabaseDSN),
+		RedisAddr:     firstNonEmpty(getenv("SYDOM_REDIS_ADDR"), fc.RedisAddr),
+		AdminAddr:     fc.AdminAddr,
+		SyncAddr:      fc.SyncAddr,
+		RootPrincipal: fc.RootPrincipal,
+	}
+	if cfg.HeartbeatInterval, err = parseDurationDefault(fc.HeartbeatInterval, 30*time.Second); err != nil {
+		return Config{}, fmt.Errorf("heartbeat_interval: %w", err)
+	}
+	if cfg.RelayPollInterval, err = parseDurationDefault(fc.RelayPollInterval, time.Second); err != nil {
+		return Config{}, fmt.Errorf("relay_poll_interval: %w", err)
+	}
+
+	mk, err := base64.StdEncoding.DecodeString(getenv("SYDOM_MASTER_KEY"))
+	if err != nil {
+		return Config{}, fmt.Errorf("decode SYDOM_MASTER_KEY: %w", err)
+	}
+	cfg.MasterKey = mk
+	cfg.RootSecret = []byte(getenv("SYDOM_ROOT_SECRET"))
+
+	if len(cfg.MasterKey) != crypto.KeySize {
+		return Config{}, fmt.Errorf("SYDOM_MASTER_KEY must decode to %d bytes, got %d", crypto.KeySize, len(cfg.MasterKey))
+	}
+	if len(cfg.RootSecret) == 0 {
+		return Config{}, errors.New("SYDOM_ROOT_SECRET required")
+	}
+	for _, f := range []struct{ name, val string }{
+		{"database_dsn", cfg.DatabaseDSN},
+		{"redis_addr", cfg.RedisAddr},
+		{"admin_addr", cfg.AdminAddr},
+		{"sync_addr", cfg.SyncAddr},
+		{"root_principal", cfg.RootPrincipal},
+	} {
+		if f.val == "" {
+			return Config{}, fmt.Errorf("%s required", f.name)
+		}
+	}
+	return cfg, nil
+}
+
+func firstNonEmpty(a, b string) string {
+	if a != "" {
+		return a
+	}
+	return b
+}
+
+func parseDurationDefault(s string, def time.Duration) (time.Duration, error) {
+	if s == "" {
+		return def, nil
+	}
+	return time.ParseDuration(s)
+}
