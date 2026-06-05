@@ -69,3 +69,15 @@ func (a *Authorizer) Check(subject, object, action string) (bool, error) {
 	}
 	return a.engine.Enforce(subject, a.domain, object, action)
 }
+
+// BatchCheck 批量判定；用 pin 域组装 casbin 四元请求，等长同序返回。守卫不通过即 fail-close。
+func (a *Authorizer) BatchCheck(reqs []CheckReq) ([]bool, error) {
+	if err := a.checkFresh(); err != nil {
+		return nil, err
+	}
+	rows := make([][]string, len(reqs))
+	for i, r := range reqs {
+		rows[i] = []string{r.Subject, a.domain, r.Object, r.Action}
+	}
+	return a.engine.BatchEnforce(rows)
+}

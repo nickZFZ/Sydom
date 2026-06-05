@@ -99,3 +99,21 @@ func TestAuthorizer_Check_MaxStalenessZero_DisablesGuard(t *testing.T) {
 	require.NoError(t, err, "MaxStaleness=0 时陈旧不拦截")
 	require.True(t, allow)
 }
+
+func TestAuthorizer_BatchCheck_PreservesOrderAndLength(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	got, err := a.BatchCheck([]CheckReq{
+		{Subject: "alice", Object: "order", Action: "read"},   // 命中
+		{Subject: "alice", Object: "order", Action: "delete"}, // 不命中
+		{Subject: "bob", Object: "order", Action: "read"},     // bob 无角色
+	})
+	require.NoError(t, err)
+	require.Equal(t, []bool{true, false, false}, got)
+}
+
+func TestAuthorizer_BatchCheck_NotReady_FailClose(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: false})
+	got, err := a.BatchCheck([]CheckReq{{Subject: "alice", Object: "order", Action: "read"}})
+	require.ErrorIs(t, err, kernel.ErrNotReady)
+	require.Nil(t, got)
+}
