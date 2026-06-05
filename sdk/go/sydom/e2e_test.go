@@ -19,7 +19,7 @@ import (
 // stubFresh 让陈旧守卫始终放行（Ready 且刚同步）。
 type stubFresh struct{}
 
-func (stubFresh) Ready() bool            { return true }
+func (stubFresh) Ready() bool           { return true }
 func (stubFresh) LastSyncAt() time.Time { return time.Now() }
 
 func TestClient_EndToEnd_RealAuthService(t *testing.T) {
