@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // startAuthServer 起 bufconn AuthService，返回拨号好的客户端。
@@ -45,4 +46,45 @@ func TestServer_Check_NotReady_Unavailable(t *testing.T) {
 	cli := startAuthServer(t, a)
 	_, err := cli.Check(context.Background(), &authv1.CheckRequest{Subject: "alice", Object: "order", Action: "read"})
 	require.Equal(t, codes.Unavailable, status.Code(err), "未就绪应映射 Unavailable，而非 allowed=false")
+}
+
+func TestServer_BatchCheck(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	cli := startAuthServer(t, a)
+	resp, err := cli.BatchCheck(context.Background(), &authv1.BatchCheckRequest{
+		Requests: []*authv1.CheckRequest{
+			{Subject: "alice", Object: "order", Action: "read"},
+			{Subject: "alice", Object: "order", Action: "delete"},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, []bool{true, false}, resp.GetAllowed())
+}
+
+func TestServer_FilterSQL_DenyOverride_WKTRoundTrip(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	cli := startAuthServer(t, a)
+	attrs, err := structpb.NewStruct(map[string]any{"department": "HR"})
+	require.NoError(t, err)
+	resp, err := cli.FilterSQL(context.Background(), &authv1.FilterRequest{
+		Subject: "alice", Resource: "order", Attrs: attrs,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "(dept = ? AND NOT (status IN (?, ?)))", resp.GetSql())
+	gotArgs := make([]any, len(resp.GetArgs()))
+	for i, v := range resp.GetArgs() {
+		gotArgs[i] = v.AsInterface()
+	}
+	require.Equal(t, []any{"HR", "locked", "void"}, gotArgs)
+}
+
+func TestServer_FilterSQL_MissingVar_InvalidArgument(t *testing.T) {
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	cli := startAuthServer(t, a)
+	empty, err := structpb.NewStruct(map[string]any{})
+	require.NoError(t, err)
+	_, err = cli.FilterSQL(context.Background(), &authv1.FilterRequest{
+		Subject: "alice", Resource: "order", Attrs: empty, // 缺 department
+	})
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
 }

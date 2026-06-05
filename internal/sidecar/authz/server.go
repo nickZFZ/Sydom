@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // Server 把 Authorizer 适配为 gRPC AuthService。
@@ -34,6 +35,34 @@ func (s *Server) Check(_ context.Context, req *authv1.CheckRequest) (*authv1.Che
 		return nil, toStatus(err)
 	}
 	return &authv1.CheckResponse{Allowed: allowed}, nil
+}
+
+func (s *Server) BatchCheck(_ context.Context, req *authv1.BatchCheckRequest) (*authv1.BatchCheckResponse, error) {
+	reqs := make([]CheckReq, len(req.GetRequests()))
+	for i, r := range req.GetRequests() {
+		reqs[i] = CheckReq{Subject: r.GetSubject(), Object: r.GetObject(), Action: r.GetAction()}
+	}
+	allowed, err := s.a.BatchCheck(reqs)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &authv1.BatchCheckResponse{Allowed: allowed}, nil
+}
+
+func (s *Server) FilterSQL(_ context.Context, req *authv1.FilterRequest) (*authv1.FilterSQLResponse, error) {
+	res, err := s.a.FilterSQL(req.GetSubject(), req.GetResource(), req.GetAttrs().AsMap())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	args := make([]*structpb.Value, len(res.Args))
+	for i, v := range res.Args {
+		val, verr := structpb.NewValue(v)
+		if verr != nil {
+			return nil, status.Errorf(codes.Internal, "encode arg %d: %v", i, verr)
+		}
+		args[i] = val
+	}
+	return &authv1.FilterSQLResponse{Sql: res.SQL, Args: args}, nil
 }
 
 // toStatus 把领域错误映射为 gRPC status：
