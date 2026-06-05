@@ -81,7 +81,11 @@ func (c *Client) BatchCheck(ctx context.Context, reqs []CheckReq) ([]bool, error
 	if err != nil {
 		return nil, mapErr(err)
 	}
-	return resp.GetAllowed(), nil
+	got := resp.GetAllowed()
+	if len(got) != len(reqs) {
+		return nil, fmt.Errorf("sydom: BatchCheck 响应长度 %d 与请求数 %d 不一致", len(got), len(reqs))
+	}
+	return got, nil
 }
 
 // FilterSQL 返回数据权限的参数化 SQL 片段。attrs 为 $user.xxx 变量取值（JSON 标量）。

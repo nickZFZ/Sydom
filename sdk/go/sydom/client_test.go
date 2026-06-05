@@ -2,7 +2,6 @@ package sydom_test
 
 import (
 	"context"
-	"errors"
 	"net"
 	"testing"
 
@@ -146,4 +145,17 @@ func TestClient_Close_InjectedConn_NotClosed(t *testing.T) {
 	require.True(t, allowed)
 }
 
-var _ = errors.Is // 保留 errors 导入（部分断言用 ErrorIs/NotErrorIs 已覆盖）
+func TestClient_BatchCheck_LengthMismatch_Errors(t *testing.T) {
+	f := &fakeAuth{batch: func(*authv1.BatchCheckRequest) (*authv1.BatchCheckResponse, error) {
+		// 请求 2 条，却只返回 1 个结果——长度不一致。
+		return &authv1.BatchCheckResponse{Allowed: []bool{true}}, nil
+	}}
+	c, _ := startFake(t, f)
+
+	got, err := c.BatchCheck(context.Background(), []sydom.CheckReq{
+		{Subject: "alice", Object: "order", Action: "read"},
+		{Subject: "alice", Object: "order", Action: "write"},
+	})
+	require.Error(t, err) // fail-close：响应长度错位必须报错
+	require.Nil(t, got)
+}
