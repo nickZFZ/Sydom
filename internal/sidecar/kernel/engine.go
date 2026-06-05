@@ -48,6 +48,9 @@ func (e *Engine) Version() uint64 { return e.version.Load() }
 // Ready 表示是否已成功应用过一次快照。
 func (e *Engine) Ready() bool { return e.ready.Load() }
 
+// Domain 返回构造时 pin 的 casbin 域（供上层组合者取单一真相源的域，避免平行配置漂移）。
+func (e *Engine) Domain() string { return e.domain }
+
 // Enforce 判定 (sub,dom,obj,act)。未就绪/越域/出错一律 fail-close。
 func (e *Engine) Enforce(sub, dom, obj, act string) (bool, error) {
 	if !e.ready.Load() {

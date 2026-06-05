@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package sydom.auth.v1;
+
+option go_package = "github.com/nickZFZ/Sydom/gen/sydom/auth/v1;authv1";
+
+import "google/protobuf/struct.proto";
+
+// AuthService 是 Sidecar 对同机业务进程暴露的本地鉴权服务（回环调用，v1 不加 HMAC）。
+// 域由 Sidecar 按所属 app pin，不在请求体中传递（强隔离）。
+service AuthService {
+  // Check 判定单条功能权限。
+  rpc Check(CheckRequest) returns (CheckResponse);
+  // BatchCheck 批量判定，结果与请求等长同序。
+  rpc BatchCheck(BatchCheckRequest) returns (BatchCheckResponse);
+  // FilterSQL 返回数据权限的参数化 SQL 片段（值在 args，绝不进 SQL 文本）。
+  rpc FilterSQL(FilterRequest) returns (FilterSQLResponse);
+}
+
+message CheckRequest {
+  string subject = 1;
+  string object = 2;
+  string action = 3;
+}
+
+message CheckResponse {
+  bool allowed = 1;
+}
+
+message BatchCheckRequest {
+  repeated CheckRequest requests = 1;
+}
+
+message BatchCheckResponse {
+  repeated bool allowed = 1; // 与 requests 等长同序
+}
+
+message FilterRequest {
+  string subject = 1;
+  string resource = 2;
+  google.protobuf.Struct attrs = 3; // $user.xxx 变量取值（JSON 标量）
+}
+
+message FilterSQLResponse {
+  string sql = 1;                          // 无过滤=空串；deny-all="1=0"；否则参数化片段
+  repeated google.protobuf.Value args = 2; // 占位符实参（JSON 标量）
+}
