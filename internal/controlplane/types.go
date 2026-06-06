@@ -59,6 +59,22 @@ type DBTX interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
+// PermissionPoint 是一条上报的权限点目录元数据。
+type PermissionPoint struct {
+	Code        string
+	Resource    string
+	Action      string
+	Type        string
+	Name        string
+	Description string
+}
+
+// ReportResult 是一次权限点上报的写入统计。
+type ReportResult struct {
+	Upserted int // 新增或刷新（source=auto）
+	Skipped  int // 命中 manual 行被保留
+}
+
 type operatorKey struct{}
 
 // WithOperator 把操作者标识注入 context（③-3 从认证上下文设置）。

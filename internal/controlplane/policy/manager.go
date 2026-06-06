@@ -108,6 +108,39 @@ func (m *PolicyManager) runVersionedWrite(ctx context.Context, appID int64, op w
 	return delta, nil
 }
 
+// ReportPermissions 批量上报权限点（app 凭据来源，全标 source=auto）。
+// 单批走 runVersionedWrite：纯目录上报无投影 diff → 不 bump、不广播；若上报改了
+// "已被授权权限点"的 resource/action 致投影变化 → 照常 bump+广播（一致性要求）。
+// 命中 manual 行的条目被跳过、计入 Skipped，绝不覆盖人工配置。
+func (m *PolicyManager) ReportPermissions(ctx context.Context, appID int64, points []cp.PermissionPoint) (cp.ReportResult, error) {
+	var res cp.ReportResult
+	ctx = cp.WithOperator(ctx, "auto-report") // bump 路径的 audit actor
+	_, err := m.runVersionedWrite(ctx, appID, writeOp{
+		action:     "report_permissions",
+		entityType: "permission",
+		entityID:   "",
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			for _, p := range points {
+				applied, e := store.UpsertAutoPermission(ctx, tx, appID,
+					p.Code, p.Resource, p.Action, p.Type, p.Name, p.Description)
+				if e != nil {
+					return nil, e
+				}
+				if applied {
+					res.Upserted++
+				} else {
+					res.Skipped++
+				}
+			}
+			return nil, nil
+		},
+	})
+	if err != nil {
+		return cp.ReportResult{}, err
+	}
+	return res, nil
+}
+
 // GrantPermission 给角色授予权限点（幂等）。
 // 契约：幂等命中或无策略影响时返回 (nil, nil)——业务态已持久化但无需下发；
 // 出错时返回 (nil, err)。调用方据 (err==nil && delta==nil) 判定"无变更、不下发"。

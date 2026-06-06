@@ -12,6 +12,43 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestReportPermissions_CatalogOnly_NoBump(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	mgr := policy.NewPolicyManager(db, nil)
+	ctx := context.Background()
+
+	res, err := mgr.ReportPermissions(ctx, appID, []cp.PermissionPoint{
+		{Code: "p.read", Resource: "order", Action: "read", Type: "api", Name: "读"},
+		{Code: "p.write", Resource: "order", Action: "write", Type: "api", Name: "写"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, res.Upserted)
+	require.Equal(t, 0, res.Skipped)
+
+	var v int64
+	require.NoError(t, db.QueryRowContext(ctx,
+		`SELECT current_version FROM application WHERE id=$1`, appID).Scan(&v))
+	require.Equal(t, int64(0), v) // 纯目录上报无投影 diff → 版本不 bump
+}
+
+func TestReportPermissions_MixAutoManual_Counts(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	_, err := db.Exec(`INSERT INTO permission (app_id, code, resource, action, type, name, source)
+		VALUES ($1,'p.m','order','write','api','人工','manual')`, appID)
+	require.NoError(t, err)
+	mgr := policy.NewPolicyManager(db, nil)
+
+	res, err := mgr.ReportPermissions(context.Background(), appID, []cp.PermissionPoint{
+		{Code: "p.a", Resource: "order", Action: "read", Type: "api", Name: "自动"},
+		{Code: "p.m", Resource: "x", Action: "x", Type: "x", Name: "篡改"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, res.Upserted)
+	require.Equal(t, 1, res.Skipped)
+}
+
 // 建一个角色 + 权限点，返回 (roleID, permID)。
 func seedRoleAndPerm(t *testing.T, db *sql.DB, appID int64) (int64, int64) {
 	t.Helper()
