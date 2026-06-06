@@ -36,7 +36,8 @@ func Scope(fr sydom.FilterResult) func(*gorm.DB) *gorm.DB {
 }
 
 // ScopeApply 便捷封装：调 f.FilterSQL 取片段再 Scope。
-// FilterSQL 的错误（含 sydom.ErrUnavailable）经 db.AddError 注入，业务据 db.Error 自定 fail-open/close。
+// FilterSQL 的错误（含 sydom.ErrUnavailable）经 db.AddError 注入后 Find 将返回 error（fail-close）；
+// 若业务需对 ErrUnavailable fail-open，应在调用 Scope 前自行判定，不在 GORM 层清除 db.Error。
 func ScopeApply(ctx context.Context, f sydomsql.Filterer, subject, resource string, attrs map[string]any) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		fr, err := f.FilterSQL(ctx, subject, resource, attrs)

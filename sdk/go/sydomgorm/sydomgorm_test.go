@@ -56,8 +56,23 @@ func TestScope_Conditional(t *testing.T) {
 	if !strings.Contains(got, "dept = ?") || !strings.Contains(got, "status <> ?") {
 		t.Fatalf("missing where: %q", got)
 	}
-	if len(res.Statement.Vars) != 2 {
-		t.Fatalf("want 2 vars, got %v", res.Statement.Vars)
+	if len(res.Statement.Vars) != 2 || res.Statement.Vars[0] != "HR" || res.Statement.Vars[1] != "void" {
+		t.Fatalf("args 顺序/数量错误: %v", res.Statement.Vars)
+	}
+}
+
+func TestScopeApply_HappyPath_InjectsWhere(t *testing.T) {
+	db := newDryRunDB(t)
+	f := stubFilterer{fr: sydom.FilterResult{SQL: "dept = ?", Args: []any{"HR"}}}
+	res := db.Model(&order{}).Scopes(sydomgorm.ScopeApply(context.Background(), f, "alice", "order", nil)).Find(&[]order{})
+	if res.Error != nil {
+		t.Fatalf("err: %v", res.Error)
+	}
+	if !strings.Contains(res.Statement.SQL.String(), "dept = ?") {
+		t.Fatalf("ScopeApply 未注入 WHERE: %q", res.Statement.SQL.String())
+	}
+	if len(res.Statement.Vars) != 1 || res.Statement.Vars[0] != "HR" {
+		t.Fatalf("args=%v", res.Statement.Vars)
 	}
 }
 
