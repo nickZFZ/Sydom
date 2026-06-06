@@ -82,8 +82,11 @@ secret 全程 stdout→shell 变量→env，**绝不落文件**。`make demo-dow
 ## 4. Demo 业务场景（seeder 配置）
 
 - **App**：tenant=`demo`，domain=`shop`，app_key=`demo-shop`。
-- **功能权限点**（订单服务启动时经 SDK 注册并上报，source=auto）：`order:read` / `order:write` / `order:delete`（resource=`order`，action=读/写/删，type=`api`，name 中文）。
-- **角色与功能授权**：`manager`→read+write+delete（allow）；`clerk`→read（allow）。
+- **功能权限点（app 自声明目录，订单服务启动时经 SDK 注册并上报）**：`order:read` / `order:write` / `order:delete` / `order:export`。
+  - 关键事实（已回源核实 `store.UpsertPermission` / `UpsertAutoPermission` / migration 000004）：`permission.source` 默认 `'manual'`；admin 路径 `UpsertPermission` 建行为 `manual` 且冲突时**不改 source**；auto 上报 `UpsertAutoPermission` 仅写/更 `source='auto'` 行、**跳过 manual 行**。
+  - 因 `GrantPermission` 要求权限点先存在，**被授权的 read/write/delete 由 seeder 经 `UpsertPermission` 预建为 `source='manual'`**；app 启动 auto 上报同 code → 命中 manual → **Skipped（不覆盖人工配置，§8 头条不变量）**。
+  - `order:export` 是 app 声明但**尚未授权/未接路由**的能力点（真实场景常见）：admin 未预建 → auto 上报落 `source='auto'`，演示**新增 auto 插入**。
+- **角色与功能授权**：`manager`→read+write+delete（allow）；`clerk`→read（allow）。export 不授权（仅目录声明）。
 - **用户绑定**：`alice`→manager；`bob`→clerk（bob.department=`shanghai`）。
 - **数据策略（行级，resource=order）**：
   - `clerk`：allow `{"field":"dept","op":"EQ","value":"$user.department"}` → 只见本部门订单。
@@ -95,7 +98,7 @@ secret 全程 stdout→shell 变量→env，**绝不落文件**。`make demo-dow
 
 1. **功能权限（A+B）**：alice 删订单成功；bob 删订单被拒。
 2. **数据权限（C）**：bob 列表只见 `shanghai` 行；alice 见全部；**deny-all 负向**：一个有 `order:read` 功能权限但无任何 allow 数据策略的主体 → 列表 0 行（绝不退化为全表）。
-3. **权限点上报（D）**：订单服务启动后，控制面 `permission` 表出现 3 条 `source='auto'`；预置一条同 code 的 `manual` 行不被覆盖。
+3. **权限点上报（D）**：订单服务启动后——(a) admin 预建并授权的 `order:read/write/delete` 仍为 `source='manual'`、name/resource 未被 auto 上报覆盖（auto 绝不覆盖人工配置）；(b) app 自声明的 `order:export` 落为 `source='auto'`（新增 auto 插入贯通）。
 4. **实时同步贯通**：revoke alice 的 `order:delete` 授权 → sidecar 经 PolicySync 同步、版本推进 → alice 删订单由"成功"翻为"被拒"。
 5. **就绪前 fail-close**：sidecar bootstrap 完成前，业务请求得 503（`ErrUnavailable`），绝不放行。
 
@@ -120,7 +123,7 @@ secret 全程 stdout→shell 变量→env，**绝不落文件**。`make demo-dow
 - `go list -deps ./examples/orderservice/...` 依赖图**不含任何 `internal/`**（机器可断言，证明订单服务是合法外部消费者）。
 
 ### G1 — In-process 贯通测试（硬，CI 准出，需 Docker）
-一个 `test/e2e` 测试全绿，断言 §5 五条（功能权限 allow/deny、数据权限行级过滤 + **deny-all 0 行负向**、权限点上报 auto 不覆盖 manual、revoke 实时翻转、就绪前 503 fail-close）。
+一个 `test/e2e` 测试全绿，断言 §5 五条（功能权限 allow/deny、数据权限行级过滤 + **deny-all 0 行负向**、权限点上报 **auto 不覆盖 manual（read/write/delete 仍 manual）+ order:export 落 auto**、revoke 实时翻转、就绪前 503 fail-close）。
 
 ### G2 — 人用业务流（硬，Playwright 真人视角，需 compose 栈）
 1. 开 `/` →「以 alice 进入」→ `/orders` 见**全部**订单 → 点删除**成功**。
