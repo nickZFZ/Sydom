@@ -76,9 +76,11 @@ func TestUpsertAutoPermission_InsertAndRefresh(t *testing.T) {
 	applied, err = store.UpsertAutoPermission(ctx, db, appID, "p.read", "order", "read", "api", "读订单V2", "desc")
 	require.NoError(t, err)
 	require.True(t, applied)
+	var desc string
 	require.NoError(t, db.QueryRowContext(ctx,
-		`SELECT name FROM permission WHERE app_id=$1 AND code=$2`, appID, "p.read").Scan(&name))
+		`SELECT name, description FROM permission WHERE app_id=$1 AND code=$2`, appID, "p.read").Scan(&name, &desc))
 	require.Equal(t, "读订单V2", name)
+	require.Equal(t, "desc", desc) // 固化空串→非空串刷新口径（DB 真相源存空串非 NULL）
 }
 
 func TestUpsertAutoPermission_NeverClobbersManual(t *testing.T) {
