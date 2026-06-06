@@ -27,6 +27,8 @@ type fakeServer struct {
 	subCalls    int
 	snapFn      func(call int) (*syncv1.Snapshot, error)
 	subscribeFn func(call int, s syncv1.PolicySync_SubscribeServer) error
+	reportResp  *syncv1.ReportPermissionsResponse
+	gotReport   []*syncv1.PermissionPoint
 }
 
 func (f *fakeServer) PullSnapshot(_ context.Context, _ *syncv1.PullSnapshotRequest) (*syncv1.Snapshot, error) {
@@ -46,6 +48,17 @@ func (f *fakeServer) Subscribe(_ *syncv1.SubscribeRequest, s syncv1.PolicySync_S
 }
 
 func (f *fakeServer) pullCount() int { f.mu.Lock(); defer f.mu.Unlock(); return f.pullCalls }
+
+func (f *fakeServer) ReportPermissions(_ context.Context, req *syncv1.ReportPermissionsRequest) (*syncv1.ReportPermissionsResponse, error) {
+	f.mu.Lock()
+	f.gotReport = req.GetPermissions()
+	resp := f.reportResp
+	f.mu.Unlock()
+	if resp != nil {
+		return resp, nil
+	}
+	return &syncv1.ReportPermissionsResponse{}, nil
+}
 
 // sendThenBlock 依次 Send evs，然后阻塞到 stream ctx 取消（模拟长连保持，避免触发重连）。
 func sendThenBlock(evs ...*syncv1.SyncEvent) func(int, syncv1.PolicySync_SubscribeServer) error {
@@ -275,8 +288,8 @@ func TestSyncClient_ReplayDelta_Discarded(t *testing.T) {
 		snapFn: func(int) (*syncv1.Snapshot, error) { return snapV5(), nil },
 		subscribeFn: sendThenBlock(
 			deltaEv(&syncv1.Delta{Version: 6, PolicyChanges: []*syncv1.PolicyChange{addP("read")}}),
-			deltaEv(&syncv1.Delta{Version: 5}),                                                       // 重放（==引导版本）
-			deltaEv(&syncv1.Delta{Version: 6}),                                                       // 重复（==当前）
+			deltaEv(&syncv1.Delta{Version: 5}), // 重放（==引导版本）
+			deltaEv(&syncv1.Delta{Version: 6}), // 重复（==当前）
 			deltaEv(&syncv1.Delta{Version: 7, PolicyChanges: []*syncv1.PolicyChange{addP("write")}}), // 继续推进
 		),
 	}
@@ -364,4 +377,28 @@ func TestSyncClient_ContextCancel_RunReturnsNil(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("Run 未在 ctx 取消后及时退出")
 	}
+}
+
+func TestReportPermissions_RelaysToControlPlane(t *testing.T) {
+	f := &fakeServer{
+		snapFn:      func(int) (*syncv1.Snapshot, error) { return &syncv1.Snapshot{}, nil },
+		subscribeFn: sendThenBlock(),
+		reportResp:  &syncv1.ReportPermissionsResponse{Upserted: 2, Skipped: 1},
+	}
+	c, _, _ := startFake(t, f)
+
+	res, err := c.ReportPermissions(context.Background(), []PermissionPoint{
+		{Code: "p.read", Resource: "order", Action: "read", Type: "api", Name: "读"},
+		{Code: "p.write", Resource: "order", Action: "write", Type: "api", Name: "写"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, res.Upserted)
+	require.Equal(t, 1, res.Skipped)
+
+	f.mu.Lock()
+	got := f.gotReport
+	f.mu.Unlock()
+	require.Len(t, got, 2)
+	require.Equal(t, "p.read", got[0].GetCode())
+	require.Equal(t, "read", got[0].GetAction())
 }

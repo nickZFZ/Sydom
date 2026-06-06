@@ -45,7 +45,7 @@ func TestEndToEnd_AdminWriteReachesSidecarStream(t *testing.T) {
 	_, err = db.Exec(`UPDATE application SET app_secret_enc=$1 WHERE app_key=$2`, enc, dbtest.SeedAppKey)
 	require.NoError(t, err)
 
-	ps := policysync.NewServer(db, policysync.Config{HeartbeatInterval: 50 * time.Millisecond, BufSize: 8})
+	ps := policysync.NewServer(db, policysync.Config{HeartbeatInterval: 50 * time.Millisecond, BufSize: 8}, nil)
 	sub := broadcast.NewRedisSubscriber(redis.NewClient(&redis.Options{Addr: addr}))
 	dispCtx, dispCancel := context.WithCancel(context.Background())
 	defer dispCancel()

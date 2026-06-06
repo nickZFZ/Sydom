@@ -193,3 +193,35 @@ func (c *SyncClient) sleep(ctx context.Context, d time.Duration) bool {
 		return true
 	}
 }
+
+// PermissionPoint 是上报给控制面的一条权限点目录元数据（域中性，不含 app_id）。
+type PermissionPoint struct {
+	Code        string
+	Resource    string
+	Action      string
+	Type        string
+	Name        string
+	Description string
+}
+
+// ReportResult 是上报写入统计。
+type ReportResult struct {
+	Upserted int
+	Skipped  int
+}
+
+// ReportPermissions 经已认证的 PolicySync 连接把权限点上报到控制面（HMAC 凭据已在连接上）。
+func (c *SyncClient) ReportPermissions(ctx context.Context, points []PermissionPoint) (ReportResult, error) {
+	in := &syncv1.ReportPermissionsRequest{Permissions: make([]*syncv1.PermissionPoint, len(points))}
+	for i, p := range points {
+		in.Permissions[i] = &syncv1.PermissionPoint{
+			Code: p.Code, Resource: p.Resource, Action: p.Action,
+			Type: p.Type, Name: p.Name, Description: p.Description,
+		}
+	}
+	resp, err := c.client.ReportPermissions(ctx, in)
+	if err != nil {
+		return ReportResult{}, err
+	}
+	return ReportResult{Upserted: int(resp.GetUpserted()), Skipped: int(resp.GetSkipped())}, nil
+}

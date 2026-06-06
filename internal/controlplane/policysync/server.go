@@ -7,6 +7,7 @@ import (
 
 	syncv1 "github.com/nickZFZ/Sydom/gen/sydom/sync/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
+	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/controlplane/translate"
@@ -23,23 +24,29 @@ type Config struct {
 	BufSize           int           // 每流事件缓冲容量
 }
 
+// permissionReporter 是 Server 对策略管理器的窄依赖（*policy.PolicyManager 满足）。
+type permissionReporter interface {
+	ReportPermissions(ctx context.Context, appID int64, points []cp.PermissionPoint) (cp.ReportResult, error)
+}
+
 // Server 实现 syncv1.PolicySyncServer：PullSnapshot 全量快照 + Subscribe 流式下发。
 type Server struct {
 	syncv1.UnimplementedPolicySyncServer
-	db  *sql.DB
-	hub *Hub
-	cfg Config
+	db       *sql.DB
+	hub      *Hub
+	cfg      Config
+	reporter permissionReporter
 }
 
 // NewServer 构造 Server。
-func NewServer(db *sql.DB, cfg Config) *Server {
+func NewServer(db *sql.DB, cfg Config, reporter permissionReporter) *Server {
 	if cfg.HeartbeatInterval <= 0 {
 		cfg.HeartbeatInterval = 30 * time.Second
 	}
 	if cfg.BufSize <= 0 {
 		cfg.BufSize = 256
 	}
-	return &Server{db: db, hub: NewHub(cfg.BufSize), cfg: cfg}
+	return &Server{db: db, hub: NewHub(cfg.BufSize), cfg: cfg, reporter: reporter}
 }
 
 // Hub 暴露给广播订阅循环 Dispatch（任务 8 接线）。
@@ -169,4 +176,33 @@ func (s *Server) RunDispatchLoop(ctx context.Context, sub broadcast.Subscriber) 
 			Event: &syncv1.SyncEvent_Delta{Delta: delta},
 		})
 	})
+}
+
+// ReportPermissions 接收权限点批量上报：app_id 由凭据强制解析，校验后委托 reporter。
+func (s *Server) ReportPermissions(ctx context.Context, req *syncv1.ReportPermissionsRequest) (*syncv1.ReportPermissionsResponse, error) {
+	appKey, ok := auth.AppIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing app identity")
+	}
+	points := make([]cp.PermissionPoint, 0, len(req.GetPermissions()))
+	for _, p := range req.GetPermissions() {
+		if p.GetCode() == "" || p.GetResource() == "" || p.GetAction() == "" {
+			return nil, status.Error(codes.InvalidArgument, "permission code/resource/action 不可为空")
+		}
+		points = append(points, cp.PermissionPoint{
+			Code: p.GetCode(), Resource: p.GetResource(), Action: p.GetAction(),
+			Type: p.GetType(), Name: p.GetName(), Description: p.GetDescription(),
+		})
+	}
+	appID, err := store.ResolveAppIDByKey(ctx, s.db, appKey)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "resolve app: %v", err)
+	}
+	res, err := s.reporter.ReportPermissions(ctx, appID, points)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "report permissions: %v", err)
+	}
+	return &syncv1.ReportPermissionsResponse{
+		Upserted: uint32(res.Upserted), Skipped: uint32(res.Skipped),
+	}, nil
 }

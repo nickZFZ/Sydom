@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AuthService_Check_FullMethodName      = "/sydom.auth.v1.AuthService/Check"
-	AuthService_BatchCheck_FullMethodName = "/sydom.auth.v1.AuthService/BatchCheck"
-	AuthService_FilterSQL_FullMethodName  = "/sydom.auth.v1.AuthService/FilterSQL"
+	AuthService_Check_FullMethodName             = "/sydom.auth.v1.AuthService/Check"
+	AuthService_BatchCheck_FullMethodName        = "/sydom.auth.v1.AuthService/BatchCheck"
+	AuthService_FilterSQL_FullMethodName         = "/sydom.auth.v1.AuthService/FilterSQL"
+	AuthService_ReportPermissions_FullMethodName = "/sydom.auth.v1.AuthService/ReportPermissions"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -34,6 +35,8 @@ type AuthServiceClient interface {
 	BatchCheck(ctx context.Context, in *BatchCheckRequest, opts ...grpc.CallOption) (*BatchCheckResponse, error)
 	// FilterSQL 返回数据权限的参数化 SQL 片段（值在 args，绝不进 SQL 文本）。
 	FilterSQL(ctx context.Context, in *FilterRequest, opts ...grpc.CallOption) (*FilterSQLResponse, error)
+	// ReportPermissions 把业务进程的权限点上报中继到控制面（Sidecar 转发，域由 Sidecar pin）。
+	ReportPermissions(ctx context.Context, in *ReportPermissionsRequest, opts ...grpc.CallOption) (*ReportPermissionsResponse, error)
 }
 
 type authServiceClient struct {
@@ -71,6 +74,15 @@ func (c *authServiceClient) FilterSQL(ctx context.Context, in *FilterRequest, op
 	return out, nil
 }
 
+func (c *authServiceClient) ReportPermissions(ctx context.Context, in *ReportPermissionsRequest, opts ...grpc.CallOption) (*ReportPermissionsResponse, error) {
+	out := new(ReportPermissionsResponse)
+	err := c.cc.Invoke(ctx, AuthService_ReportPermissions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
@@ -81,6 +93,8 @@ type AuthServiceServer interface {
 	BatchCheck(context.Context, *BatchCheckRequest) (*BatchCheckResponse, error)
 	// FilterSQL 返回数据权限的参数化 SQL 片段（值在 args，绝不进 SQL 文本）。
 	FilterSQL(context.Context, *FilterRequest) (*FilterSQLResponse, error)
+	// ReportPermissions 把业务进程的权限点上报中继到控制面（Sidecar 转发，域由 Sidecar pin）。
+	ReportPermissions(context.Context, *ReportPermissionsRequest) (*ReportPermissionsResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -96,6 +110,9 @@ func (UnimplementedAuthServiceServer) BatchCheck(context.Context, *BatchCheckReq
 }
 func (UnimplementedAuthServiceServer) FilterSQL(context.Context, *FilterRequest) (*FilterSQLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FilterSQL not implemented")
+}
+func (UnimplementedAuthServiceServer) ReportPermissions(context.Context, *ReportPermissionsRequest) (*ReportPermissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportPermissions not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -164,6 +181,24 @@ func _AuthService_FilterSQL_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_ReportPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportPermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ReportPermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ReportPermissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ReportPermissions(ctx, req.(*ReportPermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -182,6 +217,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FilterSQL",
 			Handler:    _AuthService_FilterSQL_Handler,
+		},
+		{
+			MethodName: "ReportPermissions",
+			Handler:    _AuthService_ReportPermissions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

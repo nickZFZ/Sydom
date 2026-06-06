@@ -9,6 +9,7 @@ import (
 
 	syncv1 "github.com/nickZFZ/Sydom/gen/sydom/sync/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
+	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policysync"
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
@@ -48,7 +49,7 @@ func startServer(t *testing.T, db *sql.DB) (*grpc.ClientConn, []byte) {
 	srv := policysync.NewGRPCServer(policysync.NewServer(db, policysync.Config{
 		HeartbeatInterval: 50 * time.Millisecond,
 		BufSize:           8,
-	}), res)
+	}, &stubReporter{}), res)
 
 	lis := bufconn.Listen(1024 * 1024)
 	go func() { _ = srv.Serve(lis) }()
@@ -80,7 +81,7 @@ func startServerNoAuth(t *testing.T, db *sql.DB) *grpc.ClientConn {
 	srv := policysync.NewGRPCServer(policysync.NewServer(db, policysync.Config{
 		HeartbeatInterval: 50 * time.Millisecond,
 		BufSize:           8,
-	}), res)
+	}, &stubReporter{}), res)
 
 	lis := bufconn.Listen(1024 * 1024)
 	go func() { _ = srv.Serve(lis) }()
@@ -266,7 +267,7 @@ func startServerCapture(t *testing.T, db *sql.DB, holder chan *policysync.Server
 	_, err = db.Exec(`UPDATE application SET app_secret_enc=$1 WHERE app_key=$2`, enc, dbtest.SeedAppKey)
 	require.NoError(t, err)
 
-	srv := policysync.NewServer(db, policysync.Config{HeartbeatInterval: 50 * time.Millisecond, BufSize: 8})
+	srv := policysync.NewServer(db, policysync.Config{HeartbeatInterval: 50 * time.Millisecond, BufSize: 8}, &stubReporter{})
 	holder <- srv
 	g := policysync.NewGRPCServer(srv, res)
 	lis := bufconn.Listen(1024 * 1024)
@@ -281,4 +282,53 @@ func startServerCapture(t *testing.T, db *sql.DB, holder chan *policysync.Server
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = conn.Close() })
 	return conn
+}
+
+type stubReporter struct {
+	gotAppID int64
+	gotN     int
+	res      cp.ReportResult
+}
+
+func (s *stubReporter) ReportPermissions(_ context.Context, appID int64, pts []cp.PermissionPoint) (cp.ReportResult, error) {
+	s.gotAppID = appID
+	s.gotN = len(pts)
+	return s.res, nil
+}
+
+func TestReportPermissions_ResolvesAppIDAndDelegates(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	stub := &stubReporter{res: cp.ReportResult{Upserted: 2}}
+	srv := policysync.NewServer(db, policysync.Config{}, stub)
+
+	ctx := auth.WithAppID(context.Background(), dbtest.SeedAppKey)
+	resp, err := srv.ReportPermissions(ctx, &syncv1.ReportPermissionsRequest{
+		Permissions: []*syncv1.PermissionPoint{
+			{Code: "p.read", Resource: "order", Action: "read", Type: "api", Name: "读"},
+			{Code: "p.write", Resource: "order", Action: "write", Type: "api", Name: "写"},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, appID, stub.gotAppID)
+	require.Equal(t, 2, stub.gotN)
+	require.Equal(t, uint32(2), resp.GetUpserted())
+}
+
+func TestReportPermissions_RejectsEmptyCode(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	dbtest.SeedApp(t, db)
+	srv := policysync.NewServer(db, policysync.Config{}, &stubReporter{})
+	ctx := auth.WithAppID(context.Background(), dbtest.SeedAppKey)
+	_, err := srv.ReportPermissions(ctx, &syncv1.ReportPermissionsRequest{
+		Permissions: []*syncv1.PermissionPoint{{Code: "", Resource: "o", Action: "r"}},
+	})
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestReportPermissions_Unauthenticated(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	srv := policysync.NewServer(db, policysync.Config{}, &stubReporter{})
+	_, err := srv.ReportPermissions(context.Background(), &syncv1.ReportPermissionsRequest{})
+	require.Equal(t, codes.Unauthenticated, status.Code(err))
 }

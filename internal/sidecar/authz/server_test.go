@@ -2,11 +2,13 @@ package authz
 
 import (
 	"context"
+	"errors"
 	"net"
 	"testing"
 	"time"
 
 	authv1 "github.com/nickZFZ/Sydom/gen/sydom/auth/v1"
+	"github.com/nickZFZ/Sydom/internal/sidecar/syncclient"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,7 +22,7 @@ import (
 func startAuthServer(t *testing.T, a *Authorizer) authv1.AuthServiceClient {
 	t.Helper()
 	g := grpc.NewServer()
-	authv1.RegisterAuthServiceServer(g, NewServer(a))
+	authv1.RegisterAuthServiceServer(g, NewServer(a, nil))
 	lis := bufconn.Listen(1024 * 1024)
 	go func() { _ = g.Serve(lis) }()
 	t.Cleanup(g.Stop)
@@ -87,4 +89,40 @@ func TestServer_FilterSQL_MissingVar_InvalidArgument(t *testing.T) {
 		Subject: "alice", Resource: "order", Attrs: empty, // 缺 department
 	})
 	require.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+type stubRelay struct {
+	got []syncclient.PermissionPoint
+	res syncclient.ReportResult
+	err error
+}
+
+func (s *stubRelay) ReportPermissions(_ context.Context, pts []syncclient.PermissionPoint) (syncclient.ReportResult, error) {
+	s.got = pts
+	return s.res, s.err
+}
+
+func TestServer_ReportPermissions_TranslatesAndDelegates(t *testing.T) {
+	relay := &stubRelay{res: syncclient.ReportResult{Upserted: 2, Skipped: 1}}
+	srv := NewServer(nil, relay) // ReportPermissions 不碰 Authorizer，a 可为 nil
+	resp, err := srv.ReportPermissions(context.Background(), &authv1.ReportPermissionsRequest{
+		Permissions: []*authv1.PermissionPoint{
+			{Code: "p.read", Resource: "order", Action: "read", Type: "api", Name: "读"},
+			{Code: "p.write", Resource: "order", Action: "write"},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, uint32(2), resp.GetUpserted())
+	require.Equal(t, uint32(1), resp.GetSkipped())
+	require.Len(t, relay.got, 2)
+	require.Equal(t, "p.read", relay.got[0].Code)
+}
+
+func TestServer_ReportPermissions_RelayErrorPropagates(t *testing.T) {
+	relay := &stubRelay{err: errors.New("cp down")}
+	srv := NewServer(nil, relay)
+	_, err := srv.ReportPermissions(context.Background(), &authv1.ReportPermissionsRequest{
+		Permissions: []*authv1.PermissionPoint{{Code: "c", Resource: "r", Action: "a"}},
+	})
+	require.Error(t, err) // 上报失败错误回传，业务自定处理（fail-soft）
 }

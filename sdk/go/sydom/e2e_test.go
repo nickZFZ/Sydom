@@ -43,7 +43,7 @@ func TestClient_EndToEnd_RealAuthService(t *testing.T) {
 	}))
 
 	authzr := authz.New(engine, filter, stubFresh{}, authz.Config{MaxStaleness: 0})
-	g := authz.NewGRPCServer(authzr)
+	g := authz.NewGRPCServer(authzr, nil)
 	lis := bufconn.Listen(1 << 20)
 	go func() { _ = g.Serve(lis) }()
 	t.Cleanup(g.Stop)

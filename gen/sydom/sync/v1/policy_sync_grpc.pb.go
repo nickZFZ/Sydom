@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	PolicySync_Subscribe_FullMethodName    = "/sydom.sync.v1.PolicySync/Subscribe"
-	PolicySync_PullSnapshot_FullMethodName = "/sydom.sync.v1.PolicySync/PullSnapshot"
+	PolicySync_Subscribe_FullMethodName         = "/sydom.sync.v1.PolicySync/Subscribe"
+	PolicySync_PullSnapshot_FullMethodName      = "/sydom.sync.v1.PolicySync/PullSnapshot"
+	PolicySync_ReportPermissions_FullMethodName = "/sydom.sync.v1.PolicySync/ReportPermissions"
 )
 
 // PolicySyncClient is the client API for PolicySync service.
@@ -33,6 +34,8 @@ type PolicySyncClient interface {
 	// PullSnapshot 拉取该 app 全量策略快照。
 	// 冷启动、版本断档、收到 SnapshotRequired 时调用。
 	PullSnapshot(ctx context.Context, in *PullSnapshotRequest, opts ...grpc.CallOption) (*Snapshot, error)
+	// ReportPermissions 批量上报权限点目录（app 凭据，幂等 upsert，source=auto）。
+	ReportPermissions(ctx context.Context, in *ReportPermissionsRequest, opts ...grpc.CallOption) (*ReportPermissionsResponse, error)
 }
 
 type policySyncClient struct {
@@ -84,6 +87,15 @@ func (c *policySyncClient) PullSnapshot(ctx context.Context, in *PullSnapshotReq
 	return out, nil
 }
 
+func (c *policySyncClient) ReportPermissions(ctx context.Context, in *ReportPermissionsRequest, opts ...grpc.CallOption) (*ReportPermissionsResponse, error) {
+	out := new(ReportPermissionsResponse)
+	err := c.cc.Invoke(ctx, PolicySync_ReportPermissions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PolicySyncServer is the server API for PolicySync service.
 // All implementations must embed UnimplementedPolicySyncServer
 // for forward compatibility
@@ -94,6 +106,8 @@ type PolicySyncServer interface {
 	// PullSnapshot 拉取该 app 全量策略快照。
 	// 冷启动、版本断档、收到 SnapshotRequired 时调用。
 	PullSnapshot(context.Context, *PullSnapshotRequest) (*Snapshot, error)
+	// ReportPermissions 批量上报权限点目录（app 凭据，幂等 upsert，source=auto）。
+	ReportPermissions(context.Context, *ReportPermissionsRequest) (*ReportPermissionsResponse, error)
 	mustEmbedUnimplementedPolicySyncServer()
 }
 
@@ -106,6 +120,9 @@ func (UnimplementedPolicySyncServer) Subscribe(*SubscribeRequest, PolicySync_Sub
 }
 func (UnimplementedPolicySyncServer) PullSnapshot(context.Context, *PullSnapshotRequest) (*Snapshot, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PullSnapshot not implemented")
+}
+func (UnimplementedPolicySyncServer) ReportPermissions(context.Context, *ReportPermissionsRequest) (*ReportPermissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportPermissions not implemented")
 }
 func (UnimplementedPolicySyncServer) mustEmbedUnimplementedPolicySyncServer() {}
 
@@ -159,6 +176,24 @@ func _PolicySync_PullSnapshot_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PolicySync_ReportPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportPermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PolicySyncServer).ReportPermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PolicySync_ReportPermissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PolicySyncServer).ReportPermissions(ctx, req.(*ReportPermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PolicySync_ServiceDesc is the grpc.ServiceDesc for PolicySync service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -169,6 +204,10 @@ var PolicySync_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PullSnapshot",
 			Handler:    _PolicySync_PullSnapshot_Handler,
+		},
+		{
+			MethodName: "ReportPermissions",
+			Handler:    _PolicySync_ReportPermissions_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
