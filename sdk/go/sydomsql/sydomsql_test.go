@@ -166,3 +166,18 @@ func TestAndWhere_BuildError_Propagates(t *testing.T) {
 		t.Fatalf("出错时不应返回部分结果: where=%q args=%v", where, args)
 	}
 }
+
+func TestAndWhere_Conditional_Question_BaseNonEmpty(t *testing.T) {
+	// Question 方言 + base 非空：片段 ? 原样透传，括号包裹 AND 拼接，args 合并
+	fr := sydom.FilterResult{SQL: "dept = ?", Args: []any{"HR"}}
+	where, args, err := sydomsql.AndWhere("tenant_id = ?", []any{42}, fr, sydomsql.Question)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if where != "(tenant_id = ?) AND (dept = ?)" {
+		t.Fatalf("got %q", where)
+	}
+	if len(args) != 2 || args[0] != 42 || args[1] != "HR" {
+		t.Fatalf("args=%v", args)
+	}
+}

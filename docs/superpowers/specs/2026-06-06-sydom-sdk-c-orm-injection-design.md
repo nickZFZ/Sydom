@@ -146,7 +146,7 @@ db.Scopes(sydomgorm.Scope(fr)).Find(&orders)
 - **deny-all 不退化**：MatchNone 经 `AndWhere`/`Scope` 后 WHERE 恒含 `1=0`。
 - **真实片段端到端**：`(dept = ? AND NOT (status IN (?, ?)))` 分别译成 PG（`$N`）/ MySQL（`?`）两版断言。
 - **GORM 适配**：`db.Session(&gorm.Session{DryRun:true})` 断言三态生成的 SQL；MatchAll 不加 WHERE。
-- **Apply/ScopeApply**：bufconn 起 fake AuthService，验证 `ErrUnavailable` 透传。
+- **Apply/ScopeApply**：验证 `ErrUnavailable` 透传。〔实现说明：因 `Apply`/`ScopeApply` 经窄接口 `Filterer` 解耦，用轻量 `stubFilterer` 桩即可验证错误透传，无需 bufconn 起真 gRPC——真链路已由 A 切片 e2e 覆盖，此处不重复。〕
 
 ## 8. 对既有包零改动
 
