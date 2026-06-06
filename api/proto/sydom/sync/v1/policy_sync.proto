@@ -14,6 +14,9 @@ service PolicySync {
   // PullSnapshot 拉取该 app 全量策略快照。
   // 冷启动、版本断档、收到 SnapshotRequired 时调用。
   rpc PullSnapshot(PullSnapshotRequest) returns (Snapshot);
+
+  // ReportPermissions 批量上报权限点目录（app 凭据，幂等 upsert，source=auto）。
+  rpc ReportPermissions(ReportPermissionsRequest) returns (ReportPermissionsResponse);
 }
 
 // SubscribeRequest 携带 Sidecar 已应用到的版本号；冷启动为 0。
@@ -96,4 +99,25 @@ message Snapshot {
   uint64 version = 1;                    // 快照对应的 app 当前版本号
   repeated PolicyRule rules = 2;         // 全量 casbin 策略行（p + g）
   repeated DataPolicy data_policies = 3; // 全量 data_policy
+}
+
+// ReportPermissionsRequest 批量上报权限点。app_id 由认证凭据强制，不在请求体。
+message ReportPermissionsRequest {
+  repeated PermissionPoint permissions = 1;
+}
+
+// PermissionPoint 是一条权限点目录元数据（功能权限定义，非授权）。
+message PermissionPoint {
+  string code = 1;
+  string resource = 2;
+  string action = 3;
+  string type = 4;
+  string name = 5;
+  string description = 6;
+}
+
+// ReportPermissionsResponse 返回写入统计。
+message ReportPermissionsResponse {
+  uint32 upserted = 1; // 新增或刷新（source=auto）的条数
+  uint32 skipped = 2;  // 命中 source=manual 行被保留而跳过的条数
 }

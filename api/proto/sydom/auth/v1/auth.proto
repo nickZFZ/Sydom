@@ -15,6 +15,8 @@ service AuthService {
   rpc BatchCheck(BatchCheckRequest) returns (BatchCheckResponse);
   // FilterSQL 返回数据权限的参数化 SQL 片段（值在 args，绝不进 SQL 文本）。
   rpc FilterSQL(FilterRequest) returns (FilterSQLResponse);
+  // ReportPermissions 把业务进程的权限点上报中继到控制面（Sidecar 转发，域由 Sidecar pin）。
+  rpc ReportPermissions(ReportPermissionsRequest) returns (ReportPermissionsResponse);
 }
 
 message CheckRequest {
@@ -44,4 +46,23 @@ message FilterRequest {
 message FilterSQLResponse {
   string sql = 1;                          // 无过滤=空串；deny-all="1=0"；否则参数化片段
   repeated google.protobuf.Value args = 2; // 占位符实参（JSON 标量）
+}
+
+// ReportPermissionsRequest 批量上报权限点（本地：无 app_id，Sidecar pin 域）。
+message ReportPermissionsRequest {
+  repeated PermissionPoint permissions = 1;
+}
+
+message PermissionPoint {
+  string code = 1;
+  string resource = 2;
+  string action = 3;
+  string type = 4;
+  string name = 5;
+  string description = 6;
+}
+
+message ReportPermissionsResponse {
+  uint32 upserted = 1;
+  uint32 skipped = 2;
 }
