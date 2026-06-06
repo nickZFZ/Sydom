@@ -80,3 +80,32 @@ func toDollar(s string, startIndex int) string {
 	}
 	return b.String()
 }
+
+// AndWhere 把数据权限片段 AND 进既有 WHERE，自动处理三态 + Postgres 续号。
+//
+//	MatchAll    → (base, baseArgs) 原样
+//	MatchNone   → base 非空 "(base) AND (1=0)"；base 空 "1=0"（恒假护栏，绝不放行）
+//	Conditional → base 非空 "(base) AND (frag)"；base 空 frag；args = baseArgs + fragArgs
+//
+// Postgres 下片段占位符按 len(baseArgs) 续号，杜绝 $N 撞号。
+func AndWhere(base string, baseArgs []any, fr sydom.FilterResult, d Dialect) (where string, args []any, err error) {
+	cl, err := Build(fr, d, len(baseArgs))
+	if err != nil {
+		return "", nil, err
+	}
+	switch cl.Kind {
+	case MatchAll:
+		return base, baseArgs, nil
+	case MatchNone:
+		if base == "" {
+			return denyAllSQL, baseArgs, nil
+		}
+		return "(" + base + ") AND (" + denyAllSQL + ")", baseArgs, nil
+	default:
+		merged := append(append([]any(nil), baseArgs...), cl.Args...)
+		if base == "" {
+			return cl.SQL, merged, nil
+		}
+		return "(" + base + ") AND (" + cl.SQL + ")", merged, nil
+	}
+}

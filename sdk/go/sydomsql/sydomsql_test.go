@@ -84,3 +84,62 @@ func TestBuild_InvariantViolation(t *testing.T) {
 		t.Fatal("want error on placeholder/arg mismatch")
 	}
 }
+
+func TestAndWhere_MatchAll_Unchanged(t *testing.T) {
+	where, args, err := sydomsql.AndWhere("tenant_id = $1", []any{42}, sydom.FilterResult{SQL: ""}, sydomsql.Postgres)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if where != "tenant_id = $1" || len(args) != 1 || args[0] != 42 {
+		t.Fatalf("got where=%q args=%v", where, args)
+	}
+}
+
+func TestAndWhere_MatchNone_BaseNonEmpty_NeverOpen(t *testing.T) {
+	where, args, err := sydomsql.AndWhere("tenant_id = $1", []any{42}, sydom.FilterResult{SQL: "1=0"}, sydomsql.Postgres)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if where != "(tenant_id = $1) AND (1=0)" {
+		t.Fatalf("deny-all 退化为放行: %q", where)
+	}
+	if len(args) != 1 {
+		t.Fatalf("args=%v", args)
+	}
+}
+
+func TestAndWhere_MatchNone_BaseEmpty(t *testing.T) {
+	where, _, err := sydomsql.AndWhere("", nil, sydom.FilterResult{SQL: "1=0"}, sydomsql.Question)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if where != "1=0" {
+		t.Fatalf("got %q", where)
+	}
+}
+
+func TestAndWhere_Conditional_Postgres_OffsetByBaseArgs(t *testing.T) {
+	fr := sydom.FilterResult{SQL: "(dept = ? AND NOT (status IN (?, ?)))", Args: []any{"HR", "locked", "void"}}
+	where, args, err := sydomsql.AndWhere("tenant_id = $1", []any{42}, fr, sydomsql.Postgres)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	want := "(tenant_id = $1) AND ((dept = $2 AND NOT (status IN ($3, $4))))"
+	if where != want {
+		t.Fatalf("got %q want %q", where, want)
+	}
+	if len(args) != 4 || args[0] != 42 || args[1] != "HR" || args[3] != "void" {
+		t.Fatalf("args=%v", args)
+	}
+}
+
+func TestAndWhere_Conditional_BaseEmpty_Question(t *testing.T) {
+	fr := sydom.FilterResult{SQL: "dept = ?", Args: []any{"HR"}}
+	where, args, err := sydomsql.AndWhere("", nil, fr, sydomsql.Question)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if where != "dept = ?" || len(args) != 1 || args[0] != "HR" {
+		t.Fatalf("got where=%q args=%v", where, args)
+	}
+}
