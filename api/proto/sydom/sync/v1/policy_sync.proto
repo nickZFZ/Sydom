@@ -107,16 +107,18 @@ message ReportPermissionsRequest {
 }
 
 // PermissionPoint 是一条权限点目录元数据（功能权限定义，非授权）。
+// 与 auth.v1.PermissionPoint 保持镜像（不同 package 故各定义一份），加字段时两处同步。
 message PermissionPoint {
   string code = 1;
   string resource = 2;
   string action = 3;
-  string type = 4;
+  string type = 4; // 权限点业务分类，如 "api" / "menu" / "button"（非 casbin policy type）
   string name = 5;
   string description = 6;
 }
 
-// ReportPermissionsResponse 返回写入统计。
+// ReportPermissionsResponse 返回写入统计。批量语义：整批原子——任一条非法
+// （code/resource/action 空）整批拒为 gRPC 错误，成功时 upserted+skipped == 上报条数。
 message ReportPermissionsResponse {
   uint32 upserted = 1; // 新增或刷新（source=auto）的条数
   uint32 skipped = 2;  // 命中 source=manual 行被保留而跳过的条数

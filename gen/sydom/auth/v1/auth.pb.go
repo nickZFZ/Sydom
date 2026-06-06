@@ -391,6 +391,8 @@ func (x *ReportPermissionsRequest) GetPermissions() []*PermissionPoint {
 	return nil
 }
 
+// PermissionPoint 是一条权限点目录元数据（功能权限定义，非授权）。
+// 与 sync.v1.PermissionPoint 保持镜像（不同 package 故各定义一份），加字段时两处同步。
 type PermissionPoint struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -399,7 +401,7 @@ type PermissionPoint struct {
 	Code        string `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
 	Resource    string `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
 	Action      string `protobuf:"bytes,3,opt,name=action,proto3" json:"action,omitempty"`
-	Type        string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Type        string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"` // 权限点业务分类，如 "api" / "menu" / "button"（非 casbin policy type）
 	Name        string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
 }
@@ -478,6 +480,8 @@ func (x *PermissionPoint) GetDescription() string {
 	return ""
 }
 
+// 批量语义：整批原子——任一条非法（code/resource/action 空）整批拒为 gRPC 错误，
+// 成功时 upserted+skipped == 上报条数，无局部失败计数。
 type ReportPermissionsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
