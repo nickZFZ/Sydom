@@ -39,7 +39,7 @@ func Run(ctx context.Context, cfg Config, authLis net.Listener, logger *slog.Log
 		return fmt.Errorf("new sync client: %w", err)
 	}
 	authzr := authz.New(engine, filter, syncCli, authz.Config{MaxStaleness: cfg.MaxStaleness})
-	authSrv := authz.NewGRPCServer(authzr)
+	authSrv := authz.NewGRPCServer(authzr, syncCli)
 
 	logger.Info("sidecar starting",
 		"auth_addr", authLis.Addr().String(),
