@@ -13,6 +13,7 @@ import (
 	"sync"
 	"syscall"
 
+	_ "github.com/lib/pq"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
@@ -20,7 +21,6 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policysync"
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
-	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -60,7 +60,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis net.Listener, logger
 
 	mgr := policy.NewPolicyManager(db, outbox.NewSink())
 	adminSrv := mgmt.NewGRPCServer(mgmt.NewAdminServer(db, mgr, cfg.MasterKey), operatorResolver, enforcer, db)
-	syncCore := policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval})
+	syncCore := policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval}, mgr)
 	syncSrv := policysync.NewGRPCServer(syncCore, appResolver)
 	pub := broadcast.NewRedisPublisher(rdb)
 	sub := broadcast.NewRedisSubscriber(rdb)
