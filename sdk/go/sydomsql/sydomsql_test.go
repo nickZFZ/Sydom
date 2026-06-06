@@ -53,6 +53,30 @@ func TestBuild_Conditional_Postgres_Renumber(t *testing.T) {
 	}
 }
 
+func TestBuild_Conditional_Postgres_StartIndexZero(t *testing.T) {
+	// 最常见路径：首个片段，startIndex=0 → 从 $1 起（off-by-one 边界）
+	fr := sydom.FilterResult{SQL: "dept = ? AND status <> ?", Args: []any{"HR", "void"}}
+	cl, err := sydomsql.Build(fr, sydomsql.Postgres, 0)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if cl.SQL != "dept = $1 AND status <> $2" {
+		t.Fatalf("got %q", cl.SQL)
+	}
+}
+
+func TestBuild_Conditional_ZeroPlaceholders(t *testing.T) {
+	// 合法 Conditional 但零占位符（对应 dataperm OpIsNull）：n==len(Args)==0，原样透传
+	fr := sydom.FilterResult{SQL: "active IS NULL"}
+	cl, err := sydomsql.Build(fr, sydomsql.Postgres, 3)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if cl.Kind != sydomsql.Conditional || cl.SQL != "active IS NULL" || len(cl.Args) != 0 {
+		t.Fatalf("got %+v", cl)
+	}
+}
+
 func TestBuild_InvariantViolation(t *testing.T) {
 	// 2 个 ? 但只有 1 个 arg → fail-close
 	_, err := sydomsql.Build(sydom.FilterResult{SQL: "a = ? AND b = ?", Args: []any{1}}, sydomsql.Question, 0)
