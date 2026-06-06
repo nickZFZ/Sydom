@@ -58,3 +58,47 @@ func TestLockAndBumpVersion(t *testing.T) {
 		`SELECT current_version FROM application WHERE id=$1`, appID).Scan(&v))
 	require.Equal(t, int64(1), v)
 }
+
+func TestUpsertAutoPermission_InsertAndRefresh(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	ctx := context.Background()
+
+	applied, err := store.UpsertAutoPermission(ctx, db, appID, "p.read", "order", "read", "api", "读订单", "")
+	require.NoError(t, err)
+	require.True(t, applied)
+	var src, name string
+	require.NoError(t, db.QueryRowContext(ctx,
+		`SELECT source, name FROM permission WHERE app_id=$1 AND code=$2`, appID, "p.read").Scan(&src, &name))
+	require.Equal(t, "auto", src)
+	require.Equal(t, "读订单", name)
+
+	applied, err = store.UpsertAutoPermission(ctx, db, appID, "p.read", "order", "read", "api", "读订单V2", "desc")
+	require.NoError(t, err)
+	require.True(t, applied)
+	require.NoError(t, db.QueryRowContext(ctx,
+		`SELECT name FROM permission WHERE app_id=$1 AND code=$2`, appID, "p.read").Scan(&name))
+	require.Equal(t, "读订单V2", name)
+}
+
+func TestUpsertAutoPermission_NeverClobbersManual(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	ctx := context.Background()
+
+	_, err := db.ExecContext(ctx,
+		`INSERT INTO permission (app_id, code, resource, action, type, name, source)
+		 VALUES ($1,$2,$3,$4,$5,$6,'manual')`,
+		appID, "p.manual", "order", "write", "api", "人工写订单")
+	require.NoError(t, err)
+
+	applied, err := store.UpsertAutoPermission(ctx, db, appID, "p.manual", "CHANGED", "CHANGED", "x", "篡改", "x")
+	require.NoError(t, err)
+	require.False(t, applied)
+	var src, resource, name string
+	require.NoError(t, db.QueryRowContext(ctx,
+		`SELECT source, resource, name FROM permission WHERE app_id=$1 AND code=$2`, appID, "p.manual").Scan(&src, &resource, &name))
+	require.Equal(t, "manual", src)
+	require.Equal(t, "order", resource)
+	require.Equal(t, "人工写订单", name)
+}

@@ -4,6 +4,8 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
@@ -218,4 +220,26 @@ func DeleteDataPolicy(ctx context.Context, ex cp.DBTX, appID, id int64) error {
 		return fmt.Errorf("data_policy id=%d not found for app %d", id, appID)
 	}
 	return nil
+}
+
+// UpsertAutoPermission 上报式幂等写权限点：新增标 source='auto'；冲突时仅当现有行
+// source='auto' 才覆盖（DO UPDATE ... WHERE），命中 manual 行原样保留（§8 不覆盖人工配置）。
+// 返回 applied：true=新增或刷新了 auto 行；false=命中 manual 行被跳过（非错误）。
+func UpsertAutoPermission(ctx context.Context, ex cp.DBTX, appID int64, code, resource, action, permType, name, description string) (bool, error) {
+	var id int64
+	err := ex.QueryRowContext(ctx, `
+		INSERT INTO permission (app_id, code, resource, action, type, name, description, source)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,'auto')
+		ON CONFLICT (app_id, code) DO UPDATE SET
+			resource=EXCLUDED.resource, action=EXCLUDED.action, type=EXCLUDED.type,
+			name=EXCLUDED.name, description=EXCLUDED.description, updated_at=now()
+		WHERE permission.source='auto'
+		RETURNING id`, appID, code, resource, action, permType, name, description).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil // 命中 manual 行，DO UPDATE 的 WHERE 为假，零行返回 → 跳过
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
