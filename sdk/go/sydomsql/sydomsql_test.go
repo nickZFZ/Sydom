@@ -143,3 +143,26 @@ func TestAndWhere_Conditional_BaseEmpty_Question(t *testing.T) {
 		t.Fatalf("got where=%q args=%v", where, args)
 	}
 }
+
+func TestAndWhere_MatchAll_BaseEmpty(t *testing.T) {
+	// 契约：MatchAll + base 空 → 空 where、nil args（调用方据此不附加 WHERE）
+	where, args, err := sydomsql.AndWhere("", nil, sydom.FilterResult{SQL: ""}, sydomsql.Postgres)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if where != "" || args != nil {
+		t.Fatalf("got where=%q args=%v", where, args)
+	}
+}
+
+func TestAndWhere_BuildError_Propagates(t *testing.T) {
+	// 契约：Build 不变量破坏（? 数 ≠ args 数）必须经 AndWhere 透传，不静默拼接（fail-close）
+	where, args, err := sydomsql.AndWhere("tenant_id = $1", []any{42},
+		sydom.FilterResult{SQL: "a = ? AND b = ?", Args: []any{1}}, sydomsql.Postgres)
+	if err == nil {
+		t.Fatal("want error propagated from Build")
+	}
+	if where != "" || args != nil {
+		t.Fatalf("出错时不应返回部分结果: where=%q args=%v", where, args)
+	}
+}
