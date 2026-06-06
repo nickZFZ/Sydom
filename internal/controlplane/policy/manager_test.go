@@ -49,6 +49,22 @@ func TestReportPermissions_MixAutoManual_Counts(t *testing.T) {
 	require.Equal(t, 1, res.Skipped)
 }
 
+func TestReportPermissions_EmptyBatch_NoOp(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	mgr := policy.NewPolicyManager(db, nil)
+
+	res, err := mgr.ReportPermissions(context.Background(), appID, nil)
+	require.NoError(t, err)
+	require.Equal(t, 0, res.Upserted)
+	require.Equal(t, 0, res.Skipped)
+
+	var v int64
+	require.NoError(t, db.QueryRowContext(context.Background(),
+		`SELECT current_version FROM application WHERE id=$1`, appID).Scan(&v))
+	require.Equal(t, int64(0), v) // 空批：no-op，不 bump
+}
+
 // 建一个角色 + 权限点，返回 (roleID, permID)。
 func seedRoleAndPerm(t *testing.T, db *sql.DB, appID int64) (int64, int64) {
 	t.Helper()
