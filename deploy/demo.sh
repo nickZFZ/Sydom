@@ -24,16 +24,21 @@ APP_SECRET="$($DC run --rm -e CP_ADMIN_ADDR=controlplane:8081 -e SYDOM_ROOT_SECR
 echo "[5/5] 起 Sidecar + 订单服务 ..."
 SYDOM_APP_SECRET="$APP_SECRET" $DC up -d sidecar orderservice
 
-echo "等待订单服务就绪 ..."
+echo "等待鉴权链就绪（订单服务 + Sidecar 引导 + 数据策略）..."
+# 只探 / 不够：落地页恒 200，不代表 Sidecar 已从控制面引导完策略。
+# 改为探「alice 能真正看到北京订单」——证明鉴权链端到端就绪，规避 smoke 竞态假失败。
 ready=
+jar="$(mktemp)"
 for _ in $(seq 1 60); do
-	if curl -fsS -o /dev/null "http://localhost:8080/"; then
+	if curl -fsS -c "$jar" "http://localhost:8080/login?user=alice" -o /dev/null 2>/dev/null &&
+		curl -fsS -b "$jar" "http://localhost:8080/orders" 2>/dev/null | grep -q "北京客户"; then
 		ready=1
 		break
 	fi
 	sleep 1
 done
-[ -n "$ready" ] || { echo "订单服务在 60s 内未就绪"; $DC logs --tail 50 orderservice sidecar; exit 1; }
+rm -f "$jar"
+[ -n "$ready" ] || { echo "鉴权链在 60s 内未就绪"; $DC logs --tail 50 orderservice sidecar; exit 1; }
 
 echo
 echo "✅ demo 就绪：浏览器打开 http://localhost:8080"

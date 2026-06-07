@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/nickZFZ/Sydom/sdk/go/sydom"
 	"github.com/nickZFZ/Sydom/sdk/go/sydomsql"
@@ -66,6 +67,9 @@ func ListOrders(ctx context.Context, db *sql.DB, fr sydom.FilterResult) ([]Order
 	case sydomsql.Conditional:
 		q += ` WHERE ` + clause.SQL
 		args = clause.Args
+	default:
+		// 防御性 fail-close：未知 Kind 宁可不查也绝不退化为全表。
+		return nil, fmt.Errorf("orderservice: 未知 sydomsql.Clause.Kind=%d", clause.Kind)
 	}
 	q += ` ORDER BY id`
 	rows, err := db.QueryContext(ctx, q, args...)

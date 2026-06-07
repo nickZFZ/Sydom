@@ -150,7 +150,7 @@ func Provision(ctx context.Context, cli adminv1.AdminServiceClient, tenant, doma
 		return "", fmt.Errorf("bind bob: %w", err)
 	}
 
-	// 数据策略（resource=order）：clerk 仅本部门；manager 覆盖全部门（看全部）。
+	// 数据策略（resource=order）：clerk 仅本部门；manager 覆盖既有两部门（看全部）。
 	dp := func(subjectID, condition string) error {
 		_, e := cli.UpsertDataPolicy(ctx, &adminv1.UpsertDataPolicyRequest{
 			AppId: appID, Id: 0, SubjectType: "role", SubjectId: subjectID,

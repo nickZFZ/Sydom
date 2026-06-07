@@ -25,6 +25,7 @@ make demo-down     # 拆栈（清容器与卷）
 
 > 端口被占用时，在 `deploy/.env.demo` 取消注释对应 `*_HOST_PORT` 改用空闲端口。
 > `.env.demo` 内为 **DEMO 占位密钥**，生产务必另行注入，绝不沿用。
+> 供应不可重入（seeder 非 upsert），**重跑 `make demo` 前先 `make demo-down`** 清栈清卷。
 
 一次真人浏览器走查（含截图）见 [`test/e2e/browser/WALKTHROUGH.md`](test/e2e/browser/WALKTHROUGH.md)，
 逐屏印证**功能权限**、**数据权限**与 **fail-close** 三件事。
