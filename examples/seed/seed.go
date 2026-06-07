@@ -13,6 +13,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// 轮询与供应各自独立计时；60×500ms ≈ 30s。
+const (
+	readyPollInterval = 500 * time.Millisecond
+	readyTimeout      = 30 * time.Second
+	provisionTimeout  = 30 * time.Second
+)
+
 func env(k, def string) string {
 	if v := os.Getenv(k); v != "" {
 		return v
@@ -45,21 +52,28 @@ func Run() int {
 	defer conn.Close()
 	cli := adminv1.NewAdminServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
 	// 等控制面就绪（root 能调通 AdminService）。
-	for i := 0; ; i++ {
-		if _, err := cli.ListApplications(ctx, &adminv1.ListApplicationsRequest{}); err == nil {
+	waitCtx, waitCancel := context.WithTimeout(context.Background(), readyTimeout)
+	defer waitCancel()
+
+	var lastErr error
+	for {
+		if _, err := cli.ListApplications(waitCtx, &adminv1.ListApplicationsRequest{}); err == nil {
 			break
-		} else if i > 60 {
-			log.Printf("控制面未就绪: %v", err)
+		} else {
+			lastErr = err
+		}
+		select {
+		case <-time.After(readyPollInterval):
+		case <-waitCtx.Done():
+			log.Printf("控制面未就绪 (last: %v)", lastErr)
 			return 1
 		}
-		time.Sleep(500 * time.Millisecond)
 	}
 
-	secret, err := Provision(ctx, cli, tenant, domain, appKey)
+	provCtx, provCancel := context.WithTimeout(context.Background(), provisionTimeout)
+	defer provCancel()
+	secret, err := Provision(provCtx, cli, tenant, domain, appKey)
 	if err != nil {
 		log.Printf("provision: %v", err)
 		return 1
