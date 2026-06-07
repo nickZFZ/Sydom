@@ -189,7 +189,8 @@ func TestEndToEnd_OrderServiceFullChain(t *testing.T) {
 	aliceList := bodyOf(t, do(t, srv.URL, http.MethodGet, "/orders", "alice"))
 	require.Contains(t, aliceList, "北京客户")
 
-	// G1#2 deny-all 负向：guest 角色有 read 功能权限但无 allow 数据策略 → 列表 0 行。
+	// G1#2 deny-all 负向：本段动态新建 guest 角色 + 绑定 dave（区别于 seed 预配的 alice/bob）。
+	// guest 有 read 功能权限但无 allow 数据策略 → 列表 0 行。
 	guest, err := adminCli.CreateRole(context.Background(), &adminv1.CreateRoleRequest{AppId: appID(t, db), Code: "guest", Name: "访客"})
 	require.NoError(t, err)
 	pr, err := adminCli.UpsertPermission(context.Background(), &adminv1.UpsertPermissionRequest{
@@ -219,9 +220,15 @@ func TestEndToEnd_OrderServiceFullChain(t *testing.T) {
 	// 上报必须在 bootstrap 之后（此时 Sidecar→CP 中继连接已建立）；ReportCatalog 是 fail-soft，
 	// 用 Eventually 重报直至 export 落 auto（ReportPermissions 同步中继，通常首次即成）。
 	require.Eventually(t, func() bool {
-		oapp.ReportCatalog(context.Background(), client)
+		rctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		oapp.ReportCatalog(rctx, client)
+		cancel()
+		aid, ok := tryAppID(db) // 闭包在子 goroutine：不可调 require.*（会 Goexit）
+		if !ok {
+			return false
+		}
 		var src string
-		e := db.QueryRow(`SELECT source FROM permission WHERE app_id=$1 AND code=$2`, appID(t, db), "order:export").Scan(&src)
+		e := db.QueryRow(`SELECT source FROM permission WHERE app_id=$1 AND code=$2`, aid, "order:export").Scan(&src)
 		return e == nil && src == "auto"
 	}, 15*time.Second, 200*time.Millisecond, "order:export 应经 auto 上报落库")
 	requireSource(t, db, "order:read", "manual") // 人工配置不被 auto 覆盖
@@ -265,6 +272,16 @@ func appID(t *testing.T, db *sql.DB) uint64 {
 	var id uint64
 	require.NoError(t, db.QueryRow(`SELECT id FROM application WHERE app_key='demo-shop'`).Scan(&id))
 	return id
+}
+
+// tryAppID 是 appID 的非断言版本，供 require.Eventually 的条件 goroutine 用
+// （goroutine 内不可调 require.*——t.FailNow→Goexit 会破坏 Eventually 的内部 channel）。
+func tryAppID(db *sql.DB) (uint64, bool) {
+	var id uint64
+	if err := db.QueryRow(`SELECT id FROM application WHERE app_key='demo-shop'`).Scan(&id); err != nil {
+		return 0, false
+	}
+	return id, true
 }
 func managerRoleID(t *testing.T, db *sql.DB) int64 {
 	t.Helper()
