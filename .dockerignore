@@ -2,3 +2,4 @@
 casbin
 **/.codegraph
 *.log
+deploy

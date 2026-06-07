@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-export $(grep -v '^#' .env.demo | xargs)
+# 健壮加载 .env.demo：set -a 让 source 的变量自动导出，避免 xargs 对含空格/特殊字符的值误拆分。
+set -a
+# shellcheck disable=SC1091
+source .env.demo
+set +a
 DC="docker compose --env-file .env.demo"
 
 echo "[1/5] 起 PG + Redis ..."
@@ -19,6 +23,17 @@ APP_SECRET="$($DC run --rm -e CP_ADMIN_ADDR=controlplane:8081 -e SYDOM_ROOT_SECR
 
 echo "[5/5] 起 Sidecar + 订单服务 ..."
 SYDOM_APP_SECRET="$APP_SECRET" $DC up -d sidecar orderservice
+
+echo "等待订单服务就绪 ..."
+ready=
+for _ in $(seq 1 60); do
+	if curl -fsS -o /dev/null "http://localhost:8080/"; then
+		ready=1
+		break
+	fi
+	sleep 1
+done
+[ -n "$ready" ] || { echo "订单服务在 60s 内未就绪"; $DC logs --tail 50 orderservice sidecar; exit 1; }
 
 echo
 echo "✅ demo 就绪：浏览器打开 http://localhost:8080"

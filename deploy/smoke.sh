@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 B=http://localhost:8080
+# 独立运行时也容忍服务尚未完全就绪：短轮询登陆页。
+for _ in $(seq 1 30); do curl -fsS -o /dev/null "$B/" && break || sleep 1; done
 jar=$(mktemp); jarb=$(mktemp); trap 'rm -f $jar $jarb' EXIT
 curl -fsS -c "$jar" "$B/login?user=alice" -o /dev/null
 curl -fsS -c "$jarb" "$B/login?user=bob" -o /dev/null
