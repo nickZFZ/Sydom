@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -83,6 +84,19 @@ func TestHandler_Unavailable_Friendly503(t *testing.T) {
 	srv := newTestServer(t, fakeGW{
 		check:  func(_, _, _ string) (bool, error) { return false, sydom.ErrUnavailable },
 		filter: func(_, _ string, _ map[string]any) (sydom.FilterResult, error) { return sydom.FilterResult{}, nil },
+	})
+	resp := do(t, srv, http.MethodGet, "/orders", "bob")
+	require.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
+}
+
+// 中间件放行后，handler 自身在 FilterSQL 出错时按 fail-close 走 503（不展示数据）。
+// 区别于上面的 Check ErrUnavailable（中间件路径）——这是数据权限阶段的 fail-close。
+func TestHandler_OrdersList_FilterError_Friendly503(t *testing.T) {
+	srv := newTestServer(t, fakeGW{
+		check: func(_, _, _ string) (bool, error) { return true, nil }, // 功能权限放行
+		filter: func(_, _ string, _ map[string]any) (sydom.FilterResult, error) {
+			return sydom.FilterResult{}, errors.New("filter unavailable")
+		},
 	})
 	resp := do(t, srv, http.MethodGet, "/orders", "bob")
 	require.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
