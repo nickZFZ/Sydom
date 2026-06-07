@@ -3,6 +3,8 @@ package app_test
 import (
 	"context"
 	"database/sql"
+	"io"
+	"net/http"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -56,4 +58,12 @@ func TestDeleteOrder(t *testing.T) {
 	ok, err = oapp.DeleteOrder(context.Background(), db, 999999)
 	require.NoError(t, err)
 	require.False(t, ok)
+}
+
+func readBody(t *testing.T, resp *http.Response) string {
+	t.Helper()
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	return string(b)
 }
