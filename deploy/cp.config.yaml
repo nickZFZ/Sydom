@@ -1,0 +1,7 @@
+database_dsn: "postgres://sydom:sydom@postgres:5432/sydom?sslmode=disable"
+redis_addr: "redis:6379"
+admin_addr: ":8081"
+sync_addr: ":8082"
+root_principal: "root@sydom"
+heartbeat_interval: "30s"
+relay_poll_interval: "1s"

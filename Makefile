@@ -32,3 +32,13 @@ proto-check: proto-gen
 	git diff --exit-code gen/
 
 .PHONY: migrate-up migrate-down test proto-tools proto-lint proto-gen proto-check
+
+.PHONY: demo demo-down smoke
+demo: ## 一键起 demo 全栈（compose + 编排器）
+	bash deploy/demo.sh
+
+demo-down: ## 拆 demo 全栈（清容器+卷）
+	cd deploy && docker compose --env-file .env.demo down -v
+
+smoke: ## 对运行中的 demo 做 HTTP 冒烟（1×allow 1×deny 1×数据过滤）
+	bash deploy/smoke.sh

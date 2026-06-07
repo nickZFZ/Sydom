@@ -1,0 +1,46 @@
+name: sydom-demo
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment: { POSTGRES_USER: sydom, POSTGRES_PASSWORD: sydom, POSTGRES_DB: sydom }
+    ports: ["5432:5432"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U sydom"], interval: 2s, timeout: 3s, retries: 30 }
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 2s, timeout: 3s, retries: 30 }
+  migrate:
+    image: migrate/migrate:v4.17.0
+    depends_on: { postgres: { condition: service_healthy } }
+    volumes: ["../db/migrations:/migrations:ro"]
+    command: ["-path", "/migrations", "-database", "postgres://sydom:sydom@postgres:5432/sydom?sslmode=disable", "up"]
+    restart: on-failure
+  controlplane:
+    build: { context: .., dockerfile: deploy/Dockerfile.controlplane }
+    depends_on: { migrate: { condition: service_completed_successfully }, redis: { condition: service_healthy } }
+    environment:
+      SYDOM_MASTER_KEY: ${SYDOM_MASTER_KEY}
+      SYDOM_ROOT_SECRET: ${SYDOM_ROOT_SECRET}
+    command: ["-config", "/config.yaml"]
+    volumes: ["./cp.config.yaml:/config.yaml:ro"]
+    ports: ["8081:8081", "8082:8082"]
+  seeder:
+    build: { context: .., dockerfile: deploy/Dockerfile.seed }
+    profiles: ["tools"]
+    depends_on: { controlplane: { condition: service_started } }
+  sidecar:
+    build: { context: .., dockerfile: deploy/Dockerfile.sidecar }
+    depends_on: { controlplane: { condition: service_started } }
+    environment:
+      SYDOM_APP_SECRET: ${SYDOM_APP_SECRET}
+    command: ["-config", "/config.yaml"]
+    volumes: ["./sidecar.config.yaml:/config.yaml:ro"]
+    ports: ["8090:8090"]
+  orderservice:
+    build: { context: .., dockerfile: deploy/Dockerfile.orderservice }
+    depends_on: { sidecar: { condition: service_started } }
+    environment:
+      DATABASE_DSN: "postgres://sydom:sydom@postgres:5432/sydom?sslmode=disable"
+      SIDECAR_ADDR: "sidecar:8090"
+      LISTEN_ADDR: ":8080"
+    ports: ["8080:8080"]

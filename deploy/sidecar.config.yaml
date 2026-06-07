@@ -1,0 +1,7 @@
+control_plane_addr: "controlplane:8082"
+app_key: "demo-shop"
+domain: "shop"
+auth_addr: ":8090"
+max_staleness: "0s"
+backoff_initial: "500ms"
+backoff_max: "30s"
