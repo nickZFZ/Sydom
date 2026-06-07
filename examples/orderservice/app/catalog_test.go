@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	oapp "github.com/nickZFZ/Sydom/examples/orderservice/app"
@@ -31,4 +32,18 @@ func TestReportCatalog_ReportsAll(t *testing.T) {
 	r := &fakeReporter{}
 	oapp.ReportCatalog(context.Background(), r) // fail-soft，无返回
 	require.Len(t, r.got, 4)
+}
+
+// errReporter 模拟上报端不可用（如 Sidecar 未就绪）。
+type errReporter struct{}
+
+func (errReporter) ReportPermissions(_ context.Context, _ []sydom.Permission) (sydom.ReportResult, error) {
+	return sydom.ReportResult{}, errors.New("sidecar unavailable")
+}
+
+// fail-soft 核心承诺：reporter 报错时 ReportCatalog 既不 panic 也不向上抛错，正常返回。
+func TestReportCatalog_FailSoft(t *testing.T) {
+	require.NotPanics(t, func() {
+		oapp.ReportCatalog(context.Background(), errReporter{})
+	})
 }
