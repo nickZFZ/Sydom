@@ -47,6 +47,20 @@ func TestResolver_ProtectedWithoutUser_FailClose(t *testing.T) {
 	require.False(t, errors.Is(err, sydomhttp.ErrSkipAuth)) // 非 skip → 中间件 fail-close 拒绝
 }
 
+func TestResolver_CreateMapsToWrite(t *testing.T) {
+	sub, obj, act, err := resolver(reqWithUser(http.MethodPost, "/orders", "alice"))
+	require.NoError(t, err)
+	require.Equal(t, "alice", sub)
+	require.Equal(t, "order", obj)
+	require.Equal(t, "write", act)
+}
+
+func TestResolver_UnknownRoute_Skip(t *testing.T) {
+	// 未知路由放行交 mux 404（非 fail-close）。
+	_, _, _, err := resolver(reqWithUser(http.MethodGet, "/unknown/path", "alice"))
+	require.ErrorIs(t, err, sydomhttp.ErrSkipAuth)
+}
+
 func TestUserDept(t *testing.T) {
 	require.Equal(t, "shanghai", userDept("bob"))
 	require.Equal(t, "", userDept("alice")) // manager 不按部门过滤
