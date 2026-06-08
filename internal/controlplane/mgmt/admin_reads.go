@@ -157,3 +157,46 @@ func (s *AdminServer) ListDataPolicies(ctx context.Context, r *adminv1.ListDataP
 	}
 	return out, nil
 }
+
+func (s *AdminServer) ListOperators(ctx context.Context, _ *adminv1.ListOperatorsRequest) (*adminv1.ListOperatorsResponse, error) {
+	// 只 SELECT id/principal/status —— secret_enc 绝不出查询，物理保证不泄露。
+	rows, err := s.db.QueryContext(ctx, `SELECT id, principal, status FROM admin_operator ORDER BY id`)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list operators: %v", err)
+	}
+	defer rows.Close()
+	out := &adminv1.ListOperatorsResponse{}
+	for rows.Next() {
+		var x adminv1.OperatorSummary
+		var st int16
+		if err := rows.Scan(&x.OperatorId, &x.Principal, &st); err != nil {
+			return nil, status.Errorf(codes.Internal, "scan operator: %v", err)
+		}
+		x.Status = uint32(st)
+		out.Operators = append(out.Operators, &x)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, status.Errorf(codes.Internal, "rows operator: %v", err)
+	}
+	return out, nil
+}
+
+func (s *AdminServer) ListAdminRoles(ctx context.Context, _ *adminv1.ListAdminRolesRequest) (*adminv1.ListAdminRolesResponse, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT id, code, name FROM admin_role ORDER BY id`)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list admin roles: %v", err)
+	}
+	defer rows.Close()
+	out := &adminv1.ListAdminRolesResponse{}
+	for rows.Next() {
+		var x adminv1.AdminRoleSummary
+		if err := rows.Scan(&x.RoleId, &x.Code, &x.Name); err != nil {
+			return nil, status.Errorf(codes.Internal, "scan admin role: %v", err)
+		}
+		out.Roles = append(out.Roles, &x)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, status.Errorf(codes.Internal, "rows admin role: %v", err)
+	}
+	return out, nil
+}

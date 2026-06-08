@@ -105,3 +105,36 @@ func TestAdminReads_AppDomain_RoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, empty.Roles)
 }
+
+func TestAdminReads_SystemDomain_NoSecret(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	require.NoError(t, adminauthz.EnsureRootOperator(context.Background(), db, mk(), "root", []byte("root-secret")))
+	cli := dialMgmt(t, db, "root", []byte("root-secret"))
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	_, err := cli.CreateOperator(ctx, &adminv1.CreateOperatorRequest{Principal: "op-2"})
+	require.NoError(t, err)
+
+	ops, err := cli.ListOperators(ctx, &adminv1.ListOperatorsRequest{})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(ops.Operators), 2) // root + op-2
+	var principals []string
+	for _, o := range ops.Operators {
+		require.NotZero(t, o.OperatorId)
+		require.NotEmpty(t, o.Principal)
+		require.Contains(t, []uint32{1, 2}, o.Status)
+		principals = append(principals, o.Principal)
+	}
+	require.Contains(t, principals, "root")
+	require.Contains(t, principals, "op-2")
+	// secret 不泄露由 OperatorSummary 结构保证（无 secret 字段）；此处再断言 principal/status 正确即可。
+
+	roles, err := cli.ListAdminRoles(ctx, &adminv1.ListAdminRolesRequest{})
+	require.NoError(t, err)
+	var roleCodes []string
+	for _, r := range roles.Roles {
+		roleCodes = append(roleCodes, r.Code)
+	}
+	require.Contains(t, roleCodes, "super-admin") // 000013 内置
+}
