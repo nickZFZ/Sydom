@@ -60,6 +60,10 @@ func TestAdminReads_AppDomain_RoundTrip(t *testing.T) {
 	g2, err := cli.ListGrants(ctx, &adminv1.ListGrantsRequest{AppId: appID, RoleId: clerkRole.RoleId})
 	require.NoError(t, err)
 	require.Empty(t, g2.Grants)
+	g3, err := cli.ListGrants(ctx, &adminv1.ListGrantsRequest{AppId: appID, RoleId: mgrRole.RoleId})
+	require.NoError(t, err)
+	require.Len(t, g3.Grants, 1)
+	require.Equal(t, mgrRole.RoleId, g3.Grants[0].RoleId)
 
 	inh, err := cli.ListRoleInheritances(ctx, &adminv1.ListRoleInheritancesRequest{AppId: appID})
 	require.NoError(t, err)
@@ -74,6 +78,10 @@ func TestAdminReads_AppDomain_RoundTrip(t *testing.T) {
 	b2, err := cli.ListUserBindings(ctx, &adminv1.ListUserBindingsRequest{AppId: appID, UserId: "nobody"})
 	require.NoError(t, err)
 	require.Empty(t, b2.Bindings)
+	b3, err := cli.ListUserBindings(ctx, &adminv1.ListUserBindingsRequest{AppId: appID, UserId: "alice"})
+	require.NoError(t, err)
+	require.Len(t, b3.Bindings, 1)
+	require.Equal(t, "alice", b3.Bindings[0].UserId)
 
 	dps, err := cli.ListDataPolicies(ctx, &adminv1.ListDataPoliciesRequest{AppId: appID})
 	require.NoError(t, err)
@@ -85,6 +93,10 @@ func TestAdminReads_AppDomain_RoundTrip(t *testing.T) {
 	dpEmpty, err := cli.ListDataPolicies(ctx, &adminv1.ListDataPoliciesRequest{AppId: appID, Resource: "other"})
 	require.NoError(t, err)
 	require.Empty(t, dpEmpty.DataPolicies)
+	dpOrder, err := cli.ListDataPolicies(ctx, &adminv1.ListDataPoliciesRequest{AppId: appID, Resource: "order"})
+	require.NoError(t, err)
+	require.Len(t, dpOrder.DataPolicies, 1)
+	require.Equal(t, "order", dpOrder.DataPolicies[0].Resource)
 
 	app2, err := cli.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
 		TenantName: "t2", Domain: "d2", Name: "n2", AppKey: "k-empty"})
