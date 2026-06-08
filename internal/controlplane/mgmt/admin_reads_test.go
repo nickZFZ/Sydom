@@ -7,8 +7,11 @@ import (
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
+	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 	"github.com/nickZFZ/Sydom/internal/dbtest"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestAdminReads_AppDomain_RoundTrip(t *testing.T) {
@@ -137,4 +140,48 @@ func TestAdminReads_SystemDomain_NoSecret(t *testing.T) {
 		roleCodes = append(roleCodes, r.Code)
 	}
 	require.Contains(t, roleCodes, "super-admin") // 000013 内置
+}
+
+func TestAdminReads_CrossAppDomainDenied(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	require.NoError(t, adminauthz.EnsureRootOperator(context.Background(), db, mk(), "root", []byte("root-secret")))
+	root := dialMgmt(t, db, "root", []byte("root-secret"))
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	appA, err := root.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
+		TenantName: "ta", Domain: "da", Name: "na", AppKey: "k-a"})
+	require.NoError(t, err)
+	appB, err := root.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
+		TenantName: "tb", Domain: "db", Name: "nb", AppKey: "k-b"})
+	require.NoError(t, err)
+
+	// reader：仅在域 A 有 role/read（细粒度）
+	op, err := root.CreateOperator(ctx, &adminv1.CreateOperatorRequest{Principal: "reader"})
+	require.NoError(t, err)
+	ar, err := root.CreateAdminRole(ctx, &adminv1.CreateAdminRoleRequest{Code: "reader-role", Name: "只读"})
+	require.NoError(t, err)
+	domainA := mgmt.DomainOfAppID(int64(appA.AppId))
+	_, err = root.GrantAdminRole(ctx, &adminv1.GrantAdminRoleRequest{
+		RoleId: ar.RoleId, Domain: domainA, Resource: "role", Action: "read"})
+	require.NoError(t, err)
+	_, err = root.BindOperatorRole(ctx, &adminv1.BindOperatorRoleRequest{
+		OperatorId: op.OperatorId, RoleId: ar.RoleId, Domain: domainA})
+	require.NoError(t, err)
+
+	// 绑定/授权完成后再拨号 reader（dialMgmt 此刻构造的 enforcer 已含上述策略）
+	reader := dialMgmt(t, db, "reader", []byte(op.Secret))
+
+	// 域 A 的 role：放行
+	_, err = reader.ListRoles(ctx, &adminv1.ListRolesRequest{AppId: appA.AppId})
+	require.NoError(t, err)
+	// 域 B 的 role：跨域拒绝
+	_, err = reader.ListRoles(ctx, &adminv1.ListRolesRequest{AppId: appB.AppId})
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
+	// 域 A 的 permission（reader 只有 role/read）：细粒度资源拒绝
+	_, err = reader.ListPermissions(ctx, &adminv1.ListPermissionsRequest{AppId: appA.AppId})
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
+	// system 域 ListOperators（reader 无 admin/read）：拒绝
+	_, err = reader.ListOperators(ctx, &adminv1.ListOperatorsRequest{})
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
 }
