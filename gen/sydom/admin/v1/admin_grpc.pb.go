@@ -38,6 +38,14 @@ const (
 	AdminService_CreateAdminRole_FullMethodName       = "/sydom.admin.v1.AdminService/CreateAdminRole"
 	AdminService_GrantAdminRole_FullMethodName        = "/sydom.admin.v1.AdminService/GrantAdminRole"
 	AdminService_BindOperatorRole_FullMethodName      = "/sydom.admin.v1.AdminService/BindOperatorRole"
+	AdminService_ListRoles_FullMethodName             = "/sydom.admin.v1.AdminService/ListRoles"
+	AdminService_ListPermissions_FullMethodName       = "/sydom.admin.v1.AdminService/ListPermissions"
+	AdminService_ListGrants_FullMethodName            = "/sydom.admin.v1.AdminService/ListGrants"
+	AdminService_ListRoleInheritances_FullMethodName  = "/sydom.admin.v1.AdminService/ListRoleInheritances"
+	AdminService_ListUserBindings_FullMethodName      = "/sydom.admin.v1.AdminService/ListUserBindings"
+	AdminService_ListDataPolicies_FullMethodName      = "/sydom.admin.v1.AdminService/ListDataPolicies"
+	AdminService_ListOperators_FullMethodName         = "/sydom.admin.v1.AdminService/ListOperators"
+	AdminService_ListAdminRoles_FullMethodName        = "/sydom.admin.v1.AdminService/ListAdminRoles"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -66,6 +74,15 @@ type AdminServiceClient interface {
 	CreateAdminRole(ctx context.Context, in *CreateAdminRoleRequest, opts ...grpc.CallOption) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(ctx context.Context, in *GrantAdminRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	BindOperatorRole(ctx context.Context, in *BindOperatorRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	// —— 读面（SP1：只读 List，REST/Console 展示现状用）——
+	ListRoles(ctx context.Context, in *ListRolesRequest, opts ...grpc.CallOption) (*ListRolesResponse, error)
+	ListPermissions(ctx context.Context, in *ListPermissionsRequest, opts ...grpc.CallOption) (*ListPermissionsResponse, error)
+	ListGrants(ctx context.Context, in *ListGrantsRequest, opts ...grpc.CallOption) (*ListGrantsResponse, error)
+	ListRoleInheritances(ctx context.Context, in *ListRoleInheritancesRequest, opts ...grpc.CallOption) (*ListRoleInheritancesResponse, error)
+	ListUserBindings(ctx context.Context, in *ListUserBindingsRequest, opts ...grpc.CallOption) (*ListUserBindingsResponse, error)
+	ListDataPolicies(ctx context.Context, in *ListDataPoliciesRequest, opts ...grpc.CallOption) (*ListDataPoliciesResponse, error)
+	ListOperators(ctx context.Context, in *ListOperatorsRequest, opts ...grpc.CallOption) (*ListOperatorsResponse, error)
+	ListAdminRoles(ctx context.Context, in *ListAdminRolesRequest, opts ...grpc.CallOption) (*ListAdminRolesResponse, error)
 }
 
 type adminServiceClient struct {
@@ -247,6 +264,78 @@ func (c *adminServiceClient) BindOperatorRole(ctx context.Context, in *BindOpera
 	return out, nil
 }
 
+func (c *adminServiceClient) ListRoles(ctx context.Context, in *ListRolesRequest, opts ...grpc.CallOption) (*ListRolesResponse, error) {
+	out := new(ListRolesResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListRoles_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListPermissions(ctx context.Context, in *ListPermissionsRequest, opts ...grpc.CallOption) (*ListPermissionsResponse, error) {
+	out := new(ListPermissionsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListPermissions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListGrants(ctx context.Context, in *ListGrantsRequest, opts ...grpc.CallOption) (*ListGrantsResponse, error) {
+	out := new(ListGrantsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListGrants_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListRoleInheritances(ctx context.Context, in *ListRoleInheritancesRequest, opts ...grpc.CallOption) (*ListRoleInheritancesResponse, error) {
+	out := new(ListRoleInheritancesResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListRoleInheritances_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListUserBindings(ctx context.Context, in *ListUserBindingsRequest, opts ...grpc.CallOption) (*ListUserBindingsResponse, error) {
+	out := new(ListUserBindingsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListUserBindings_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListDataPolicies(ctx context.Context, in *ListDataPoliciesRequest, opts ...grpc.CallOption) (*ListDataPoliciesResponse, error) {
+	out := new(ListDataPoliciesResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListDataPolicies_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListOperators(ctx context.Context, in *ListOperatorsRequest, opts ...grpc.CallOption) (*ListOperatorsResponse, error) {
+	out := new(ListOperatorsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListOperators_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListAdminRoles(ctx context.Context, in *ListAdminRolesRequest, opts ...grpc.CallOption) (*ListAdminRolesResponse, error) {
+	out := new(ListAdminRolesResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListAdminRoles_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility
@@ -273,6 +362,15 @@ type AdminServiceServer interface {
 	CreateAdminRole(context.Context, *CreateAdminRoleRequest) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(context.Context, *GrantAdminRoleRequest) (*WriteResponse, error)
 	BindOperatorRole(context.Context, *BindOperatorRoleRequest) (*WriteResponse, error)
+	// —— 读面（SP1：只读 List，REST/Console 展示现状用）——
+	ListRoles(context.Context, *ListRolesRequest) (*ListRolesResponse, error)
+	ListPermissions(context.Context, *ListPermissionsRequest) (*ListPermissionsResponse, error)
+	ListGrants(context.Context, *ListGrantsRequest) (*ListGrantsResponse, error)
+	ListRoleInheritances(context.Context, *ListRoleInheritancesRequest) (*ListRoleInheritancesResponse, error)
+	ListUserBindings(context.Context, *ListUserBindingsRequest) (*ListUserBindingsResponse, error)
+	ListDataPolicies(context.Context, *ListDataPoliciesRequest) (*ListDataPoliciesResponse, error)
+	ListOperators(context.Context, *ListOperatorsRequest) (*ListOperatorsResponse, error)
+	ListAdminRoles(context.Context, *ListAdminRolesRequest) (*ListAdminRolesResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -336,6 +434,30 @@ func (UnimplementedAdminServiceServer) GrantAdminRole(context.Context, *GrantAdm
 }
 func (UnimplementedAdminServiceServer) BindOperatorRole(context.Context, *BindOperatorRoleRequest) (*WriteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BindOperatorRole not implemented")
+}
+func (UnimplementedAdminServiceServer) ListRoles(context.Context, *ListRolesRequest) (*ListRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRoles not implemented")
+}
+func (UnimplementedAdminServiceServer) ListPermissions(context.Context, *ListPermissionsRequest) (*ListPermissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPermissions not implemented")
+}
+func (UnimplementedAdminServiceServer) ListGrants(context.Context, *ListGrantsRequest) (*ListGrantsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGrants not implemented")
+}
+func (UnimplementedAdminServiceServer) ListRoleInheritances(context.Context, *ListRoleInheritancesRequest) (*ListRoleInheritancesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRoleInheritances not implemented")
+}
+func (UnimplementedAdminServiceServer) ListUserBindings(context.Context, *ListUserBindingsRequest) (*ListUserBindingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListUserBindings not implemented")
+}
+func (UnimplementedAdminServiceServer) ListDataPolicies(context.Context, *ListDataPoliciesRequest) (*ListDataPoliciesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDataPolicies not implemented")
+}
+func (UnimplementedAdminServiceServer) ListOperators(context.Context, *ListOperatorsRequest) (*ListOperatorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOperators not implemented")
+}
+func (UnimplementedAdminServiceServer) ListAdminRoles(context.Context, *ListAdminRolesRequest) (*ListAdminRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAdminRoles not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 
@@ -692,6 +814,150 @@ func _AdminService_BindOperatorRole_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRolesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListRoles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListRoles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListRoles(ctx, req.(*ListRolesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListPermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListPermissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListPermissions(ctx, req.(*ListPermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListGrants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGrantsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListGrants(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListGrants_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListGrants(ctx, req.(*ListGrantsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListRoleInheritances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRoleInheritancesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListRoleInheritances(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListRoleInheritances_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListRoleInheritances(ctx, req.(*ListRoleInheritancesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListUserBindings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserBindingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListUserBindings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListUserBindings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListUserBindings(ctx, req.(*ListUserBindingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListDataPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDataPoliciesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListDataPolicies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListDataPolicies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListDataPolicies(ctx, req.(*ListDataPoliciesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListOperators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOperatorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListOperators(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListOperators_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListOperators(ctx, req.(*ListOperatorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListAdminRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAdminRolesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListAdminRoles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListAdminRoles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListAdminRoles(ctx, req.(*ListAdminRolesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -774,6 +1040,38 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BindOperatorRole",
 			Handler:    _AdminService_BindOperatorRole_Handler,
+		},
+		{
+			MethodName: "ListRoles",
+			Handler:    _AdminService_ListRoles_Handler,
+		},
+		{
+			MethodName: "ListPermissions",
+			Handler:    _AdminService_ListPermissions_Handler,
+		},
+		{
+			MethodName: "ListGrants",
+			Handler:    _AdminService_ListGrants_Handler,
+		},
+		{
+			MethodName: "ListRoleInheritances",
+			Handler:    _AdminService_ListRoleInheritances_Handler,
+		},
+		{
+			MethodName: "ListUserBindings",
+			Handler:    _AdminService_ListUserBindings_Handler,
+		},
+		{
+			MethodName: "ListDataPolicies",
+			Handler:    _AdminService_ListDataPolicies_Handler,
+		},
+		{
+			MethodName: "ListOperators",
+			Handler:    _AdminService_ListOperators_Handler,
+		},
+		{
+			MethodName: "ListAdminRoles",
+			Handler:    _AdminService_ListAdminRoles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

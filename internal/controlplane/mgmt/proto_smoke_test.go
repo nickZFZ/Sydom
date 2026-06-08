@@ -11,4 +11,5 @@ func TestProtoGenerated(t *testing.T) {
 	_ = &adminv1.WriteResponse{}
 	_ = &adminv1.CreateApplicationRequest{}
 	_ = &adminv1.CreateOperatorRequest{}
+	_ = &adminv1.ListRolesRequest{}
 }

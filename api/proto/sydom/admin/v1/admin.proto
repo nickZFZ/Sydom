@@ -32,6 +32,16 @@ service AdminService {
   rpc CreateAdminRole(CreateAdminRoleRequest) returns (CreateAdminRoleResponse);
   rpc GrantAdminRole(GrantAdminRoleRequest) returns (WriteResponse);
   rpc BindOperatorRole(BindOperatorRoleRequest) returns (WriteResponse);
+
+  // —— 读面（SP1：只读 List，REST/Console 展示现状用）——
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+  rpc ListGrants(ListGrantsRequest) returns (ListGrantsResponse);
+  rpc ListRoleInheritances(ListRoleInheritancesRequest) returns (ListRoleInheritancesResponse);
+  rpc ListUserBindings(ListUserBindingsRequest) returns (ListUserBindingsResponse);
+  rpc ListDataPolicies(ListDataPoliciesRequest) returns (ListDataPoliciesResponse);
+  rpc ListOperators(ListOperatorsRequest) returns (ListOperatorsResponse);
+  rpc ListAdminRoles(ListAdminRolesRequest) returns (ListAdminRolesResponse);
 }
 
 // WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
@@ -163,3 +173,88 @@ message BindOperatorRoleRequest {
   int64 role_id = 2;
   string domain = 3;
 }
+
+// —— SP1 读面消息（app-域 6 个）——
+message RoleSummary {
+  int64 role_id = 1;
+  string code = 2;
+  string name = 3;
+  string description = 4;
+}
+message ListRolesRequest { uint64 app_id = 1; }
+message ListRolesResponse { repeated RoleSummary roles = 1; }
+
+message PermissionSummary {
+  int64 permission_id = 1;
+  string code = 2;
+  string resource = 3;
+  string action = 4;
+  string ptype = 5; // 对应 DB 列 permission.type
+  string name = 6;
+  string source = 7; // manual|auto（SDK D 语义）
+}
+message ListPermissionsRequest { uint64 app_id = 1; }
+message ListPermissionsResponse { repeated PermissionSummary permissions = 1; }
+
+message GrantSummary {
+  int64 grant_id = 1;
+  int64 role_id = 2;
+  int64 permission_id = 3;
+  string eft = 4; // allow|deny
+}
+message ListGrantsRequest {
+  uint64 app_id = 1;
+  int64 role_id = 2; // 0 = 全部
+}
+message ListGrantsResponse { repeated GrantSummary grants = 1; }
+
+message RoleInheritanceSummary {
+  int64 inheritance_id = 1;
+  int64 parent_role_id = 2;
+  int64 child_role_id = 3;
+}
+message ListRoleInheritancesRequest { uint64 app_id = 1; }
+message ListRoleInheritancesResponse { repeated RoleInheritanceSummary inheritances = 1; }
+
+message UserBindingSummary {
+  int64 binding_id = 1;
+  string user_id = 2;
+  int64 role_id = 3;
+}
+message ListUserBindingsRequest {
+  uint64 app_id = 1;
+  string user_id = 2; // "" = 全部
+}
+message ListUserBindingsResponse { repeated UserBindingSummary bindings = 1; }
+
+message DataPolicySummary {
+  int64 data_policy_id = 1;
+  string subject_type = 2;
+  string subject_id = 3;
+  string resource = 4;
+  string condition = 5; // 原始 JSON 串
+  string effect = 6;    // allow|deny
+  uint64 version = 7;
+}
+message ListDataPoliciesRequest {
+  uint64 app_id = 1;
+  string resource = 2; // "" = 全部
+}
+message ListDataPoliciesResponse { repeated DataPolicySummary data_policies = 1; }
+
+// —— SP1 读面消息（system-域 2 个）——
+message OperatorSummary { // 永不含 secret
+  int64 operator_id = 1;
+  string principal = 2;
+  uint32 status = 3;
+}
+message ListOperatorsRequest {}
+message ListOperatorsResponse { repeated OperatorSummary operators = 1; }
+
+message AdminRoleSummary {
+  int64 role_id = 1;
+  string code = 2;
+  string name = 3;
+}
+message ListAdminRolesRequest {}
+message ListAdminRolesResponse { repeated AdminRoleSummary roles = 1; }
