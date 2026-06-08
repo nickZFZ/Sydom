@@ -46,6 +46,12 @@ var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/CreateAdminRole":       {"admin", "create", false, true},
 	"/sydom.admin.v1.AdminService/GrantAdminRole":        {"admin", "update", false, true},
 	"/sydom.admin.v1.AdminService/BindOperatorRole":      {"admin", "update", false, true},
+	"/sydom.admin.v1.AdminService/ListRoles":            {"role", "read", false, false},
+	"/sydom.admin.v1.AdminService/ListPermissions":      {"permission", "read", false, false},
+	"/sydom.admin.v1.AdminService/ListGrants":           {"grant", "read", false, false},
+	"/sydom.admin.v1.AdminService/ListRoleInheritances": {"inheritance", "read", false, false},
+	"/sydom.admin.v1.AdminService/ListUserBindings":     {"binding", "read", false, false},
+	"/sydom.admin.v1.AdminService/ListDataPolicies":     {"data_policy", "read", false, false},
 }
 
 // DomainOfAppID 把 app_id 转成 casbin domain 字符串。
