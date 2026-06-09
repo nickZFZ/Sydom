@@ -1,0 +1,358 @@
+package restgw
+
+import (
+	"context"
+	"net/http"
+	"strconv"
+
+	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
+	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+)
+
+// route 是一条静态路由登记。fullMethod 即 ruleTable 键，使授权核心与 gRPC 端逐字节复用同一 rpcRule。
+type route struct {
+	method     string // HTTP 动词
+	pattern    string // ServeMux 方法感知模式的路径部分
+	fullMethod string // gRPC FullMethod（ruleTable 键）
+	decode     func(r *http.Request, body []byte) (proto.Message, error)
+	invoke     func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error)
+}
+
+// —— decode helpers ——
+
+// decodeBody 用 protojson 填 body 字段（DiscardUnknown：容忍多余字段）。空 body 跳过。
+func decodeBody(body []byte, m proto.Message) error {
+	if len(body) == 0 {
+		return nil
+	}
+	if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(body, m); err != nil {
+		return status.Error(codes.InvalidArgument, "invalid json body")
+	}
+	return nil
+}
+
+func pathUint64(r *http.Request, key string) (uint64, error) {
+	v, err := strconv.ParseUint(r.PathValue(key), 10, 64)
+	if err != nil {
+		return 0, status.Errorf(codes.InvalidArgument, "invalid path %s", key)
+	}
+	return v, nil
+}
+
+func pathInt64(r *http.Request, key string) (int64, error) {
+	v, err := strconv.ParseInt(r.PathValue(key), 10, 64)
+	if err != nil {
+		return 0, status.Errorf(codes.InvalidArgument, "invalid path %s", key)
+	}
+	return v, nil
+}
+
+// queryInt64 取可选 int64 query（缺=0）。
+func queryInt64(r *http.Request, key string) (int64, error) {
+	s := r.URL.Query().Get(key)
+	if s == "" {
+		return 0, nil
+	}
+	v, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, status.Errorf(codes.InvalidArgument, "invalid query %s", key)
+	}
+	return v, nil
+}
+
+// appRoutes 是 app 域 18 路由（授权域=path app_id；path 值权威覆写 body）。
+func appRoutes() []route {
+	const pfx = "/sydom.admin.v1.AdminService/"
+	return []route{
+		{"GET", "/v1/apps/{app_id}/roles", pfx + "ListRoles",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListRolesRequest{AppId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListRoles(ctx, m.(*adminv1.ListRolesRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/roles", pfx + "CreateRole",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.CreateRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.CreateRole(ctx, m.(*adminv1.CreateRoleRequest))
+			}},
+		{"DELETE", "/v1/apps/{app_id}/roles/{role_id}", pfx + "DeleteRole",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				roleID, err := pathInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.DeleteRoleRequest{AppId: appID, RoleId: roleID}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.DeleteRole(ctx, m.(*adminv1.DeleteRoleRequest))
+			}},
+		{"GET", "/v1/apps/{app_id}/permissions", pfx + "ListPermissions",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListPermissionsRequest{AppId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListPermissions(ctx, m.(*adminv1.ListPermissionsRequest))
+			}},
+		{"PUT", "/v1/apps/{app_id}/permissions/{code}", pfx + "UpsertPermission",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.UpsertPermissionRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id
+				m.Code = r.PathValue("code") // 路径权威：code 由路径决定（ServeMux 单段，天然无 '/'）
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.UpsertPermission(ctx, m.(*adminv1.UpsertPermissionRequest))
+			}},
+		{"GET", "/v1/apps/{app_id}/grants", pfx + "ListGrants",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				roleID, err := queryInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListGrantsRequest{AppId: id, RoleId: roleID}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListGrants(ctx, m.(*adminv1.ListGrantsRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/roles/{role_id}/grants", pfx + "GrantPermission",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.GrantPermissionRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				roleID, err := pathInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId, m.RoleId = appID, roleID
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.GrantPermission(ctx, m.(*adminv1.GrantPermissionRequest))
+			}},
+		{"DELETE", "/v1/apps/{app_id}/roles/{role_id}/grants/{permission_id}", pfx + "RevokePermission",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				roleID, err := pathInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				permID, err := pathInt64(r, "permission_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.RevokePermissionRequest{AppId: appID, RoleId: roleID, PermissionId: permID}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.RevokePermission(ctx, m.(*adminv1.RevokePermissionRequest))
+			}},
+		{"GET", "/v1/apps/{app_id}/role-inheritances", pfx + "ListRoleInheritances",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListRoleInheritancesRequest{AppId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListRoleInheritances(ctx, m.(*adminv1.ListRoleInheritancesRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/roles/{child_role_id}/parents", pfx + "AddRoleInheritance",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.RoleInheritanceRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				childID, err := pathInt64(r, "child_role_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId, m.ChildRoleId = appID, childID
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.AddRoleInheritance(ctx, m.(*adminv1.RoleInheritanceRequest))
+			}},
+		{"DELETE", "/v1/apps/{app_id}/roles/{child_role_id}/parents/{parent_role_id}", pfx + "RemoveRoleInheritance",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				childID, err := pathInt64(r, "child_role_id")
+				if err != nil {
+					return nil, err
+				}
+				parentID, err := pathInt64(r, "parent_role_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.RoleInheritanceRequest{AppId: appID, ChildRoleId: childID, ParentRoleId: parentID}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.RemoveRoleInheritance(ctx, m.(*adminv1.RoleInheritanceRequest))
+			}},
+		{"GET", "/v1/apps/{app_id}/user-bindings", pfx + "ListUserBindings",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListUserBindingsRequest{AppId: id, UserId: r.URL.Query().Get("user_id")}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListUserBindings(ctx, m.(*adminv1.ListUserBindingsRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/users/{user_id}/roles", pfx + "BindUserRole",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.UserRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = appID
+				m.UserId = r.PathValue("user_id")
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.BindUserRole(ctx, m.(*adminv1.UserRoleRequest))
+			}},
+		{"DELETE", "/v1/apps/{app_id}/users/{user_id}/roles/{role_id}", pfx + "UnbindUserRole",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				roleID, err := pathInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.UserRoleRequest{AppId: appID, UserId: r.PathValue("user_id"), RoleId: roleID}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.UnbindUserRole(ctx, m.(*adminv1.UserRoleRequest))
+			}},
+		{"GET", "/v1/apps/{app_id}/data-policies", pfx + "ListDataPolicies",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListDataPoliciesRequest{AppId: id, Resource: r.URL.Query().Get("resource")}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListDataPolicies(ctx, m.(*adminv1.ListDataPoliciesRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/data-policies", pfx + "UpsertDataPolicy",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.UpsertDataPolicyRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId, m.Id = id, 0 // POST 恒为新增（id=0），路径无 id
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.UpsertDataPolicy(ctx, m.(*adminv1.UpsertDataPolicyRequest))
+			}},
+		{"PUT", "/v1/apps/{app_id}/data-policies/{id}", pfx + "UpsertDataPolicy",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.UpsertDataPolicyRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				id, err := pathInt64(r, "id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId, m.Id = appID, id // 路径 id 权威
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.UpsertDataPolicy(ctx, m.(*adminv1.UpsertDataPolicyRequest))
+			}},
+		{"DELETE", "/v1/apps/{app_id}/data-policies/{id}", pfx + "DeleteDataPolicy",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				appID, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				id, err := pathInt64(r, "id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.DeleteDataPolicyRequest{AppId: appID, DataPolicyId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.DeleteDataPolicy(ctx, m.(*adminv1.DeleteDataPolicyRequest))
+			}},
+	}
+}
+
+// allRoutes 汇总全部路由组（任务 6 追加 applicationRoutes/systemRoutes）。
+func allRoutes() []route {
+	var rs []route
+	rs = append(rs, appRoutes()...)
+	return rs
+}
