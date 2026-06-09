@@ -165,3 +165,67 @@ func TestREST_PathAuthority_OverridesBodyAppID(t *testing.T) {
 // 小工具：uint64/int64 转字符串路径段。
 func u(v uint64) string { return strconv.FormatUint(v, 10) }
 func i(v int64) string  { return strconv.FormatInt(v, 10) }
+
+func TestREST_OneTimeSecrets(t *testing.T) {
+	ts, _ := newTestGW(t)
+	c := rootClient(t, ts.URL)
+
+	// CreateApplication 响应含非空 app_secret。
+	resp, body := c.do("POST", "/v1/applications", map[string]any{
+		"tenantName": "t1", "domain": "d1", "name": "n1", "appKey": "k-once"})
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var app adminv1.CreateApplicationResponse
+	require.NoError(t, protoUnmarshal(body, &app))
+	require.NotEmpty(t, app.AppSecret)
+
+	// CreateOperator 响应含非空 secret。
+	resp, body = c.do("POST", "/v1/operators", map[string]any{"principal": "op-rest"})
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var op adminv1.CreateOperatorResponse
+	require.NoError(t, protoUnmarshal(body, &op))
+	require.NotEmpty(t, op.Secret)
+	require.NotZero(t, op.OperatorId)
+
+	// ListOperators 走通且不含 secret 字段（OperatorSummary 结构保证）。
+	resp, body = c.do("GET", "/v1/operators", nil)
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	require.NotContains(t, string(body), op.Secret) // 明文 secret 绝不复现在列表里
+
+	// 顺带验证顶层 ListApplications 走通（CreateApplication 已写入一条）。
+	resp, body = c.do("GET", "/v1/applications", nil)
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var apps adminv1.ListApplicationsResponse
+	require.NoError(t, protoUnmarshal(body, &apps))
+	require.NotEmpty(t, apps.Applications)
+}
+
+func TestREST_SystemDomain_RequiresSuperAdmin(t *testing.T) {
+	ts, _ := newTestGW(t)
+	c := rootClient(t, ts.URL)
+
+	// root（super-admin）建一个普通 operator（无任何 grant）。
+	resp, body := c.do("POST", "/v1/operators", map[string]any{"principal": "plain"})
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var op adminv1.CreateOperatorResponse
+	require.NoError(t, protoUnmarshal(body, &op))
+
+	// 该 operator 调 system 端点 ListOperators：无 admin/read → 403。
+	plain := &restClient{t: t, base: ts.URL, principal: "plain", secret: []byte(op.Secret)}
+	resp, _ = plain.do("GET", "/v1/operators", nil)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
+
+	// root 调 admin-roles 列表：放行。
+	resp, body = c.do("GET", "/v1/admin-roles", nil)
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var roles adminv1.ListAdminRolesResponse
+	require.NoError(t, protoUnmarshal(body, &roles))
+	require.NotEmpty(t, roles.Roles) // 含内置 super-admin
+}
+
+func TestREST_RouteTable_Complete(t *testing.T) {
+	// 通过 NewHandler 注册不 panic 即证明 28 条 method+pattern 无 ServeMux 冲突。
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	require.NotPanics(t, func() {
+		_ = restgw.NewHandler(nil, nil, nil, nil, logger)
+	})
+}

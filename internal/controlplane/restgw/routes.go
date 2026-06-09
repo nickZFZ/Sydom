@@ -350,9 +350,143 @@ func appRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部路由组（任务 6 追加 applicationRoutes/systemRoutes）。
+// applicationRoutes 是 §3.2 应用管理 3 路由。
+func applicationRoutes() []route {
+	const pfx = "/sydom.admin.v1.AdminService/"
+	return []route{
+		{"GET", "/v1/applications", pfx + "ListApplications",
+			func(_ *http.Request, _ []byte) (proto.Message, error) {
+				return &adminv1.ListApplicationsRequest{}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListApplications(ctx, m.(*adminv1.ListApplicationsRequest))
+			}},
+		{"POST", "/v1/applications", pfx + "CreateApplication",
+			func(_ *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.CreateApplicationRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.CreateApplication(ctx, m.(*adminv1.CreateApplicationRequest))
+			}},
+		{"PUT", "/v1/applications/{app_id}/status", pfx + "SetApplicationStatus",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.SetApplicationStatusRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // 路径权威；status 来自 body
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.SetApplicationStatus(ctx, m.(*adminv1.SetApplicationStatusRequest))
+			}},
+	}
+}
+
+// systemRoutes 是 §3.3 管理员/admin-role 域 7 路由（授权域 "*"）。
+func systemRoutes() []route {
+	const pfx = "/sydom.admin.v1.AdminService/"
+	return []route{
+		{"GET", "/v1/operators", pfx + "ListOperators",
+			func(_ *http.Request, _ []byte) (proto.Message, error) {
+				return &adminv1.ListOperatorsRequest{}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListOperators(ctx, m.(*adminv1.ListOperatorsRequest))
+			}},
+		{"POST", "/v1/operators", pfx + "CreateOperator",
+			func(_ *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.CreateOperatorRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.CreateOperator(ctx, m.(*adminv1.CreateOperatorRequest))
+			}},
+		{"PUT", "/v1/operators/{operator_id}/status", pfx + "SetOperatorStatus",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.SetOperatorStatusRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathInt64(r, "operator_id")
+				if err != nil {
+					return nil, err
+				}
+				m.OperatorId = id
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.SetOperatorStatus(ctx, m.(*adminv1.SetOperatorStatusRequest))
+			}},
+		{"POST", "/v1/operators/{operator_id}/roles", pfx + "BindOperatorRole",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.BindOperatorRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathInt64(r, "operator_id")
+				if err != nil {
+					return nil, err
+				}
+				m.OperatorId = id
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.BindOperatorRole(ctx, m.(*adminv1.BindOperatorRoleRequest))
+			}},
+		{"GET", "/v1/admin-roles", pfx + "ListAdminRoles",
+			func(_ *http.Request, _ []byte) (proto.Message, error) {
+				return &adminv1.ListAdminRolesRequest{}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListAdminRoles(ctx, m.(*adminv1.ListAdminRolesRequest))
+			}},
+		{"POST", "/v1/admin-roles", pfx + "CreateAdminRole",
+			func(_ *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.CreateAdminRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.CreateAdminRole(ctx, m.(*adminv1.CreateAdminRoleRequest))
+			}},
+		{"POST", "/v1/admin-roles/{role_id}/grants", pfx + "GrantAdminRole",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.GrantAdminRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				m.RoleId = id
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.GrantAdminRole(ctx, m.(*adminv1.GrantAdminRoleRequest))
+			}},
+	}
+}
+
+// allRoutes 汇总全部 28 路由（app 域 18 + 应用管理 3 + system 域 7）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
+	rs = append(rs, applicationRoutes()...)
+	rs = append(rs, systemRoutes()...)
 	return rs
 }
