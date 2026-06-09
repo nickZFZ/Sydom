@@ -229,3 +229,148 @@ func TestREST_RouteTable_Complete(t *testing.T) {
 		_ = restgw.NewHandler(nil, nil, nil, nil, logger)
 	})
 }
+
+// ② 认证失败矩阵 → 401。
+func TestREST_AuthnFailures(t *testing.T) {
+	ts, _ := newTestGW(t)
+
+	// 缺头部。
+	req, _ := http.NewRequest("GET", ts.URL+"/v1/applications", nil)
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	resp.Body.Close()
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+	// 坏签名。
+	bad := &restClient{t: t, base: ts.URL, principal: "root", secret: []byte("WRONG-SECRET")}
+	resp, _ = bad.do("GET", "/v1/applications", nil)
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+	// 时间偏移越界：手工构造过期时间戳。
+	staleTS := time.Now().Add(-10 * time.Minute).Unix()
+	req, _ = http.NewRequest("GET", ts.URL+"/v1/applications", nil)
+	sum := sha256.Sum256(nil)
+	hh := hex.EncodeToString(sum[:])
+	req.Header.Set(auth.HdrPrincipal, "root")
+	req.Header.Set(auth.HdrTimestamp, strconv.FormatInt(staleTS, 10))
+	req.Header.Set(auth.HdrSignature, auth.SignREST([]byte("root-secret"), "root", staleTS, "GET", "/v1/applications", hh))
+	resp, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	resp.Body.Close()
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+	// 非法 principal（含空格）。
+	badP := &restClient{t: t, base: ts.URL, principal: "ro ot", secret: []byte("root-secret")}
+	resp, _ = badP.do("GET", "/v1/applications", nil)
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
+// ③ 鉴权：跨 app 域 / 细粒度资源 / system 端点 → 403。
+func TestREST_AuthzMatrix(t *testing.T) {
+	ts, _ := newTestGW(t)
+	c := rootClient(t, ts.URL)
+
+	// 建两 app。
+	appA := createApp(t, c, "ta", "da", "na", "k-aa")
+	appB := createApp(t, c, "tb", "db", "nb", "k-bb")
+
+	// reader：仅域 A 有 role/read。
+	resp, body := c.do("POST", "/v1/operators", map[string]any{"principal": "reader"})
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var op adminv1.CreateOperatorResponse
+	require.NoError(t, protoUnmarshal(body, &op))
+	resp, body = c.do("POST", "/v1/admin-roles", map[string]any{"code": "reader-role", "name": "只读"})
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var ar adminv1.CreateAdminRoleResponse
+	require.NoError(t, protoUnmarshal(body, &ar))
+	resp, _ = c.do("POST", "/v1/admin-roles/"+i(ar.RoleId)+"/grants", map[string]any{
+		"domain": u(appA.AppId), "resource": "role", "action": "read"})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	resp, _ = c.do("POST", "/v1/operators/"+i(op.OperatorId)+"/roles", map[string]any{
+		"roleId": strconv.FormatInt(ar.RoleId, 10), "domain": u(appA.AppId)})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	reader := &restClient{t: t, base: ts.URL, principal: "reader", secret: []byte(op.Secret)}
+	// 域 A role：放行。
+	resp, _ = reader.do("GET", "/v1/apps/"+u(appA.AppId)+"/roles", nil)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	// 域 B role：跨域 403。
+	resp, _ = reader.do("GET", "/v1/apps/"+u(appB.AppId)+"/roles", nil)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	// 域 A permission（只有 role/read）：细粒度 403。
+	resp, _ = reader.do("GET", "/v1/apps/"+u(appA.AppId)+"/permissions", nil)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	// system ListOperators：无 admin/read → 403。
+	resp, _ = reader.do("GET", "/v1/operators", nil)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+// ④ status 写闸：停用 app 上写 → 409。
+func TestREST_StatusWriteBlocked(t *testing.T) {
+	ts, _ := newTestGW(t)
+	c := rootClient(t, ts.URL)
+	app := createApp(t, c, "ts", "ds", "ns", "k-st")
+
+	// 停用 app（status=2）。
+	resp, _ := c.do("PUT", "/v1/applications/"+u(app.AppId)+"/status", map[string]any{"status": 2})
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// 在停用 app 上写（建角色）→ FailedPrecondition → 409。
+	resp, body := c.do("POST", "/v1/apps/"+u(app.AppId)+"/roles", map[string]any{"code": "x", "name": "y"})
+	require.Equal(t, http.StatusConflict, resp.StatusCode, string(body))
+}
+
+// ⑥ 错误映射：未知路由 404 / body 超限 400 / Internal 500 脱敏。
+func TestREST_ErrorMapping(t *testing.T) {
+	ts, _ := newTestGW(t)
+	c := rootClient(t, ts.URL)
+
+	// 未知路由 → 404（ServeMux 默认）。
+	resp, _ := c.do("GET", "/v1/nonexistent", nil)
+	require.Equal(t, http.StatusNotFound, resp.StatusCode)
+
+	// body 超限（>1 MiB）→ 400。
+	big := make([]byte, maxBodyForTest+1)
+	for i := range big {
+		big[i] = 'a'
+	}
+	resp = postRaw(t, ts.URL, "/v1/applications", "root", []byte("root-secret"), big)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	// AlreadyExists→409（app_key 唯一冲突）。
+	app := createApp(t, c, "tdup", "ddup", "ndup", "k-dup")
+	require.NotZero(t, app.AppId)
+	resp, _ = c.do("POST", "/v1/applications", map[string]any{
+		"tenantName": "tdup2", "domain": "ddup2", "name": "ndup2", "appKey": "k-dup"}) // app_key 唯一冲突
+	require.Equal(t, http.StatusConflict, resp.StatusCode)
+}
+
+// —— 测试 helpers ——
+const maxBodyForTest = 1 << 20
+
+func createApp(t *testing.T, c *restClient, tenant, domain, name, appKey string) *adminv1.CreateApplicationResponse {
+	t.Helper()
+	resp, body := c.do("POST", "/v1/applications", map[string]any{
+		"tenantName": tenant, "domain": domain, "name": name, "appKey": appKey})
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	var app adminv1.CreateApplicationResponse
+	require.NoError(t, protoUnmarshal(body, &app))
+	return &app
+}
+
+// postRaw 发原始字节 body（用于 body 超限测试），签名按实际字节算。
+func postRaw(t *testing.T, base, path, principal string, secret, body []byte) *http.Response {
+	t.Helper()
+	sum := sha256.Sum256(body)
+	h := hex.EncodeToString(sum[:])
+	ts := time.Now().Unix()
+	req, err := http.NewRequest("POST", base+path, bytes.NewReader(body))
+	require.NoError(t, err)
+	req.Header.Set(auth.HdrPrincipal, principal)
+	req.Header.Set(auth.HdrTimestamp, strconv.FormatInt(ts, 10))
+	req.Header.Set(auth.HdrSignature, auth.SignREST(secret, principal, ts, "POST", path, h))
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	resp.Body.Close()
+	return resp
+}
