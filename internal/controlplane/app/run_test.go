@@ -2,9 +2,13 @@ package app_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"log/slog"
 	"net"
+	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
@@ -41,26 +45,46 @@ func TestRun_WiringEndToEnd(t *testing.T) {
 	require.NoError(t, err)
 	syncLis, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
+	restLis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	go func() { done <- app.Run(ctx, cfg, adminLis, syncLis, logger) }()
+	go func() { done <- app.Run(ctx, cfg, adminLis, syncLis, restLis, logger) }()
 
+	// gRPC 链贯通（既有断言）。
 	conn, err := grpc.NewClient(adminLis.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithPerRPCCredentials(auth.NewPerRPCCredentials(cfg.RootPrincipal, rootSecret, false)))
 	require.NoError(t, err)
 	defer conn.Close()
 	cli := adminv1.NewAdminServiceClient(conn)
-
-	// 装配链贯通：root 凭据经 operator 认证 + 元-RBAC 调 ListApplications 成功。
 	require.Eventually(t, func() bool {
 		_, err := cli.ListApplications(context.Background(), &adminv1.ListApplicationsRequest{})
 		return err == nil
-	}, 10*time.Second, 100*time.Millisecond, "装配后 root 应能调通 AdminService")
+	}, 10*time.Second, 100*time.Millisecond, "装配后 root 应能调通 gRPC AdminService")
 
-	// 优雅关闭：取消 ctx，Run 在超时内干净返回 nil。
+	// REST 监听器走通认证链：root 签名 GET /v1/applications → 200。
+	restBase := "http://" + restLis.Addr().String()
+	require.Eventually(t, func() bool {
+		target := "/v1/applications"
+		ts := time.Now().Unix()
+		sum := sha256.Sum256(nil)
+		h := hex.EncodeToString(sum[:])
+		req, _ := http.NewRequest("GET", restBase+target, nil)
+		req.Header.Set(auth.HdrPrincipal, cfg.RootPrincipal)
+		req.Header.Set(auth.HdrTimestamp, strconv.FormatInt(ts, 10))
+		req.Header.Set(auth.HdrSignature, auth.SignREST(rootSecret, cfg.RootPrincipal, ts, "GET", target, h))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return false
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode == http.StatusOK
+	}, 10*time.Second, 100*time.Millisecond, "REST 监听器应走通认证链返回 200")
+
+	// 优雅关闭。
 	cancel()
 	select {
 	case err := <-done:

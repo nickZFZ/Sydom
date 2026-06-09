@@ -106,3 +106,31 @@ root_principal: "root@sydom"
 	require.Equal(t, 30*time.Second, cfg.HeartbeatInterval)
 	require.Equal(t, time.Second, cfg.RelayPollInterval)
 }
+
+func TestLoadConfig_RESTAddr(t *testing.T) {
+	yaml := `
+database_dsn: "postgres://localhost/sydom"
+redis_addr: "localhost:6379"
+admin_addr: ":8081"
+sync_addr: ":8082"
+rest_addr: ":8083"
+root_principal: "root@sydom"
+`
+	cfg, err := app.LoadConfig(writeConfig(t, yaml), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.Equal(t, ":8083", cfg.RESTAddr)
+}
+
+func TestLoadConfig_RESTAddrOptional(t *testing.T) {
+	// 省略 rest_addr 时 LoadConfig 应成功，RESTAddr 为空（不起 REST 向后兼容）。
+	yaml := `
+database_dsn: "postgres://localhost/sydom"
+redis_addr: "localhost:6379"
+admin_addr: ":8081"
+sync_addr: ":8082"
+root_principal: "root@sydom"
+`
+	cfg, err := app.LoadConfig(writeConfig(t, yaml), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.Equal(t, "", cfg.RESTAddr)
+}

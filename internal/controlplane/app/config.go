@@ -18,6 +18,7 @@ type Config struct {
 	RedisAddr         string
 	AdminAddr         string
 	SyncAddr          string
+	RESTAddr          string // 空=不起 REST，向后兼容
 	RootPrincipal     string
 	HeartbeatInterval time.Duration
 	RelayPollInterval time.Duration
@@ -31,6 +32,7 @@ type fileConfig struct {
 	RedisAddr         string `yaml:"redis_addr"`
 	AdminAddr         string `yaml:"admin_addr"`
 	SyncAddr          string `yaml:"sync_addr"`
+	RESTAddr          string `yaml:"rest_addr"`
 	RootPrincipal     string `yaml:"root_principal"`
 	HeartbeatInterval string `yaml:"heartbeat_interval"`
 	RelayPollInterval string `yaml:"relay_poll_interval"`
@@ -53,6 +55,7 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 		RedisAddr:     firstNonEmpty(getenv("SYDOM_REDIS_ADDR"), fc.RedisAddr),
 		AdminAddr:     fc.AdminAddr,
 		SyncAddr:      fc.SyncAddr,
+		RESTAddr:      fc.RESTAddr,
 		RootPrincipal: fc.RootPrincipal,
 	}
 	if cfg.HeartbeatInterval, err = parseDurationDefault(fc.HeartbeatInterval, 30*time.Second); err != nil {

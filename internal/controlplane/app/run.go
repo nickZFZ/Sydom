@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
@@ -20,12 +22,14 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/outbox"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policysync"
+	"github.com/nickZFZ/Sydom/internal/controlplane/restgw"
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
 	"github.com/redis/go-redis/v9"
 )
 
-// Run 装配并运行控制面，阻塞至 ctx 取消后优雅关闭。adminLis/syncLis 由调用方注入（测试用 :0）。
-func Run(ctx context.Context, cfg Config, adminLis, syncLis net.Listener, logger *slog.Logger) error {
+// Run 装配并运行控制面，阻塞至 ctx 取消后优雅关闭。adminLis/syncLis/restLis 由调用方注入（测试用 :0）。
+// restLis 为 nil 时不起 REST 监听器，向后兼容。
+func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis net.Listener, logger *slog.Logger) error {
 	db, err := sql.Open("postgres", cfg.DatabaseDSN)
 	if err != nil {
 		return fmt.Errorf("open db: %w", err)
@@ -59,7 +63,8 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis net.Listener, logger
 	}
 
 	mgr := policy.NewPolicyManager(db, outbox.NewSink())
-	adminSrv := mgmt.NewGRPCServer(mgmt.NewAdminServer(db, mgr, cfg.MasterKey), operatorResolver, enforcer, db)
+	adminSrv := mgmt.NewAdminServer(db, mgr, cfg.MasterKey)
+	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db)
 	syncCore := policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval}, mgr)
 	syncSrv := policysync.NewGRPCServer(syncCore, appResolver)
 	pub := broadcast.NewRedisPublisher(rdb)
@@ -72,7 +77,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis net.Listener, logger
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var wg sync.WaitGroup
-	errCh := make(chan error, 4)
+	errCh := make(chan error, 5)
 	launch := func(name string, fn func() error) {
 		wg.Add(1)
 		go func() {
@@ -83,14 +88,31 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis net.Listener, logger
 			}
 		}()
 	}
-	launch("admin-serve", func() error { return adminSrv.Serve(adminLis) })
+	launch("admin-serve", func() error { return grpcSrv.Serve(adminLis) })
 	launch("sync-serve", func() error { return syncSrv.Serve(syncLis) })
 	launch("relay", func() error { return outbox.RunRelayLoop(runCtx, db, pub, cfg.RelayPollInterval) })
 	launch("dispatch", func() error { return syncCore.RunDispatchLoop(runCtx, sub) })
 
+	var restSrv *http.Server
+	if restLis != nil {
+		restSrv = &http.Server{Handler: restgw.NewHandler(adminSrv, operatorResolver, enforcer, db, logger)}
+		logger.Info("control plane REST enabled", "rest_addr", restLis.Addr().String())
+		launch("rest-serve", func() error {
+			if e := restSrv.Serve(restLis); e != nil && !errors.Is(e, http.ErrServerClosed) {
+				return e
+			}
+			return nil
+		})
+	}
+
 	<-runCtx.Done()
 	logger.Info("control plane shutting down")
-	adminSrv.GracefulStop()
+	if restSrv != nil {
+		shutdownCtx, scancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer scancel()
+		_ = restSrv.Shutdown(shutdownCtx)
+	}
+	grpcSrv.GracefulStop()
 	syncSrv.GracefulStop()
 	wg.Wait()
 	close(errCh)
@@ -122,11 +144,19 @@ func Main() int {
 		logger.Error("listen sync", "err", err)
 		return 1
 	}
+	var restLis net.Listener
+	if cfg.RESTAddr != "" {
+		restLis, err = net.Listen("tcp", cfg.RESTAddr)
+		if err != nil {
+			logger.Error("listen rest", "err", err)
+			return 1
+		}
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if err := Run(ctx, cfg, adminLis, syncLis, logger); err != nil {
+	if err := Run(ctx, cfg, adminLis, syncLis, restLis, logger); err != nil {
 		logger.Error("run", "err", err)
 		return 1
 	}
