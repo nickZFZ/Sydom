@@ -49,19 +49,9 @@ func authenticate(ctx context.Context, resolver SecretResolver, method string, n
 	return WithAppID(ctx, appID), nil
 }
 
-// validAppID 限定 app_id 为 ASCII 可打印且非空格字符（0x21..0x7e）。
-// 拒绝控制字符/换行（防签名串分隔符歧义）、空格、以及全部非 ASCII
-// （挡零宽空格 U+200B、方向覆盖 U+202E 等 Unicode 同形字欺骗）。
+// validAppID 委托 ValidPrincipal（gRPC app_id 与 REST principal 同一字符集校验）。
 func validAppID(s string) bool {
-	if s == "" {
-		return false
-	}
-	for _, r := range s {
-		if r < 0x21 || r > 0x7e {
-			return false
-		}
-	}
-	return true
+	return ValidPrincipal(s)
 }
 
 func first(md metadata.MD, key string) string {
