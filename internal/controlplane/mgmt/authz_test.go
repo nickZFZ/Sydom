@@ -6,6 +6,7 @@ import (
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
+	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 	"github.com/nickZFZ/Sydom/internal/dbtest"
@@ -125,4 +126,50 @@ func TestStatusInterceptor_BlocksWriteOnDisabledApp(t *testing.T) {
 		&grpc.UnaryServerInfo{FullMethod: "/sydom.admin.v1.AdminService/GrantPermission"},
 		func(ctx context.Context, req any) (any, error) { return nil, nil })
 	require.Equal(t, codes.FailedPrecondition, status.Code(err))
+}
+
+func TestAuthorizeRule_AppDomainAndDeny(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	ctx := context.Background()
+
+	opID, _ := adminauthz.InsertOperator(ctx, db, "alice", []byte("x"))
+	roleID, _ := adminauthz.InsertRole(ctx, db, "r", "n")
+	domain := mgmt.DomainOfAppID(appID)
+	require.NoError(t, adminauthz.InsertRoleGrant(ctx, db, roleID, domain, "grant", "create"))
+	require.NoError(t, adminauthz.InsertSubjectRole(ctx, db, opID, roleID, domain))
+	enf, err := adminauthz.NewEnforcer(db)
+	require.NoError(t, err)
+
+	const method = "/sydom.admin.v1.AdminService/GrantPermission"
+	// 命中域：返回注入 operator 的 ctx，无错。
+	newCtx, err := mgmt.AuthorizeRule(ctx, enf, method, "alice",
+		&adminv1.GrantPermissionRequest{AppId: uint64(appID), RoleId: roleID, PermissionId: 1, Eft: "allow"})
+	require.NoError(t, err)
+	require.Equal(t, "alice", cp.OperatorFromContext(newCtx))
+	// 跨域：PermissionDenied。
+	_, err = mgmt.AuthorizeRule(ctx, enf, method, "alice",
+		&adminv1.GrantPermissionRequest{AppId: 999, RoleId: roleID, PermissionId: 1, Eft: "allow"})
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
+	// 未知方法：PermissionDenied。
+	_, err = mgmt.AuthorizeRule(ctx, enf, "/sydom.admin.v1.AdminService/Bogus", "alice",
+		&adminv1.GrantPermissionRequest{AppId: uint64(appID)})
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
+}
+
+func TestCheckStatusWrite_BlocksDisabledAndPassesReads(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	ctx := context.Background()
+
+	// 写规则 + 停用 app → FailedPrecondition。
+	_, err := db.Exec(`UPDATE application SET status=2 WHERE id=$1`, appID)
+	require.NoError(t, err)
+	err = mgmt.CheckStatusWrite(ctx, db, "/sydom.admin.v1.AdminService/GrantPermission",
+		&adminv1.GrantPermissionRequest{AppId: uint64(appID)})
+	require.Equal(t, codes.FailedPrecondition, status.Code(err))
+
+	// 读规则（非 isWrite）：直接放行，不查 status。
+	require.NoError(t, mgmt.CheckStatusWrite(ctx, db, "/sydom.admin.v1.AdminService/ListRoles",
+		&adminv1.ListRolesRequest{AppId: uint64(appID)}))
 }

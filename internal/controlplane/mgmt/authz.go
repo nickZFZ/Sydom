@@ -59,54 +59,76 @@ var ruleTable = map[string]rpcRule{
 // DomainOfAppID 把 app_id 转成 casbin domain 字符串。
 func DomainOfAppID(appID int64) string { return strconv.FormatInt(appID, 10) }
 
-// AuthzUnaryInterceptor 据 ruleTable + 请求 app_id 做元-RBAC 校验，并注入 operator 到 cp.WithOperator。
+// AuthorizeRule 据 ruleTable[fullMethod] 计算授权域（system→"*"，否则取 req 的 app_id），
+// 调 enf.Enforce；成功返回注入 operator 的 ctx，失败返回 gRPC status 错误。
+// gRPC 拦截器与 REST 网关共用，ruleTable 为唯一真相源。
+func AuthorizeRule(ctx context.Context, enf *adminauthz.Enforcer, fullMethod, principal string, req any) (context.Context, error) {
+	rule, known := ruleTable[fullMethod]
+	if !known {
+		return nil, status.Error(codes.PermissionDenied, "unknown method")
+	}
+	domain := "*"
+	if !rule.system {
+		g, ok := req.(appIDGetter)
+		if !ok {
+			return nil, status.Error(codes.Internal, "request missing app_id")
+		}
+		domain = DomainOfAppID(int64(g.GetAppId()))
+	}
+	allow, err := enf.Enforce(ctx, principal, domain, rule.resource, rule.action)
+	// TODO(observability): Enforce 内部错误（DB/策略加载故障）当前与"权限不足"一并 fail-close 为 PermissionDenied；接入日志/metric 后在此区分并记录。
+	if err != nil || !allow {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+	return cp.WithOperator(ctx, principal), nil
+}
+
+// CheckStatusWrite 对"具体 app 的业务策略写"（isWrite 规则）校验目标 app 未停用；
+// 非写规则或无 app_id 的请求直接放行。返回 gRPC status 错误。
+// 调用契约：必须在 AuthorizeRule 之后执行——本函数不校验 app 归属，若先于鉴权，
+// 会借 NotFound/FailedPrecondition 差异泄露 app 存在性。
+func CheckStatusWrite(ctx context.Context, db *sql.DB, fullMethod string, req any) error {
+	rule, known := ruleTable[fullMethod]
+	if !known || !rule.isWrite {
+		return nil
+	}
+	g, ok := req.(appIDGetter)
+	if !ok {
+		return nil
+	}
+	var st int16
+	err := db.QueryRowContext(ctx,
+		`SELECT status FROM application WHERE id=$1`, int64(g.GetAppId())).Scan(&st)
+	if err != nil {
+		return status.Error(codes.NotFound, "unknown application")
+	}
+	if st != 1 {
+		return status.Error(codes.FailedPrecondition, "application disabled")
+	}
+	return nil
+}
+
+// AuthzUnaryInterceptor 是 AuthorizeRule 的 gRPC 薄封装：先取认证注入的 principal。
 func AuthzUnaryInterceptor(enf *adminauthz.Enforcer) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		principal, ok := auth.AppIDFromContext(ctx)
 		if !ok {
 			return nil, status.Error(codes.Unauthenticated, "missing operator identity")
 		}
-		rule, known := ruleTable[info.FullMethod]
-		if !known {
-			return nil, status.Error(codes.PermissionDenied, "unknown method")
+		newCtx, err := AuthorizeRule(ctx, enf, info.FullMethod, principal, req)
+		if err != nil {
+			return nil, err
 		}
-		domain := "*"
-		if !rule.system {
-			g, ok := req.(appIDGetter)
-			if !ok {
-				return nil, status.Error(codes.Internal, "request missing app_id")
-			}
-			domain = DomainOfAppID(int64(g.GetAppId()))
-		}
-		allow, err := enf.Enforce(ctx, principal, domain, rule.resource, rule.action)
-		// TODO(observability): Enforce 内部错误（DB/策略加载故障）当前与"权限不足"一并 fail-close 为 PermissionDenied；接入日志/metric 后在此区分并记录。
-		if err != nil || !allow {
-			return nil, status.Error(codes.PermissionDenied, "permission denied")
-		}
-		return handler(cp.WithOperator(ctx, principal), req)
+		return handler(newCtx, req)
 	}
 }
 
-// StatusWriteUnaryInterceptor 对"具体 app 的业务策略写"拦截 disabled app。
+// StatusWriteUnaryInterceptor 是 CheckStatusWrite 的 gRPC 薄封装。
 // 装配契约：必须排在 AuthzUnaryInterceptor 之后——本拦截器不校验 app 归属，若先于鉴权执行，会借 NotFound/FailedPrecondition 差异泄露 app 存在性。
 func StatusWriteUnaryInterceptor(db *sql.DB) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		rule, known := ruleTable[info.FullMethod]
-		if !known || !rule.isWrite {
-			return handler(ctx, req)
-		}
-		g, ok := req.(appIDGetter)
-		if !ok {
-			return handler(ctx, req)
-		}
-		var st int16
-		err := db.QueryRowContext(ctx,
-			`SELECT status FROM application WHERE id=$1`, int64(g.GetAppId())).Scan(&st)
-		if err != nil {
-			return nil, status.Error(codes.NotFound, "unknown application")
-		}
-		if st != 1 {
-			return nil, status.Error(codes.FailedPrecondition, "application disabled")
+		if err := CheckStatusWrite(ctx, db, info.FullMethod, req); err != nil {
+			return nil, err
 		}
 		return handler(ctx, req)
 	}
