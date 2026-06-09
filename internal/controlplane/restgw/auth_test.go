@@ -66,6 +66,12 @@ func TestAuthenticateHTTP_Failures(t *testing.T) {
 	_, err = authenticateHTTP(bad, nil, res, now)
 	require.Equal(t, codes.Unauthenticated, status.Code(err))
 
+	// 非数字时间戳（ParseInt 失败）→ 401。
+	notNum := signedReqTS(t, secret, "root", "GET", "/v1/applications", nil, now.Unix())
+	notNum.Header.Set(auth.HdrTimestamp, "not-a-number")
+	_, err = authenticateHTTP(notNum, nil, res, now)
+	require.Equal(t, codes.Unauthenticated, status.Code(err))
+
 	// 时间偏移越界 → 401。
 	stale := signedReqTS(t, secret, "root", "GET", "/v1/applications", nil, now.Add(-10*time.Minute).Unix())
 	_, err = authenticateHTTP(stale, nil, res, now)
