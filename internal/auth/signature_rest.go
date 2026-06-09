@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// REST-HMAC HTTP 头部（小写 canonical；net/http Header.Get 大小写不敏感）。
+// REST-HMAC HTTP 头部（Title-Case canonical，与 net/http Header.Get/Set 规范一致；大小写不敏感）。
 const (
 	HdrPrincipal = "X-Sydom-Principal"
 	HdrTimestamp = "X-Sydom-Timestamp"
@@ -20,6 +20,7 @@ const (
 //	<principal>\n<unix_ts>\n<HTTP-METHOD>\n<request-target>\n<hex(sha256(body))>
 //
 // 绑定 method+target+body 防跨端点/改 body 重放（区别于 gRPC 的方法绑定串）。
+// 调用约定：target 须为 req.URL.RequestURI()（含 query string），httpMethod 须为 req.Method（全大写 HTTP token）。
 func signingStringREST(principal string, unixTS int64, httpMethod, target, bodySHA256Hex string) string {
 	var b strings.Builder
 	b.WriteString(principal)
@@ -42,7 +43,7 @@ func SignREST(secret []byte, principal string, unixTS int64, httpMethod, target,
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// VerifyREST 以常量时间比对 REST 签名（防时序侧信道）。gotHex 须为小写 hex。
+// VerifyREST 以常量时间比对 REST 签名（防时序侧信道）。gotHex 须为小写 hex（与 SignREST 输出一致）；大写或非 hex 一律判定不匹配。
 func VerifyREST(secret []byte, principal string, unixTS int64, httpMethod, target, bodySHA256Hex, gotHex string) bool {
 	want := SignREST(secret, principal, unixTS, httpMethod, target, bodySHA256Hex)
 	return hmac.Equal([]byte(want), []byte(gotHex))
