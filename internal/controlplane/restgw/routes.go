@@ -132,7 +132,7 @@ func appRoutes() []route {
 					return nil, err
 				}
 				m.AppId = id
-				m.Code = r.PathValue("code") // 路径权威：code 由路径决定（ServeMux 单段，天然无 '/'）
+				m.Code = r.PathValue("code") // 路径权威：code 由路径段决定（%2F 会被解码进段内，但 code 仅作权限码字符串、不参与鉴权域判定，无越权风险）
 				return m, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
