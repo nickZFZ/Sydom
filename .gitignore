@@ -32,3 +32,6 @@ out/
 /*.png
 .playwright-mcp/
 /casbin/
+
+# superpowers visual-companion brainstorm prototypes
+.superpowers/
