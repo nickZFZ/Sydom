@@ -1,0 +1,14 @@
+{{define "title"}}继承 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">{{template "appnav" .}}
+<section><h2>角色继承</h2>
+<form method="post" action="/apps/{{.AppID}}/inheritances" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<input name="child_role_id" placeholder="child_role_id" required><input name="parent_role_id" placeholder="parent_role_id" required>
+<button>+ 新增继承</button></form>
+<table><thead><tr><th>ID</th><th>ChildRoleId</th><th>ParentRoleId</th><th></th></tr></thead><tbody>
+{{range .Inheritances}}<tr><td>{{.InheritanceId}}</td><td>{{.ChildRoleId}}</td><td>{{.ParentRoleId}}</td>
+<td><form method="post" action="/apps/{{$.AppID}}/inheritances/remove" onsubmit="return confirm('移除？')">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input type="hidden" name="child_role_id" value="{{.ChildRoleId}}"><input type="hidden" name="parent_role_id" value="{{.ParentRoleId}}">
+<button class="danger">移除</button></form></td></tr>{{end}}
+</tbody></table></section></div>{{end}}

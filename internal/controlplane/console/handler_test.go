@@ -138,3 +138,95 @@ func TestRoles_CSRFMissing_Forbidden(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusForbidden, resp.StatusCode) // CSRF 失败 → PermissionDenied → 403
 }
+
+// mustCreateRole 经 HTTP 建角色后查 DB 取自增 id（role 表 (app_id, code) 唯一）。
+func mustCreateRole(t *testing.T, c *http.Client, ts *httptest.Server, db *sql.DB, csrf string, appID uint64, code, name string) int64 {
+	t.Helper()
+	form := url.Values{"csrf_token": {csrf}, "code": {code}, "name": {name}}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/roles", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+	var id int64
+	require.NoError(t, db.QueryRow(`SELECT id FROM role WHERE app_id=$1 AND code=$2`, appID, code).Scan(&id))
+	return id
+}
+
+// mustCreatePermission 经 HTTP 建权限点后查 DB 取自增 id（permission 表 (app_id, code) 唯一）。
+func mustCreatePermission(t *testing.T, c *http.Client, ts *httptest.Server, db *sql.DB, csrf string, appID uint64, code string) int64 {
+	t.Helper()
+	form := url.Values{"csrf_token": {csrf}, "code": {code}, "resource": {"order"}, "action": {"read"}, "ptype": {"act"}, "name": {code}}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/permissions", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+	var id int64
+	require.NoError(t, db.QueryRow(`SELECT id FROM permission WHERE app_id=$1 AND code=$2`, appID, code).Scan(&id))
+	return id
+}
+
+func TestGrants_GrantThenList(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	roleID := mustCreateRole(t, c, ts, db, csrf, uint64(appID), "manager", "经理")
+	permID := mustCreatePermission(t, c, ts, db, csrf, uint64(appID), "order.read")
+
+	form := url.Values{"csrf_token": {csrf}, "role_id": {fmt.Sprint(roleID)}, "permission_id": {fmt.Sprint(permID)}, "eft": {"allow"}}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/grants", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode) // PRG
+
+	page, err := c.Get(ts.URL + fmt.Sprintf("/apps/%d/grants", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, fmt.Sprint(roleID))
+	require.Contains(t, body, fmt.Sprint(permID))
+}
+
+func TestBindings_BindThenList(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	roleID := mustCreateRole(t, c, ts, db, csrf, uint64(appID), "manager", "经理")
+
+	form := url.Values{"csrf_token": {csrf}, "user_id": {"alice@corp"}, "role_id": {fmt.Sprint(roleID)}}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/bindings", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	page, err := c.Get(ts.URL + fmt.Sprintf("/apps/%d/bindings", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, "alice@corp")
+}
+
+func TestInheritances_AddThenList(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	childID := mustCreateRole(t, c, ts, db, csrf, uint64(appID), "clerk", "店员")
+	parentID := mustCreateRole(t, c, ts, db, csrf, uint64(appID), "manager", "经理")
+
+	form := url.Values{"csrf_token": {csrf}, "child_role_id": {fmt.Sprint(childID)}, "parent_role_id": {fmt.Sprint(parentID)}}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/inheritances", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	page, err := c.Get(ts.URL + fmt.Sprintf("/apps/%d/inheritances", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, fmt.Sprint(childID))
+	require.Contains(t, body, fmt.Sprint(parentID))
+}
+
+func TestGrants_CSRFMissing_Forbidden(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	roleID := mustCreateRole(t, c, ts, db, csrf, uint64(appID), "manager", "经理")
+	permID := mustCreatePermission(t, c, ts, db, csrf, uint64(appID), "order.read")
+
+	form := url.Values{"role_id": {fmt.Sprint(roleID)}, "permission_id": {fmt.Sprint(permID)}, "eft": {"allow"}} // 无 csrf_token
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/grants", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
