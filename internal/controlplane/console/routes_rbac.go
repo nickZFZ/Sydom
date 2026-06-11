@@ -1,8 +1,128 @@
 package console
 
-import "net/http"
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
+	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
+	"google.golang.org/protobuf/proto"
+)
 
 // registerRBAC 注册工作台角色/权限点/授权/继承/用户绑定路由。
+// 本任务（任务 5）实现 角色(List/Create/Delete) + 权限点(List/Upsert)。
 func (h *Handler) registerRBAC(mux *http.ServeMux) {
-	// TODO(任务 5/6): 实现
+	mux.HandleFunc("GET /apps/{app_id}/roles", h.listRoles)
+	mux.HandleFunc("POST /apps/{app_id}/roles", h.createRole)
+	mux.HandleFunc("POST /apps/{app_id}/roles/{role_id}/delete", h.deleteRole)
+	mux.HandleFunc("GET /apps/{app_id}/permissions", h.listPermissions)
+	mux.HandleFunc("POST /apps/{app_id}/permissions", h.upsertPermission)
+}
+
+// appListRedirect：PRG 重定向回 /apps/{app_id}/{seg}（app_id 取自 path，权威）。
+func appListRedirect(seg string) func(*http.Request) string {
+	return func(r *http.Request) string { return fmt.Sprintf("/apps/%s/%s", r.PathValue("app_id"), seg) }
+}
+
+// listRoles：读页内联范式（requireSession → path 取 app_id → 授权 → 直调 → 渲染）。
+func (h *Handler) listRoles(w http.ResponseWriter, r *http.Request) {
+	principal, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	appID, err := pathUint64(r, "app_id")
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	msg := &adminv1.ListRolesRequest{AppId: appID}
+	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListRoles", principal, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	resp, err := h.srv.ListRoles(ctx, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	h.renderPage(w, r, "roles.html", http.StatusOK, map[string]any{
+		"Nav": "apps", "AppID": appID, "Tab": "roles", "Roles": resp.Roles, "CSRF": sess.CSRF})
+}
+
+// createRole：写动作走 doWrite（CSRF → 授权 → status 闸 → 直调 → PRG）。
+func (h *Handler) createRole(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"CreateRole",
+		func(r *http.Request) (proto.Message, error) {
+			id, err := pathUint64(r, "app_id")
+			return &adminv1.CreateRoleRequest{AppId: id, Code: r.FormValue("code"), Name: r.FormValue("name")}, err
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.CreateRole(ctx, m.(*adminv1.CreateRoleRequest))
+		},
+		appListRedirect("roles"))
+}
+
+// deleteRole：app_id 先解码（错则直接返回），再 role_id；均从 path 取（path 权威）。
+func (h *Handler) deleteRole(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"DeleteRole",
+		func(r *http.Request) (proto.Message, error) {
+			appID, err := pathUint64(r, "app_id")
+			if err != nil {
+				return nil, err
+			}
+			roleID, err := pathInt64(r, "role_id")
+			return &adminv1.DeleteRoleRequest{AppId: appID, RoleId: roleID}, err
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.DeleteRole(ctx, m.(*adminv1.DeleteRoleRequest))
+		},
+		appListRedirect("roles"))
+}
+
+// listPermissions：读页内联范式（同 listRoles）。
+func (h *Handler) listPermissions(w http.ResponseWriter, r *http.Request) {
+	principal, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	appID, err := pathUint64(r, "app_id")
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListPermissions", err)
+		return
+	}
+	msg := &adminv1.ListPermissionsRequest{AppId: appID}
+	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListPermissions", principal, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListPermissions", err)
+		return
+	}
+	resp, err := h.srv.ListPermissions(ctx, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListPermissions", err)
+		return
+	}
+	h.renderPage(w, r, "permissions.html", http.StatusOK, map[string]any{
+		"Nav": "apps", "AppID": appID, "Tab": "permissions", "Permissions": resp.Permissions, "CSRF": sess.CSRF})
+}
+
+// upsertPermission：写动作走 doWrite。app_id 从 path 取；其余字段取表单。
+func (h *Handler) upsertPermission(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"UpsertPermission",
+		func(r *http.Request) (proto.Message, error) {
+			id, err := pathUint64(r, "app_id")
+			return &adminv1.UpsertPermissionRequest{
+				AppId:    id,
+				Code:     r.FormValue("code"),
+				Resource: r.FormValue("resource"),
+				Action:   r.FormValue("action"),
+				Ptype:    r.FormValue("ptype"),
+				Name:     r.FormValue("name"),
+			}, err
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.UpsertPermission(ctx, m.(*adminv1.UpsertPermissionRequest))
+		},
+		appListRedirect("permissions"))
 }

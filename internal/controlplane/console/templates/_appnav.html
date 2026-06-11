@@ -1,0 +1,9 @@
+{{define "appnav"}}
+<aside class="appnav"><div class="appname">App #{{.AppID}}</div>
+<a href="/apps/{{.AppID}}/roles" {{if eq .Tab "roles"}}class="active"{{end}}>角色</a>
+<a href="/apps/{{.AppID}}/permissions" {{if eq .Tab "permissions"}}class="active"{{end}}>权限点</a>
+<a href="/apps/{{.AppID}}/grants" {{if eq .Tab "grants"}}class="active"{{end}}>授权</a>
+<a href="/apps/{{.AppID}}/inheritances" {{if eq .Tab "inheritances"}}class="active"{{end}}>继承</a>
+<a href="/apps/{{.AppID}}/bindings" {{if eq .Tab "bindings"}}class="active"{{end}}>用户</a>
+<a href="/apps/{{.AppID}}/data-policies" {{if eq .Tab "datapolicies"}}class="active"{{end}}>数据策略</a>
+</aside>{{end}}

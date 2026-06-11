@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -22,7 +23,7 @@ import (
 )
 
 // newConsole 起一套真依赖的 Console（root 已播种为超管）+ httptest server。
-func newConsole(t *testing.T) (*httptest.Server, *RedisStore) {
+func newConsole(t *testing.T) (*httptest.Server, *RedisStore, *sql.DB) {
 	t.Helper()
 	dsn := dbtest.MigratedDSN(t) // 注：dbtest 已 blank-import lib/pq，驱动已注册
 	db, err := sql.Open("postgres", dsn)
@@ -44,7 +45,7 @@ func newConsole(t *testing.T) (*httptest.Server, *RedisStore) {
 	h := NewHandler(srv, resolver, enf, db, store, testLogger(t), false)
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)
-	return ts, store
+	return ts, store, db
 }
 
 // loginClient 返回带会话 cookie 的 client。
@@ -59,6 +60,33 @@ func loginClient(t *testing.T, ts *httptest.Server, principal, secret string) *h
 	return c
 }
 
+// loginAndCSRF 登录并返回 (client, csrf)：从 jar 取会话 id，再向 store 拿该会话的 CSRF。
+// store==nil 时只返回 client（用于「故意不带 csrf」的否定用例）。
+func loginAndCSRF(t *testing.T, ts *httptest.Server, store *RedisStore, principal, secret string) (*http.Client, string) {
+	t.Helper()
+	jar, _ := cookiejar.New(nil)
+	c := &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	form := url.Values{"principal": {principal}, "secret": {secret}}
+	resp, err := c.PostForm(ts.URL+"/login", form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	u, _ := url.Parse(ts.URL)
+	var sessionID string
+	for _, ck := range jar.Cookies(u) {
+		if ck.Name == sessionCookieName {
+			sessionID = ck.Value
+		}
+	}
+	require.NotEmpty(t, sessionID)
+	if store == nil {
+		return c, ""
+	}
+	sess, err := store.Get(context.Background(), sessionID)
+	require.NoError(t, err)
+	return c, sess.CSRF
+}
+
 func readBody(t *testing.T, resp *http.Response) string {
 	t.Helper()
 	defer resp.Body.Close()
@@ -68,7 +96,7 @@ func readBody(t *testing.T, resp *http.Response) string {
 }
 
 func TestDashboard_SuperAdmin_ListsApps(t *testing.T) {
-	ts, _ := newConsole(t)
+	ts, _, _ := newConsole(t)
 	c := loginClient(t, ts, "root@sydom", "rootsecret")
 	resp, err := c.Get(ts.URL + "/")
 	require.NoError(t, err)
@@ -78,10 +106,35 @@ func TestDashboard_SuperAdmin_ListsApps(t *testing.T) {
 }
 
 func TestDashboard_NoSession_RedirectsLogin(t *testing.T) {
-	ts, _ := newConsole(t)
+	ts, _, _ := newConsole(t)
 	c := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	resp, err := c.Get(ts.URL + "/")
 	require.NoError(t, err)
 	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
 	require.Equal(t, "/login", resp.Header.Get("Location"))
+}
+
+func TestRoles_CreateThenList(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db) // 每个测试库只可调一次
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	form := url.Values{"csrf_token": {csrf}, "code": {"manager"}, "name": {"经理"}}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/roles", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode) // PRG
+	page, err := c.Get(ts.URL + fmt.Sprintf("/apps/%d/roles", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, "manager")
+	require.Contains(t, body, "经理")
+}
+
+func TestRoles_CSRFMissing_Forbidden(t *testing.T) {
+	ts, _, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, _ := loginAndCSRF(t, ts, nil, "root@sydom", "rootsecret")
+	form := url.Values{"code": {"x"}} // 无 csrf_token
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/roles", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode) // CSRF 失败 → PermissionDenied → 403
 }
