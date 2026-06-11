@@ -86,5 +86,8 @@ func (s *RedisStore) Get(ctx context.Context, id string) (Session, error) {
 }
 
 func (s *RedisStore) Delete(ctx context.Context, id string) error {
+	if id == "" {
+		return nil // 空 id 无会话可删，幂等返回（与 Get 空 id 短路对称）
+	}
 	return s.rdb.Del(ctx, s.key(id)).Err()
 }

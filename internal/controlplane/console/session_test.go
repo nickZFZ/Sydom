@@ -43,6 +43,12 @@ func TestRedisStore_UnknownID(t *testing.T) {
 	require.ErrorIs(t, err, ErrNoSession)
 }
 
+func TestRedisStore_EmptyID(t *testing.T) {
+	s := newTestStore(t, time.Minute)
+	_, err := s.Get(context.Background(), "")
+	require.ErrorIs(t, err, ErrNoSession)
+}
+
 func TestRedisStore_Expiry(t *testing.T) {
 	s := newTestStore(t, 50*time.Millisecond)
 	ctx := context.Background()
