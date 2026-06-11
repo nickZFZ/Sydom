@@ -21,9 +21,9 @@ type secretResolver interface {
 // Handler 是 Console BFF 的核心结构，持有所有依赖。
 // srv/enf/db 本任务不调用，task4 的 NewHandler 会填。
 type Handler struct {
-	srv          *mgmt.AdminServer     // task4 用
-	enf          *adminauthz.Enforcer  // task4 用
-	db           *sql.DB               // task4 用
+	srv          *mgmt.AdminServer    // task4 用
+	enf          *adminauthz.Enforcer // task4 用
+	db           *sql.DB              // task4 用
 	resolver     secretResolver
 	sessions     *RedisStore
 	logger       *slog.Logger
