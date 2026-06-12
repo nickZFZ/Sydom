@@ -18,6 +18,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
+	"github.com/nickZFZ/Sydom/internal/controlplane/console"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 	"github.com/nickZFZ/Sydom/internal/controlplane/outbox"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
@@ -27,9 +28,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Run 装配并运行控制面，阻塞至 ctx 取消后优雅关闭。adminLis/syncLis/restLis 由调用方注入（测试用 :0）。
-// restLis 为 nil 时不起 REST 监听器，向后兼容。
-func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis net.Listener, logger *slog.Logger) error {
+// Run 装配并运行控制面，阻塞至 ctx 取消后优雅关闭。adminLis/syncLis/restLis/consoleLis 由调用方注入（测试用 :0）。
+// restLis 为 nil 时不起 REST 监听器，consoleLis 为 nil 时不起 Console 监听器，均向后兼容。
+func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis net.Listener, logger *slog.Logger) error {
 	db, err := sql.Open("postgres", cfg.DatabaseDSN)
 	if err != nil {
 		return fmt.Errorf("open db: %w", err)
@@ -77,7 +78,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis net.Listene
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var wg sync.WaitGroup
-	errCh := make(chan error, 5)
+	errCh := make(chan error, 6)
 	launch := func(name string, fn func() error) {
 		wg.Add(1)
 		go func() {
@@ -105,12 +106,31 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis net.Listene
 		})
 	}
 
+	var consoleSrv *http.Server
+	if consoleLis != nil {
+		store := console.NewRedisStore(rdb, cfg.ConsoleSessionTTL)
+		consoleSrv = &http.Server{Handler: console.NewHandler(
+			adminSrv, operatorResolver, enforcer, db, store, logger, !cfg.ConsoleCookieInsecure)}
+		logger.Info("control plane Console enabled", "console_addr", consoleLis.Addr().String())
+		launch("console-serve", func() error {
+			if e := consoleSrv.Serve(consoleLis); e != nil && !errors.Is(e, http.ErrServerClosed) {
+				return e
+			}
+			return nil
+		})
+	}
+
 	<-runCtx.Done()
 	logger.Info("control plane shutting down")
 	if restSrv != nil {
 		shutdownCtx, scancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer scancel()
 		_ = restSrv.Shutdown(shutdownCtx)
+	}
+	if consoleSrv != nil {
+		shutdownCtx, scancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer scancel()
+		_ = consoleSrv.Shutdown(shutdownCtx)
 	}
 	grpcSrv.GracefulStop()
 	syncSrv.GracefulStop()
@@ -152,11 +172,19 @@ func Main() int {
 			return 1
 		}
 	}
+	var consoleLis net.Listener
+	if cfg.ConsoleAddr != "" {
+		consoleLis, err = net.Listen("tcp", cfg.ConsoleAddr)
+		if err != nil {
+			logger.Error("listen console", "err", err)
+			return 1
+		}
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if err := Run(ctx, cfg, adminLis, syncLis, restLis, logger); err != nil {
+	if err := Run(ctx, cfg, adminLis, syncLis, restLis, consoleLis, logger); err != nil {
 		logger.Error("run", "err", err)
 		return 1
 	}

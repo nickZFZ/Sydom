@@ -57,7 +57,7 @@ func startControlPlane(t *testing.T, dsn, redisAddr string) (adminAddr, syncAddr
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	go func() { _ = cpapp.Run(ctx, cfg, adminLis, syncLis, nil, logger) }()
+	go func() { _ = cpapp.Run(ctx, cfg, adminLis, syncLis, nil, nil, logger) }()
 	return adminLis.Addr().String(), syncLis.Addr().String(), rootSecret
 }
 

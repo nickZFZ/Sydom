@@ -47,11 +47,13 @@ func TestRun_WiringEndToEnd(t *testing.T) {
 	require.NoError(t, err)
 	restLis, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
+	consoleLis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	go func() { done <- app.Run(ctx, cfg, adminLis, syncLis, restLis, logger) }()
+	go func() { done <- app.Run(ctx, cfg, adminLis, syncLis, restLis, consoleLis, logger) }()
 
 	// gRPC 链贯通（既有断言）。
 	conn, err := grpc.NewClient(adminLis.Addr().String(),
@@ -83,6 +85,17 @@ func TestRun_WiringEndToEnd(t *testing.T) {
 		defer resp.Body.Close()
 		return resp.StatusCode == http.StatusOK
 	}, 10*time.Second, 100*time.Millisecond, "REST 监听器应走通认证链返回 200")
+
+	// Console 监听器起来：未认证 GET /login → 200 登录页。
+	consoleBase := "http://" + consoleLis.Addr().String()
+	require.Eventually(t, func() bool {
+		resp, err := http.DefaultClient.Get(consoleBase + "/login")
+		if err != nil {
+			return false
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode == http.StatusOK
+	}, 10*time.Second, 100*time.Millisecond, "Console 监听器应返回登录页 200")
 
 	// 优雅关闭。
 	cancel()

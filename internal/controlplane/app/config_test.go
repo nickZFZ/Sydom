@@ -134,3 +134,37 @@ root_principal: "root@sydom"
 	require.NoError(t, err)
 	require.Equal(t, "", cfg.RESTAddr)
 }
+
+func TestLoadConfig_ConsoleOptional(t *testing.T) {
+	// console_addr omitted → LoadConfig succeeds, ConsoleAddr=="", ConsoleSessionTTL defaults to 30m.
+	yaml := `
+database_dsn: "postgres://localhost/sydom"
+redis_addr: "localhost:6379"
+admin_addr: ":8081"
+sync_addr: ":8082"
+root_principal: "root@sydom"
+`
+	cfg, err := app.LoadConfig(writeConfig(t, yaml), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.Equal(t, "", cfg.ConsoleAddr)
+	require.Equal(t, 30*time.Minute, cfg.ConsoleSessionTTL)
+	require.False(t, cfg.ConsoleCookieInsecure)
+}
+
+func TestLoadConfig_ConsoleConfigured(t *testing.T) {
+	yaml := `
+database_dsn: "postgres://localhost/sydom"
+redis_addr: "localhost:6379"
+admin_addr: ":8081"
+sync_addr: ":8082"
+console_addr: ":8084"
+console_session_ttl: "15m"
+console_cookie_insecure: true
+root_principal: "root@sydom"
+`
+	cfg, err := app.LoadConfig(writeConfig(t, yaml), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.Equal(t, ":8084", cfg.ConsoleAddr)
+	require.Equal(t, 15*time.Minute, cfg.ConsoleSessionTTL)
+	require.True(t, cfg.ConsoleCookieInsecure)
+}

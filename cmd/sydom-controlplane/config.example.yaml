@@ -5,6 +5,10 @@ sync_addr: ":8082"
 root_principal: "root@sydom"
 heartbeat_interval: "30s"
 relay_poll_interval: "1s"
+# Console（服务端 BFF Web 控制台）可选；省略 console_addr 则不启用。
+# console_addr: ":8084"
+# console_session_ttl: "30m"        # 会话/CSRF 有效期，默认 30m
+# console_cookie_insecure: false    # true 仅用于本地明文 HTTP 调试（生产保持 false）
 # 敏感项只走环境变量（不写本文件）：
 #   SYDOM_MASTER_KEY  = base64(32 字节 AES-256 主密钥)
 #   SYDOM_ROOT_SECRET = root operator 初始 HMAC 密钥

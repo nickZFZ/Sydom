@@ -23,6 +23,10 @@ type Config struct {
 	HeartbeatInterval time.Duration
 	RelayPollInterval time.Duration
 
+	ConsoleAddr           string        // 空=不起 Console，向后兼容
+	ConsoleSessionTTL     time.Duration // 默认 30m
+	ConsoleCookieInsecure bool          // true=允许非 HTTPS 下发 cookie（本地/明文测试）
+
 	MasterKey  []byte // env SYDOM_MASTER_KEY（base64，解码须 32 字节）
 	RootSecret []byte // env SYDOM_ROOT_SECRET（原始字节）
 }
@@ -36,6 +40,10 @@ type fileConfig struct {
 	RootPrincipal     string `yaml:"root_principal"`
 	HeartbeatInterval string `yaml:"heartbeat_interval"`
 	RelayPollInterval string `yaml:"relay_poll_interval"`
+
+	ConsoleAddr           string `yaml:"console_addr"`
+	ConsoleSessionTTL     string `yaml:"console_session_ttl"`
+	ConsoleCookieInsecure bool   `yaml:"console_cookie_insecure"`
 }
 
 // LoadConfig 读 YAML + env 覆盖密钥/可选项 + 校验（任一不满足 fail-close 返错）。
@@ -57,12 +65,18 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 		SyncAddr:      fc.SyncAddr,
 		RESTAddr:      fc.RESTAddr,
 		RootPrincipal: fc.RootPrincipal,
+
+		ConsoleAddr:           fc.ConsoleAddr,
+		ConsoleCookieInsecure: fc.ConsoleCookieInsecure,
 	}
 	if cfg.HeartbeatInterval, err = parseDurationDefault(fc.HeartbeatInterval, 30*time.Second); err != nil {
 		return Config{}, fmt.Errorf("heartbeat_interval: %w", err)
 	}
 	if cfg.RelayPollInterval, err = parseDurationDefault(fc.RelayPollInterval, time.Second); err != nil {
 		return Config{}, fmt.Errorf("relay_poll_interval: %w", err)
+	}
+	if cfg.ConsoleSessionTTL, err = parseDurationDefault(fc.ConsoleSessionTTL, 30*time.Minute); err != nil {
+		return Config{}, fmt.Errorf("console_session_ttl: %w", err)
 	}
 
 	mk, err := base64.StdEncoding.DecodeString(getenv("SYDOM_MASTER_KEY"))
