@@ -31,38 +31,6 @@ func NewHandler(srv *mgmt.AdminServer, resolver secretResolver, enf *adminauthz.
 	return mux
 }
 
-// doRead 是只读页的共享管线（GET 列表/详情）：
-// 会话 → 授权 → 直调 → render（镜像 restgw serve，认证换会话、输出换 HTML）。
-//
-//	build   把请求装配为 proto（path/query 权威）；失败 → renderGRPCError。
-//	invoke  零网络跳直调 *AdminServer 对应方法。
-//	present 把响应 + 会话整理为模板数据 map。
-func (h *Handler) doRead(w http.ResponseWriter, r *http.Request, fullMethod string,
-	build func(*http.Request) (proto.Message, error),
-	invoke func(context.Context, *mgmt.AdminServer, proto.Message) (proto.Message, error),
-	page string, present func(proto.Message, Session) map[string]any) {
-	principal, sess, ok := h.requireSession(w, r)
-	if !ok {
-		return
-	}
-	msg, err := build(r)
-	if err != nil {
-		h.renderGRPCError(w, r, fullMethod, err)
-		return
-	}
-	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fullMethod, principal, msg)
-	if err != nil {
-		h.renderGRPCError(w, r, fullMethod, err)
-		return
-	}
-	resp, err := invoke(ctx, h.srv, msg)
-	if err != nil {
-		h.renderGRPCError(w, r, fullMethod, err)
-		return
-	}
-	h.renderPage(w, r, page, http.StatusOK, present(resp, sess))
-}
-
 // doWrite 是写动作的共享管线（POST）：
 // 会话 → CSRF → 解码 → 授权 → status 写闸 → 直调 → PRG 重定向。
 //
