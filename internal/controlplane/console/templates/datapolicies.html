@@ -1,0 +1,21 @@
+{{define "title"}}数据策略 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">{{template "appnav" .}}
+<section><h2>数据策略</h2>
+<form method="post" action="/apps/{{.AppID}}/data-policies" class="inline-form" id="dp-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<input type="hidden" name="id" value="0">
+<input name="subject_type" placeholder="subject_type，如 role" required>
+<input name="subject_id" placeholder="subject_id，如 clerk" required>
+<input name="resource" placeholder="resource，如 order" required>
+<select name="effect"><option value="allow">allow</option><option value="deny">deny</option></select>
+<button type="button" id="builder-toggle" style="display:none">专业模式（原始 JSON）</button>
+<div id="builder" style="display:none"></div>
+<textarea name="condition" id="cond-json" rows="4" placeholder='condition（原始 JSON），如 {"op":"and","children":[]}' required></textarea>
+<button>+ 保存策略</button></form>
+<table><thead><tr><th>ID</th><th>SubjectType</th><th>SubjectId</th><th>Resource</th><th>Effect</th><th>Condition</th><th></th></tr></thead><tbody>
+{{range .DataPolicies}}<tr><td>{{.DataPolicyId}}</td><td>{{.SubjectType}}</td><td>{{.SubjectId}}</td><td>{{.Resource}}</td><td>{{.Effect}}</td><td><code>{{.Condition}}</code></td>
+<td><form method="post" action="/apps/{{$.AppID}}/data-policies/{{.DataPolicyId}}/delete" onsubmit="return confirm('删除？')">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<button class="danger">删除</button></form></td></tr>{{end}}
+</tbody></table></section>
+<script src="/static/datapolicy.js"></script></div>{{end}}

@@ -230,3 +230,62 @@ func TestGrants_CSRFMissing_Forbidden(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
+
+// TestDataPolicy_UpsertRawJSON_ThenList：condition 作为「原始 JSON 串」走无 JS 基线 textarea
+// 提交（id=0 即插入），断言 PRG(303)，再 GET 列表确认 resource 与 condition 内容均回显。
+func TestDataPolicy_UpsertRawJSON_ThenList(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	cond := `{"op":"and","children":[{"field":"dept","op":"eq","value":"$user.dept"}]}`
+	form := url.Values{
+		"csrf_token":   {csrf},
+		"id":           {"0"},
+		"subject_type": {"role"},
+		"subject_id":   {"clerk"},
+		"resource":     {"order"},
+		"condition":    {cond},
+		"effect":       {"allow"},
+	}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/data-policies", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode) // PRG
+
+	page, err := c.Get(ts.URL + fmt.Sprintf("/apps/%d/data-policies", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, "order")
+	require.Contains(t, body, "$user.dept")
+}
+
+// TestDataPolicy_InvalidCondition_FailClose：condition 列为 JSONB NOT NULL，store 以 $5::jsonb
+// 插入。非法 JSON 在 INSERT 处 cast 失败，AdminServer.UpsertDataPolicy 把该错误一律包成
+// codes.Internal（server.go:107；仅 effect 字段在 server.go:101 特判为 InvalidArgument；
+// server.go:35-38 的 TODO 已声明此错误码映射偏粗）。Console 忠实透传 gRPC code，故返回
+// HTTP 500——不是 plan 假设的 400。Console 按红线绝不预解析 condition，因此无法也不应强行
+// 凑出 400。本用例真正担保的是「fail-close」：非法策略绝不落库（事务回滚）。
+func TestDataPolicy_InvalidCondition_FailClose(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	form := url.Values{
+		"csrf_token":   {csrf},
+		"id":           {"0"},
+		"subject_type": {"role"},
+		"subject_id":   {"clerk"},
+		"resource":     {"order_badcond"}, // 唯一标识，便于后续 NotContains 断言
+		"condition":    {"{not valid"},    // 非法 JSON → JSONB cast 失败
+		"effect":       {"allow"},
+	}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/data-policies", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusInternalServerError, resp.StatusCode) // jsonb cast → codes.Internal → 500
+
+	// fail-close：该行绝不应落库（事务回滚），列表里查不到。
+	page, err := c.Get(ts.URL + fmt.Sprintf("/apps/%d/data-policies", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.NotContains(t, body, "order_badcond")
+}
