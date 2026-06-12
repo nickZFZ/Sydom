@@ -7,8 +7,12 @@
 <button>前往</button></form>
 {{else}}
 <a class="btn-primary" href="/apps/new">+ 新建应用</a>
-<table><thead><tr><th>ID</th><th>名称</th><th>Domain</th><th>状态</th></tr></thead>
+<table><thead><tr><th>ID</th><th>名称</th><th>Domain</th><th>状态</th><th>操作</th></tr></thead>
 <tbody>{{range .Apps}}<tr><td><a href="/apps/{{.AppId}}/roles">{{.AppId}}</a></td>
-<td>{{.Name}}</td><td>{{.Domain}}</td><td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td></tr>{{end}}</tbody></table>
+<td>{{.Name}}</td><td>{{.Domain}}</td><td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td>
+<td><form method="post" action="/apps/{{.AppId}}/status" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input type="hidden" name="status" value="{{if eq .Status 1}}2{{else}}1{{end}}">
+<button class="btn-primary">切换状态</button></form></td></tr>{{end}}</tbody></table>
 {{end}}
 {{end}}

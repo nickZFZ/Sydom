@@ -1,0 +1,11 @@
+{{define "title"}}应用已创建 · 司域 Console{{end}}
+{{define "content"}}
+<h2>应用已创建</h2>
+<p>App ID：<code>{{.AppID}}</code></p>
+<div class="secret-box">
+  <p class="warn">⚠️ 请立即保存 App Secret，此密钥仅显示这一次，离开本页后无法再次查看。</p>
+  <p><strong>App Secret</strong></p>
+  <p><code class="secret">{{.AppSecret}}</code></p>
+</div>
+<p><a class="btn-primary" href="/apps/{{.AppID}}/roles">前往应用工作台</a></p>
+{{end}}

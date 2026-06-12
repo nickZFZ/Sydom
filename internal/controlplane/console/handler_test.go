@@ -231,6 +231,49 @@ func TestGrants_CSRFMissing_Forbidden(t *testing.T) {
 	require.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
 
+// TestCreateApp_ShowsOneTimeSecret：建应用走「一次性 secret」专管线（非 PRG）。
+// 断言返回 200（不是 303）且页面渲染了 App Secret 一次性提示与明文密钥标签。
+func TestCreateApp_ShowsOneTimeSecret(t *testing.T) {
+	ts, store, _ := newConsole(t)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	form := url.Values{
+		"csrf_token":  {csrf},
+		"tenant_name": {"acme"},
+		"domain":      {"acme"},
+		"name":        {"acme-app"},
+		"app_key":     {"ak_acme"},
+	}
+	resp, err := c.PostForm(ts.URL+"/apps", form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode) // 一次性 secret 页：非 PRG
+	body := readBody(t, resp)
+	require.Contains(t, body, "App Secret") // 一次性密钥标签
+	require.Contains(t, body, "仅显示这一次")     // 强警示文案，确认这是 app_created 页
+	require.Contains(t, body, "/roles")     // 前往工作台链接
+}
+
+// TestSetAppStatus_Disable：状态切换走 doWrite（PRG）。先确认新建 app 为「启用」，
+// POST status=2 后 303，再 GET 列表确认状态列变「停用」。
+func TestSetAppStatus_Disable(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	// 起始状态：新建 app 默认启用。
+	page, err := c.Get(ts.URL + "/")
+	require.NoError(t, err)
+	require.Contains(t, readBody(t, page), "启用")
+
+	form := url.Values{"csrf_token": {csrf}, "status": {"2"}}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/status", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode) // doWrite PRG
+
+	page2, err := c.Get(ts.URL + "/")
+	require.NoError(t, err)
+	require.Contains(t, readBody(t, page2), "停用") // 状态列已变停用
+}
+
 // TestDataPolicy_UpsertRawJSON_ThenList：condition 作为「原始 JSON 串」走无 JS 基线 textarea
 // 提交（id=0 即插入），断言 PRG(303)，再 GET 列表确认 resource 与 condition 内容均回显。
 func TestDataPolicy_UpsertRawJSON_ThenList(t *testing.T) {
