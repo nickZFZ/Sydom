@@ -110,3 +110,17 @@ func SeedApp(t *testing.T, conn *sql.DB) int64 {
 		tenantID, SeedDomain, SeedAppKey).Scan(&appID))
 	return appID
 }
+
+// SeedAppInTenant 建一个租户 + 其下一个应用，返回 (tenantID, appID)。
+// 与 SeedApp 不同：参数化 name/domain/app_key，支持同库播种多租户多应用（跨租户隔离测试用）。
+func SeedAppInTenant(t *testing.T, conn *sql.DB, tenantName, domain, appKey string) (int64, int64) {
+	t.Helper()
+	var tenantID, appID int64
+	require.NoError(t, conn.QueryRow(
+		`INSERT INTO tenant (name) VALUES ($1) RETURNING id`, tenantName).Scan(&tenantID))
+	require.NoError(t, conn.QueryRow(
+		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
+		 VALUES ($1, $2, $3, $4, '\xab'::bytea) RETURNING id`,
+		tenantID, domain, tenantName+"-app", appKey).Scan(&appID))
+	return tenantID, appID
+}
