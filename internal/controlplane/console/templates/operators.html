@@ -1,0 +1,20 @@
+{{define "title"}}操作员 · 司域 Console{{end}}
+{{define "content"}}
+<h2>操作员</h2>
+<p><a class="btn-primary" href="/operators/new">+ 新建操作员</a></p>
+<table><thead><tr><th>ID</th><th>Principal</th><th>状态</th><th>操作</th></tr></thead><tbody>
+{{range .Operators}}<tr><td>{{.OperatorId}}</td><td>{{.Principal}}</td>
+<td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td>
+<td>
+<form method="post" action="/operators/{{.OperatorId}}/status" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input type="hidden" name="status" value="{{if eq .Status 1}}2{{else}}1{{end}}">
+<button>切换状态</button></form>
+<form method="post" action="/operators/{{.OperatorId}}/roles" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input name="role_id" placeholder="role_id">
+<input name="domain" placeholder="domain(app_id 或 *)">
+<button>绑定角色</button></form>
+</td></tr>{{end}}
+</tbody></table>
+{{end}}

@@ -1,0 +1,9 @@
+{{define "title"}}新建操作员 · 司域 Console{{end}}
+{{define "content"}}
+<h2>新建操作员</h2>
+<form method="post" action="/operators" class="stacked-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<label>Principal <input name="principal" placeholder="principal" required></label>
+<button class="btn-primary">创建操作员</button>
+</form>
+{{end}}

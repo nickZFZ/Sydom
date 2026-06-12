@@ -10,6 +10,8 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -331,4 +333,144 @@ func TestDataPolicy_InvalidCondition_FailClose(t *testing.T) {
 	require.NoError(t, err)
 	body := readBody(t, page)
 	require.NotContains(t, body, "order_badcond")
+}
+
+// domainOf：appID → casbin 域串（与 mgmt.DomainOfAppID 同语义）。
+func domainOf(id int64) string { return strconv.FormatInt(id, 10) }
+
+// opSecretRe：从 operator_created.html 的稳定锚 id="op-secret" 中确定性抽取一次性明文密钥。
+var opSecretRe = regexp.MustCompile(`id="op-secret">([^<]+)<`)
+
+// TestOperators_CreateThenList：建操作员走「一次性 secret」专管线（非 PRG）。
+// POST /operators → 200（不是 303）且页面渲染一次性密钥锚与强警示文案；再 GET /operators 回显 principal。
+func TestOperators_CreateThenList(t *testing.T) {
+	ts, store, _ := newConsole(t)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	form := url.Values{"csrf_token": {csrf}, "principal": {"alice@ops"}}
+	resp, err := c.PostForm(ts.URL+"/operators", form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode) // 一次性 secret 页：非 PRG
+	body := readBody(t, resp)
+	require.Contains(t, body, `id="op-secret"`) // 稳定锚，便于确定性抽取
+	require.Contains(t, body, "仅显示一次")          // 强警示文案
+
+	page, err := c.Get(ts.URL + "/operators")
+	require.NoError(t, err)
+	require.Contains(t, readBody(t, page), "alice@ops")
+}
+
+// TestAdminRoles_CreateThenList：建管理角色走 doWrite（PRG）。POST /admin-roles → 303；
+// 再 GET /admin-roles 回显 code。
+func TestAdminRoles_CreateThenList(t *testing.T) {
+	ts, store, _ := newConsole(t)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	form := url.Values{"csrf_token": {csrf}, "code": {"app-admin"}, "name": {"应用管理员"}}
+	resp, err := c.PostForm(ts.URL+"/admin-roles", form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode) // PRG
+
+	page, err := c.Get(ts.URL + "/admin-roles")
+	require.NoError(t, err)
+	require.Contains(t, readBody(t, page), "app-admin")
+}
+
+// mustCreateAppViaConsole 经 console POST /apps 建应用（一次性 secret 页，200），返回该 app 自增 id。
+func mustCreateAppViaConsole(t *testing.T, c *http.Client, ts *httptest.Server, db *sql.DB,
+	csrf, tenant, domain, name, appKey string) int64 {
+	t.Helper()
+	form := url.Values{
+		"csrf_token":  {csrf},
+		"tenant_name": {tenant},
+		"domain":      {domain},
+		"name":        {name},
+		"app_key":     {appKey},
+	}
+	resp, err := c.PostForm(ts.URL+"/apps", form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode) // createApp 渲染 app_created.html
+	var id int64
+	require.NoError(t, db.QueryRow(`SELECT id FROM application WHERE app_key=$1`, appKey).Scan(&id))
+	return id
+}
+
+// TestSecurityMatrix_LimitedOperator 是冠石用例：完全经 console 写端点构造一个受限操作员，
+// 证明跨域隔离的四象限：
+//  1. 降级仪表盘——无 *-域 ListApplications 授权 → 退化为「App ID 直达」表单，绝不枚举 app。
+//  2. 本应用域内允许——在 strconv(appA) 域有 role:create → POST /apps/{appA}/roles 成功 303。
+//  3. 跨应用 403——同动作打到 appB 域无授权 → 403。
+//  4. 系统域闸——GET /operators 系统页无 * 域授权 → 403（绝不降级，否则泄露存在性）。
+//
+// 受限操作员的授权即时生效：GrantAdminRole/BindOperatorRole 自增 admin_policy_version，
+// 进程内共享 Enforcer 在下次 Enforce 时重载——无需 sleep/retry。
+func TestSecurityMatrix_LimitedOperator(t *testing.T) {
+	ts, store, db := newConsole(t)
+	root, csrfRoot := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	// 两个不同租户/域/key 的应用（root 建）。
+	appA := mustCreateAppViaConsole(t, root, ts, db, csrfRoot, "ta", "dom-a", "应用A", "ak-a")
+	appB := mustCreateAppViaConsole(t, root, ts, db, csrfRoot, "tb", "dom-b", "应用B", "ak-b")
+
+	// a. 建操作员，从一次性密钥页确定性抽取明文密钥。
+	form := url.Values{"csrf_token": {csrfRoot}, "principal": {"ops@a"}}
+	resp, err := root.PostForm(ts.URL+"/operators", form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	m := opSecretRe.FindStringSubmatch(readBody(t, resp))
+	require.Len(t, m, 2, "应能从 op-secret 锚抽取一次性密钥")
+	opsSecret := m[1]
+	require.NotEmpty(t, opsSecret)
+
+	// b. 建管理角色，读其自增 id。
+	resp, err = root.PostForm(ts.URL+"/admin-roles", url.Values{"csrf_token": {csrfRoot}, "code": {"a-admin"}, "name": {"n"}})
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+	var roleID int64
+	require.NoError(t, db.QueryRow(`SELECT id FROM admin_role WHERE code=$1`, "a-admin").Scan(&roleID))
+
+	// c. 在 appA 的 casbin 域（=strconv(appA)）授 role:create + role:read。
+	for _, action := range []string{"create", "read"} {
+		g := url.Values{"csrf_token": {csrfRoot}, "domain": {domainOf(appA)}, "resource": {"role"}, "action": {action}}
+		resp, err = root.PostForm(ts.URL+fmt.Sprintf("/admin-roles/%d/grants", roleID), g)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+	}
+
+	// d. 读操作员 id，绑角色到 appA 域。
+	var opID int64
+	require.NoError(t, db.QueryRow(`SELECT id FROM admin_operator WHERE principal=$1`, "ops@a").Scan(&opID))
+	bind := url.Values{"csrf_token": {csrfRoot}, "role_id": {fmt.Sprint(roleID)}, "domain": {domainOf(appA)}}
+	resp, err = root.PostForm(ts.URL+fmt.Sprintf("/operators/%d/roles", opID), bind)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	// 以受限操作员身份登录。
+	c, csrf := loginAndCSRF(t, ts, store, "ops@a", opsSecret)
+
+	// 象限 1：降级仪表盘——无 * 域 ListApplications 授权 → 降级直达表单，无枚举。
+	page, err := c.Get(ts.URL + "/")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, page.StatusCode)
+	homeBody := readBody(t, page)
+	require.Contains(t, homeBody, "App ID")   // 降级直达表单
+	require.NotContains(t, homeBody, "dom-a") // 绝不泄露 app 列表
+	require.NotContains(t, homeBody, "dom-b")
+
+	// 象限 2：本应用域内允许——POST /apps/{appA}/roles → 303。
+	r1 := url.Values{"csrf_token": {csrf}, "code": {"r1"}, "name": {"n"}}
+	resp, err = c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/roles", appA), r1)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	// 象限 3：跨应用 403——POST /apps/{appB}/roles → 403。
+	r2 := url.Values{"csrf_token": {csrf}, "code": {"r2"}, "name": {"n"}}
+	resp, err = c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/roles", appB), r2)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
+
+	// 象限 4：系统域闸——GET /operators → 403（绝不降级）。
+	resp, err = c.Get(ts.URL + "/operators")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
 }

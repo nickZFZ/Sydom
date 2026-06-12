@@ -1,0 +1,19 @@
+{{define "title"}}管理角色 · 司域 Console{{end}}
+{{define "content"}}
+<h2>管理角色</h2>
+<form method="post" action="/admin-roles" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<input name="code" placeholder="code" required><input name="name" placeholder="名称">
+<button>+ 新建管理角色</button></form>
+<table><thead><tr><th>ID</th><th>Code</th><th>名称</th><th>授权</th></tr></thead><tbody>
+{{range .Roles}}<tr><td>{{.RoleId}}</td><td>{{.Code}}</td><td>{{.Name}}</td>
+<td>
+<form method="post" action="/admin-roles/{{.RoleId}}/grants" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input name="domain" placeholder="domain(app_id 或 *)">
+<input name="resource" placeholder="resource">
+<input name="action" placeholder="action">
+<button>授权</button></form>
+</td></tr>{{end}}
+</tbody></table>
+{{end}}
