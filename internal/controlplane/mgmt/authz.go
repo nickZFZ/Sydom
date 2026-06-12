@@ -59,23 +59,30 @@ var ruleTable = map[string]rpcRule{
 // DomainOfAppID 把 app_id 转成 casbin domain 字符串。
 func DomainOfAppID(appID int64) string { return strconv.FormatInt(appID, 10) }
 
-// AuthorizeRule 据 ruleTable[fullMethod] 计算授权域（system→"*"，否则取 req 的 app_id），
-// 调 enf.Enforce；成功返回注入 operator 的 ctx，失败返回 gRPC status 错误。
-// gRPC 拦截器与 REST 网关共用，ruleTable 为唯一真相源。
+// AuthorizeRule 据 ruleTable[fullMethod] 计算授权域：system→("*","*")；否则取 req 的
+// app_id 算 app 域，并查其所属租户得租户域 tdom（app 不存在→fail-close 拒绝），
+// 调 enf.Enforce（5 元）。gRPC 拦截器、REST 网关、Console 共用，ruleTable 为唯一真相源。
 func AuthorizeRule(ctx context.Context, enf *adminauthz.Enforcer, fullMethod, principal string, req any) (context.Context, error) {
 	rule, known := ruleTable[fullMethod]
 	if !known {
 		return nil, status.Error(codes.PermissionDenied, "unknown method")
 	}
-	domain := "*"
+	domain, tdom := "*", "*"
 	if !rule.system {
 		g, ok := req.(appIDGetter)
 		if !ok {
 			return nil, status.Error(codes.Internal, "request missing app_id")
 		}
-		domain = DomainOfAppID(int64(g.GetAppId()))
+		appID := int64(g.GetAppId())
+		domain = DomainOfAppID(appID)
+		td, err := enf.TenantDomainOf(ctx, appID)
+		if err != nil {
+			// app 不存在/查询失败：fail-close 为 PermissionDenied，不泄露存在性差异。
+			return nil, status.Error(codes.PermissionDenied, "permission denied")
+		}
+		tdom = td
 	}
-	allow, err := enf.Enforce(ctx, principal, domain, rule.resource, rule.action)
+	allow, err := enf.Enforce(ctx, principal, domain, tdom, rule.resource, rule.action)
 	// TODO(observability): Enforce 内部错误（DB/策略加载故障）当前与"权限不足"一并 fail-close 为 PermissionDenied；接入日志/metric 后在此区分并记录。
 	if err != nil || !allow {
 		return nil, status.Error(codes.PermissionDenied, "permission denied")

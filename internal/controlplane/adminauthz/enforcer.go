@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/casbin/casbin/v3"
@@ -12,12 +13,14 @@ import (
 )
 
 // modelText 是 admin 鉴权的 RBAC-with-domain 模型。
-// matcher 关键设计：
-//   - g(r.sub, p.sub, r.dom) || g(r.sub, p.sub, "*") —— 兜住 super-admin 在 * 域的绑定；
-//   - p.dom/p.res/p.act == "*" —— 通配 grant（super-admin 的 * 行）。
+// 租户域设计：tdom 是 app 所属租户的域（"t:<tenant_id>"），作为 app 域之上的包含层。
+//   - g(r.sub,p.sub,r.dom) —— app 直绑（既有路径，向后兼容）；
+//   - g(r.sub,p.sub,r.tdom) —— 租户管理员经租户域命中其名下所有 app（新增包含层）；
+//   - g(r.sub,p.sub,"*") —— super-admin 在 * 域的兜底；
+//   - p.dom/p.res/p.act == "*" —— 通配 grant（super-admin 的 * 行、租户管理员的 t:<id> 行）。
 const modelText = `
 [request_definition]
-r = sub, dom, res, act
+r = sub, dom, tdom, res, act
 [policy_definition]
 p = sub, dom, res, act
 [role_definition]
@@ -25,7 +28,7 @@ g = _, _, _
 [policy_effect]
 e = some(where (p.eft == allow))
 [matchers]
-m = (g(r.sub, p.sub, r.dom) || g(r.sub, p.sub, "*")) && (p.dom == r.dom || p.dom == "*") && (p.res == r.res || p.res == "*") && (p.act == r.act || p.act == "*")
+m = (g(r.sub, p.sub, r.dom) || g(r.sub, p.sub, r.tdom) || g(r.sub, p.sub, "*")) && (p.dom == r.dom || p.dom == r.tdom || p.dom == "*") && (p.res == r.res || p.res == "*") && (p.act == r.act || p.act == "*")
 `
 
 // dbAdapter 是只读 casbin Adapter：仅实现 LoadPolicy，从 admin 表装配 p/g 行。
@@ -92,8 +95,9 @@ func NewEnforcer(db *sql.DB) (*Enforcer, error) {
 }
 
 // Enforce 鉴权：先比对 admin_policy_version，若变化则重载策略，再求值。
-// fail-close 由调用方据 err 拒绝（出错返回 (false, err)）。
-func (en *Enforcer) Enforce(ctx context.Context, sub, dom, res, act string) (bool, error) {
+// 必须传 5 个值（sub, dom, tdom, res, act），与 5-token 请求定义匹配，
+// 否则 casbin 报 "invalid request size"。fail-close 由调用方据 err 拒绝。
+func (en *Enforcer) Enforce(ctx context.Context, sub, dom, tdom, res, act string) (bool, error) {
 	en.mu.Lock()
 	defer en.mu.Unlock()
 	cur, err := ReadPolicyVersion(ctx, en.db)
@@ -106,5 +110,19 @@ func (en *Enforcer) Enforce(ctx context.Context, sub, dom, res, act string) (boo
 		}
 		en.loadedV = cur
 	}
-	return en.e.Enforce(sub, dom, res, act)
+	return en.e.Enforce(sub, dom, tdom, res, act)
+}
+
+// TenantDomain 把 tenant_id 转成租户域字符串。"t:" 前缀与纯数字 app 域天然不冲突。
+func TenantDomain(tenantID int64) string { return "t:" + strconv.FormatInt(tenantID, 10) }
+
+// TenantDomainOf 查 app 所属租户并返回其租户域。app 不存在/查询失败 → error
+// （fail-close：调用方据此拒绝；绝不放行，也绝不借差异泄露 app 存在性）。
+func (en *Enforcer) TenantDomainOf(ctx context.Context, appID int64) (string, error) {
+	var tenantID int64
+	if err := en.db.QueryRowContext(ctx,
+		`SELECT tenant_id FROM application WHERE id=$1`, appID).Scan(&tenantID); err != nil {
+		return "", fmt.Errorf("adminauthz: tenant of app %d: %w", appID, err)
+	}
+	return TenantDomain(tenantID), nil
 }

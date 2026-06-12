@@ -112,7 +112,10 @@ func TestAdminService_DisabledOperatorDenied(t *testing.T) {
 	require.Equal(t, codes.Unauthenticated, status.Code(err))
 }
 
-// TestAdminService_SetStatus_NotFoundOnUnknownId 证明对未知 id 的 set status 返回 NotFound。
+// TestAdminService_SetStatus_NotFoundOnUnknownId 证明对未知 id 的 set status 行为符合安全策略。
+// 租户隔离引入后：SetApplicationStatus 在鉴权层做 tenantOf 查询，未知 app_id → fail-close
+// PermissionDenied（不借 NotFound 差异泄露 app 存在性）；SetOperatorStatus 是 system 域，
+// 跳过 tenantOf，由 handler 返回 NotFound。
 func TestAdminService_SetStatus_NotFoundOnUnknownId(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	require.NoError(t, adminauthz.EnsureRootOperator(context.Background(), db, mk(), "root", []byte("root-secret")))
@@ -120,9 +123,12 @@ func TestAdminService_SetStatus_NotFoundOnUnknownId(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// SetApplicationStatus：未知 app_id 在鉴权层 tenantOf 失败 → fail-close PermissionDenied。
+	// 不返回 NotFound，以防通过状态码差异泄露 app 存在性。
 	_, err := cli.SetApplicationStatus(ctx, &adminv1.SetApplicationStatusRequest{AppId: 999999, Status: 2})
-	require.Equal(t, codes.NotFound, status.Code(err))
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
 
+	// SetOperatorStatus 是 system 域（不经 tenantOf），handler 层返回 NotFound。
 	_, err = cli.SetOperatorStatus(ctx, &adminv1.SetOperatorStatusRequest{OperatorId: 999999, Status: 2})
 	require.Equal(t, codes.NotFound, status.Code(err))
 }
