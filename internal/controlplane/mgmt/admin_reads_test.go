@@ -21,8 +21,10 @@ func TestAdminReads_AppDomain_RoundTrip(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
+	var tID int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES('seed-t') RETURNING id`).Scan(&tID))
 	app, err := cli.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
-		TenantName: "t", Domain: "d", Name: "n", AppKey: "k-roundtrip"})
+		TenantId: uint64(tID), Domain: "d", Name: "n", AppKey: "k-roundtrip"})
 	require.NoError(t, err)
 	appID := app.AppId
 
@@ -101,8 +103,10 @@ func TestAdminReads_AppDomain_RoundTrip(t *testing.T) {
 	require.Len(t, dpOrder.DataPolicies, 1)
 	require.Equal(t, "order", dpOrder.DataPolicies[0].Resource)
 
+	var tID2 int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES('seed-t2') RETURNING id`).Scan(&tID2))
 	app2, err := cli.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
-		TenantName: "t2", Domain: "d2", Name: "n2", AppKey: "k-empty"})
+		TenantId: uint64(tID2), Domain: "d2", Name: "n2", AppKey: "k-empty"})
 	require.NoError(t, err)
 	empty, err := cli.ListRoles(ctx, &adminv1.ListRolesRequest{AppId: app2.AppId})
 	require.NoError(t, err)
@@ -149,11 +153,15 @@ func TestAdminReads_CrossAppDomainDenied(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
+	var tIDA int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES('seed-ta') RETURNING id`).Scan(&tIDA))
+	var tIDB int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES('seed-tb') RETURNING id`).Scan(&tIDB))
 	appA, err := root.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
-		TenantName: "ta", Domain: "da", Name: "na", AppKey: "k-a"})
+		TenantId: uint64(tIDA), Domain: "da", Name: "na", AppKey: "k-a"})
 	require.NoError(t, err)
 	appB, err := root.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
-		TenantName: "tb", Domain: "db", Name: "nb", AppKey: "k-b"})
+		TenantId: uint64(tIDB), Domain: "db", Name: "nb", AppKey: "k-b"})
 	require.NoError(t, err)
 
 	// reader：仅在域 A 有 role/read（细粒度）

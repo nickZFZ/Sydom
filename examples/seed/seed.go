@@ -84,8 +84,13 @@ func Run() int {
 
 // Provision 建 app + 角色/权限/授权/绑定/数据策略，返回该 app 的明文 secret。
 func Provision(ctx context.Context, cli adminv1.AdminServiceClient, tenant, domain, appKey string) (string, error) {
+	reg, err := cli.RegisterTenant(ctx, &adminv1.RegisterTenantRequest{
+		TenantName: tenant, OwnerPrincipal: tenant + "-owner"})
+	if err != nil {
+		return "", fmt.Errorf("register tenant: %w", err)
+	}
 	appResp, err := cli.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
-		TenantName: tenant, Domain: domain, Name: appKey, AppKey: appKey,
+		TenantId: reg.TenantId, Domain: domain, Name: appKey, AppKey: appKey,
 	})
 	if err != nil {
 		return "", fmt.Errorf("create app: %w", err)

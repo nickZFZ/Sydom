@@ -46,6 +46,10 @@ const (
 	AdminService_ListDataPolicies_FullMethodName      = "/sydom.admin.v1.AdminService/ListDataPolicies"
 	AdminService_ListOperators_FullMethodName         = "/sydom.admin.v1.AdminService/ListOperators"
 	AdminService_ListAdminRoles_FullMethodName        = "/sydom.admin.v1.AdminService/ListAdminRoles"
+	AdminService_RegisterTenant_FullMethodName        = "/sydom.admin.v1.AdminService/RegisterTenant"
+	AdminService_ListMyTenants_FullMethodName         = "/sydom.admin.v1.AdminService/ListMyTenants"
+	AdminService_InviteMember_FullMethodName          = "/sydom.admin.v1.AdminService/InviteMember"
+	AdminService_ListMembers_FullMethodName           = "/sydom.admin.v1.AdminService/ListMembers"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -83,6 +87,11 @@ type AdminServiceClient interface {
 	ListDataPolicies(ctx context.Context, in *ListDataPoliciesRequest, opts ...grpc.CallOption) (*ListDataPoliciesResponse, error)
 	ListOperators(ctx context.Context, in *ListOperatorsRequest, opts ...grpc.CallOption) (*ListOperatorsResponse, error)
 	ListAdminRoles(ctx context.Context, in *ListAdminRolesRequest, opts ...grpc.CallOption) (*ListAdminRolesResponse, error)
+	// —— M1.2 账户层 ——
+	RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error)
+	ListMyTenants(ctx context.Context, in *ListMyTenantsRequest, opts ...grpc.CallOption) (*ListMyTenantsResponse, error)
+	InviteMember(ctx context.Context, in *InviteMemberRequest, opts ...grpc.CallOption) (*InviteMemberResponse, error)
+	ListMembers(ctx context.Context, in *ListMembersRequest, opts ...grpc.CallOption) (*ListMembersResponse, error)
 }
 
 type adminServiceClient struct {
@@ -336,6 +345,42 @@ func (c *adminServiceClient) ListAdminRoles(ctx context.Context, in *ListAdminRo
 	return out, nil
 }
 
+func (c *adminServiceClient) RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error) {
+	out := new(RegisterTenantResponse)
+	err := c.cc.Invoke(ctx, AdminService_RegisterTenant_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListMyTenants(ctx context.Context, in *ListMyTenantsRequest, opts ...grpc.CallOption) (*ListMyTenantsResponse, error) {
+	out := new(ListMyTenantsResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListMyTenants_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) InviteMember(ctx context.Context, in *InviteMemberRequest, opts ...grpc.CallOption) (*InviteMemberResponse, error) {
+	out := new(InviteMemberResponse)
+	err := c.cc.Invoke(ctx, AdminService_InviteMember_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListMembers(ctx context.Context, in *ListMembersRequest, opts ...grpc.CallOption) (*ListMembersResponse, error) {
+	out := new(ListMembersResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListMembers_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility
@@ -371,6 +416,11 @@ type AdminServiceServer interface {
 	ListDataPolicies(context.Context, *ListDataPoliciesRequest) (*ListDataPoliciesResponse, error)
 	ListOperators(context.Context, *ListOperatorsRequest) (*ListOperatorsResponse, error)
 	ListAdminRoles(context.Context, *ListAdminRolesRequest) (*ListAdminRolesResponse, error)
+	// —— M1.2 账户层 ——
+	RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error)
+	ListMyTenants(context.Context, *ListMyTenantsRequest) (*ListMyTenantsResponse, error)
+	InviteMember(context.Context, *InviteMemberRequest) (*InviteMemberResponse, error)
+	ListMembers(context.Context, *ListMembersRequest) (*ListMembersResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -458,6 +508,18 @@ func (UnimplementedAdminServiceServer) ListOperators(context.Context, *ListOpera
 }
 func (UnimplementedAdminServiceServer) ListAdminRoles(context.Context, *ListAdminRolesRequest) (*ListAdminRolesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAdminRoles not implemented")
+}
+func (UnimplementedAdminServiceServer) RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterTenant not implemented")
+}
+func (UnimplementedAdminServiceServer) ListMyTenants(context.Context, *ListMyTenantsRequest) (*ListMyTenantsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMyTenants not implemented")
+}
+func (UnimplementedAdminServiceServer) InviteMember(context.Context, *InviteMemberRequest) (*InviteMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InviteMember not implemented")
+}
+func (UnimplementedAdminServiceServer) ListMembers(context.Context, *ListMembersRequest) (*ListMembersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMembers not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 
@@ -958,6 +1020,78 @@ func _AdminService_ListAdminRoles_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_RegisterTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterTenantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RegisterTenant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RegisterTenant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RegisterTenant(ctx, req.(*RegisterTenantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListMyTenants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMyTenantsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListMyTenants(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListMyTenants_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListMyTenants(ctx, req.(*ListMyTenantsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_InviteMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InviteMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).InviteMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_InviteMember_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).InviteMember(ctx, req.(*InviteMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListMembers(ctx, req.(*ListMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1072,6 +1206,22 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAdminRoles",
 			Handler:    _AdminService_ListAdminRoles_Handler,
+		},
+		{
+			MethodName: "RegisterTenant",
+			Handler:    _AdminService_RegisterTenant_Handler,
+		},
+		{
+			MethodName: "ListMyTenants",
+			Handler:    _AdminService_ListMyTenants_Handler,
+		},
+		{
+			MethodName: "InviteMember",
+			Handler:    _AdminService_InviteMember_Handler,
+		},
+		{
+			MethodName: "ListMembers",
+			Handler:    _AdminService_ListMembers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

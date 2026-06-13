@@ -21,8 +21,10 @@ func TestAdminService_ApplicationLifecycle(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	var tID int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES('acme') RETURNING id`).Scan(&tID))
 	cr, err := cli.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
-		TenantName: "acme", Domain: "order-system", Name: "订单", AppKey: "AK_x"})
+		TenantId: uint64(tID), Domain: "order-system", Name: "订单", AppKey: "AK_x"})
 	require.NoError(t, err)
 	require.NotEmpty(t, cr.AppSecret)
 	require.Greater(t, cr.AppId, uint64(0))
@@ -69,8 +71,10 @@ func TestAdminService_CreateApplication_SecretEncryptedRoundTrip(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	var tID2 int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES('acme-enc') RETURNING id`).Scan(&tID2))
 	cr, err := cli.CreateApplication(ctx, &adminv1.CreateApplicationRequest{
-		TenantName: "acme", Domain: "order-system", Name: "订单", AppKey: "AK_x"})
+		TenantId: uint64(tID2), Domain: "order-system", Name: "订单", AppKey: "AK_x"})
 	require.NoError(t, err)
 	require.NotEmpty(t, cr.AppSecret)
 

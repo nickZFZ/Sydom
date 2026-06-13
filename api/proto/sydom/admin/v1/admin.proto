@@ -42,6 +42,12 @@ service AdminService {
   rpc ListDataPolicies(ListDataPoliciesRequest) returns (ListDataPoliciesResponse);
   rpc ListOperators(ListOperatorsRequest) returns (ListOperatorsResponse);
   rpc ListAdminRoles(ListAdminRolesRequest) returns (ListAdminRolesResponse);
+
+  // —— M1.2 账户层 ——
+  rpc RegisterTenant(RegisterTenantRequest) returns (RegisterTenantResponse); // 免鉴权
+  rpc ListMyTenants(ListMyTenantsRequest)   returns (ListMyTenantsResponse);  // self
+  rpc InviteMember(InviteMemberRequest)     returns (InviteMemberResponse);   // tenant-target
+  rpc ListMembers(ListMembersRequest)       returns (ListMembersResponse);    // tenant-target 读
 }
 
 // WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
@@ -118,10 +124,12 @@ message DeleteDataPolicyRequest {
 }
 
 message CreateApplicationRequest {
-  string tenant_name = 1;
-  string domain = 2;
-  string name = 3;
-  string app_key = 4;
+  reserved 1;             // 旧 tenant_name 字段号，禁止重用（避免 wire 破坏）
+  reserved "tenant_name";
+  uint64 tenant_id = 5;
+  string domain    = 2;
+  string name      = 3;
+  string app_key   = 4;
 }
 message CreateApplicationResponse {
   uint64 app_id = 1;
@@ -131,7 +139,7 @@ message SetApplicationStatusRequest {
   uint64 app_id = 1;
   uint32 status = 2; // 1=active, 2=disabled
 }
-message ListApplicationsRequest {}
+message ListApplicationsRequest { uint64 tenant_id = 1; }
 message ApplicationSummary {
   uint64 app_id = 1;
   string domain = 2;
@@ -258,3 +266,18 @@ message AdminRoleSummary {
 }
 message ListAdminRolesRequest {}
 message ListAdminRolesResponse { repeated AdminRoleSummary roles = 1; }
+
+// —— M1.2 账户层消息 ——
+message RegisterTenantRequest  { string tenant_name = 1; string owner_principal = 2; }
+message RegisterTenantResponse { uint64 tenant_id = 1; string owner_principal = 2; string owner_secret = 3; }
+
+message ListMyTenantsRequest    {}
+message TenantMembershipSummary { uint64 tenant_id = 1; string tenant_name = 2; uint32 tier = 3; }
+message ListMyTenantsResponse   { repeated TenantMembershipSummary memberships = 1; bool is_operating_plane = 2; }
+
+message InviteMemberRequest  { uint64 tenant_id = 1; string principal = 2; }
+message InviteMemberResponse { uint64 operator_id = 1; string principal = 2; string secret = 3; }
+
+message ListMembersRequest  { uint64 tenant_id = 1; }
+message MemberSummary       { uint64 operator_id = 1; string principal = 2; uint32 tier = 3; uint32 status = 4; }
+message ListMembersResponse { repeated MemberSummary members = 1; }

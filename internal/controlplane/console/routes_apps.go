@@ -46,8 +46,9 @@ func (h *Handler) createApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	const fm = svc + "CreateApplication"
+	tid, _ := strconv.ParseUint(r.FormValue("tenant_id"), 10, 64)
 	msg := &adminv1.CreateApplicationRequest{
-		TenantName: r.FormValue("tenant_name"), Domain: r.FormValue("domain"),
+		TenantId: tid, Domain: r.FormValue("domain"),
 		Name: r.FormValue("name"), AppKey: r.FormValue("app_key")}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
 	if err != nil {

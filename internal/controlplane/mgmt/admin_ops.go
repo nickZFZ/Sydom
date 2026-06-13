@@ -38,31 +38,27 @@ func (s *AdminServer) CreateApplication(ctx context.Context, r *adminv1.CreateAp
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "begin: %v", err)
-	}
-	defer tx.Rollback()
-	var tenantID int64
-	if err := tx.QueryRowContext(ctx,
-		`INSERT INTO tenant (name) VALUES ($1)
-		 ON CONFLICT (name) DO UPDATE SET name=EXCLUDED.name RETURNING id`, r.TenantName).Scan(&tenantID); err != nil {
-		return nil, status.Errorf(codes.Internal, "tenant: %v", err)
-	}
 	var appID int64
-	if err := tx.QueryRowContext(ctx,
+	err = s.db.QueryRowContext(ctx,
 		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
 		 VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-		tenantID, r.Domain, r.Name, r.AppKey, enc).Scan(&appID); err != nil {
+		int64(r.TenantId), r.Domain, r.Name, r.AppKey, enc).Scan(&appID)
+	if err != nil {
 		if isUniqueViolation(err) {
 			return nil, status.Errorf(codes.AlreadyExists, "create application: %v", err)
 		}
+		if isForeignKeyViolation(err) { // 目标租户不存在
+			return nil, status.Error(codes.InvalidArgument, "unknown tenant")
+		}
 		return nil, status.Errorf(codes.Internal, "create application: %v", err)
 	}
-	if err := tx.Commit(); err != nil {
-		return nil, status.Errorf(codes.Internal, "commit: %v", err)
-	}
 	return &adminv1.CreateApplicationResponse{AppId: uint64(appID), AppSecret: secret}, nil
+}
+
+// isForeignKeyViolation 判定是否外键冲突（SQLSTATE 23503）。
+func isForeignKeyViolation(err error) bool {
+	var pqErr *pq.Error
+	return errors.As(err, &pqErr) && pqErr.Code == "23503"
 }
 
 func (s *AdminServer) SetApplicationStatus(ctx context.Context, r *adminv1.SetApplicationStatusRequest) (*adminv1.WriteResponse, error) {
