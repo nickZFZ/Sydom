@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 
@@ -73,9 +74,16 @@ func (s *AdminServer) SetApplicationStatus(ctx context.Context, r *adminv1.SetAp
 	return &adminv1.WriteResponse{Changed: true}, nil
 }
 
-func (s *AdminServer) ListApplications(ctx context.Context, _ *adminv1.ListApplicationsRequest) (*adminv1.ListApplicationsResponse, error) {
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, domain, name, app_key, status, current_version FROM application ORDER BY id`)
+func (s *AdminServer) ListApplications(ctx context.Context, r *adminv1.ListApplicationsRequest) (*adminv1.ListApplicationsResponse, error) {
+	var rows *sql.Rows
+	var err error
+	if r.TenantId == 0 { // 运营平面：列全量（授权已确保仅超管可达 tenant_id=0）
+		rows, err = s.db.QueryContext(ctx,
+			`SELECT id, domain, name, app_key, status, current_version FROM application ORDER BY id`)
+	} else {
+		rows, err = s.db.QueryContext(ctx,
+			`SELECT id, domain, name, app_key, status, current_version FROM application WHERE tenant_id=$1 ORDER BY id`, int64(r.TenantId))
+	}
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list: %v", err)
 	}

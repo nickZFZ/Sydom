@@ -62,3 +62,57 @@ func TestListMyTenants_ReturnsOwnMemberships(t *testing.T) {
 	require.Equal(t, r1.TenantId, out.Memberships[0].TenantId)
 	require.False(t, out.IsOperatingPlane)
 }
+
+func TestInviteMember_NewAndExisting(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	srv := accountsSrv(db)
+
+	reg, err := srv.RegisterTenant(ctx, &adminv1.RegisterTenantRequest{TenantName: "t1", OwnerPrincipal: "owner"})
+	require.NoError(t, err)
+
+	// 新 principal → 返回一次性 secret + admin 档 membership。
+	inv, err := srv.InviteMember(ctx, &adminv1.InviteMemberRequest{TenantId: reg.TenantId, Principal: "alice"})
+	require.NoError(t, err)
+	require.NotEmpty(t, inv.Secret)
+	require.NotZero(t, inv.OperatorId)
+
+	// ListMembers 含 owner + alice。
+	lm, err := srv.ListMembers(ctx, &adminv1.ListMembersRequest{TenantId: reg.TenantId})
+	require.NoError(t, err)
+	require.Len(t, lm.Members, 2)
+
+	// 重复邀请同 principal 同租户 → AlreadyExists。
+	_, err = srv.InviteMember(ctx, &adminv1.InviteMemberRequest{TenantId: reg.TenantId, Principal: "alice"})
+	require.Equal(t, codes.AlreadyExists, status.Code(err))
+
+	// 既有 operator 被邀到另一租户 → 成功但不返回新 secret（复用既有凭据）。
+	reg2, err := srv.RegisterTenant(ctx, &adminv1.RegisterTenantRequest{TenantName: "t2", OwnerPrincipal: "owner2"})
+	require.NoError(t, err)
+	inv2, err := srv.InviteMember(ctx, &adminv1.InviteMemberRequest{TenantId: reg2.TenantId, Principal: "alice"})
+	require.NoError(t, err)
+	require.Empty(t, inv2.Secret) // 既有 operator：无新 secret
+}
+
+func TestListApplications_TenantFilter(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	srv := accountsSrv(db)
+
+	rA, err := srv.RegisterTenant(ctx, &adminv1.RegisterTenantRequest{TenantName: "ta", OwnerPrincipal: "oa"})
+	require.NoError(t, err)
+	rB, err := srv.RegisterTenant(ctx, &adminv1.RegisterTenantRequest{TenantName: "tb", OwnerPrincipal: "ob"})
+	require.NoError(t, err)
+	_, err = srv.CreateApplication(ctx, &adminv1.CreateApplicationRequest{TenantId: rA.TenantId, Domain: "da", Name: "a", AppKey: "AK_a"})
+	require.NoError(t, err)
+	_, err = srv.CreateApplication(ctx, &adminv1.CreateApplicationRequest{TenantId: rB.TenantId, Domain: "db", Name: "b", AppKey: "AK_b"})
+	require.NoError(t, err)
+
+	a, err := srv.ListApplications(ctx, &adminv1.ListApplicationsRequest{TenantId: rA.TenantId})
+	require.NoError(t, err)
+	require.Len(t, a.Applications, 1) // 仅 A 的 app
+
+	all, err := srv.ListApplications(ctx, &adminv1.ListApplicationsRequest{TenantId: 0})
+	require.NoError(t, err)
+	require.Len(t, all.Applications, 2) // 0=列全量
+}

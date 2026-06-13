@@ -81,3 +81,76 @@ func (s *AdminServer) ListMyTenants(ctx context.Context, _ *adminv1.ListMyTenant
 	}
 	return out, nil
 }
+
+// InviteMember（tenant-target，owner/admin 可调）：在 tenant_id 建 admin 档成员。
+// 新 principal 生成一次性 secret 返回；既有 operator（多租户）不返回新 secret（复用既有凭据）。
+func (s *AdminServer) InviteMember(ctx context.Context, r *adminv1.InviteMemberRequest) (*adminv1.InviteMemberResponse, error) {
+	if !auth.ValidPrincipal(r.Principal) {
+		return nil, status.Error(codes.InvalidArgument, "valid principal required")
+	}
+	secret, err := genSecret()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "gen secret: %v", err)
+	}
+	enc, err := crypto.Encrypt(s.masterKey, []byte(secret))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+
+	opID, created, err := adminauthz.EnsureOperator(ctx, tx, r.Principal, enc)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "ensure operator: %v", err)
+	}
+	inserted, err := adminauthz.InsertMembership(ctx, tx, int64(r.TenantId), opID, adminauthz.TierAdmin)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if !inserted {
+		return nil, status.Error(codes.AlreadyExists, "already a member")
+	}
+	if err := adminauthz.BindTenantAdminTx(ctx, tx, int64(r.TenantId), opID); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+	}
+	resp := &adminv1.InviteMemberResponse{OperatorId: uint64(opID), Principal: r.Principal}
+	if created {
+		resp.Secret = secret // 仅新建 operator 返回一次性 secret
+	}
+	return resp, nil
+}
+
+// ListMembers（tenant-target 读）：列 tenant_id 的成员；secret_enc 绝不出查询。
+func (s *AdminServer) ListMembers(ctx context.Context, r *adminv1.ListMembersRequest) (*adminv1.ListMembersResponse, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT o.id, o.principal, m.tier, o.status
+		 FROM tenant_membership m JOIN admin_operator o ON o.id = m.operator_id
+		 WHERE m.tenant_id = $1 ORDER BY o.id`, int64(r.TenantId))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list members: %v", err)
+	}
+	defer rows.Close()
+	out := &adminv1.ListMembersResponse{}
+	for rows.Next() {
+		var x adminv1.MemberSummary
+		var tier, st int16
+		if err := rows.Scan(&x.OperatorId, &x.Principal, &tier, &st); err != nil {
+			return nil, status.Errorf(codes.Internal, "scan member: %v", err)
+		}
+		x.Tier, x.Status = uint32(tier), uint32(st)
+		out.Members = append(out.Members, &x)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, status.Errorf(codes.Internal, "rows member: %v", err)
+	}
+	return out, nil
+}
