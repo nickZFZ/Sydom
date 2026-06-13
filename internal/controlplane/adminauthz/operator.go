@@ -119,6 +119,7 @@ func ensureOperatorTx(ctx context.Context, tx *sql.Tx, masterKey []byte, princip
 
 // EnsureTenantAdmin 幂等播种某租户的租户管理员：
 //   - operator(principal) 不存在则建（masterKey 加密初始 secret）；已存在不覆盖凭据；
+//   - 写 membership(owner) 记录账户层归属（I-1 不变量：与 casbin 绑定同事务）；
 //   - 租户专属角色（code=tenant-admin-<tenantID>）在 t:<tenantID> 域授单条通配 (*,*)；
 //   - 绑定 operator → 角色 @ t:<tenantID>；
 //   - bump 版本触发 enforcer 重载。
@@ -139,24 +140,10 @@ func EnsureTenantAdmin(ctx context.Context, db *sql.DB, masterKey []byte, tenant
 	if err != nil {
 		return err
 	}
-
-	code := fmt.Sprintf("tenant-admin-%d", tenantID)
-	var roleID int64
-	err = tx.QueryRowContext(ctx, `SELECT id FROM admin_role WHERE code=$1`, code).Scan(&roleID)
-	if errors.Is(err, sql.ErrNoRows) {
-		roleID, err = InsertRole(ctx, tx, code, fmt.Sprintf("租户%d管理员", tenantID))
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return fmt.Errorf("adminauthz: find tenant-admin role: %w", err)
-	}
-
-	dom := TenantDomain(tenantID)
-	if err := InsertRoleGrant(ctx, tx, roleID, dom, "*", "*"); err != nil {
+	if _, err := InsertMembership(ctx, tx, tenantID, opID, TierOwner); err != nil {
 		return err
 	}
-	if err := InsertSubjectRole(ctx, tx, opID, roleID, dom); err != nil {
+	if err := BindTenantAdminTx(ctx, tx, tenantID, opID); err != nil {
 		return err
 	}
 	if err := BumpPolicyVersion(ctx, tx); err != nil {
