@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
+	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -29,7 +30,8 @@ func (h *Handler) appNewForm(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	h.renderPage(w, r, "app_new.html", http.StatusOK, map[string]any{"Nav": "apps", "CSRF": sess.CSRF})
+	h.renderPage(w, r, "app_new.html", http.StatusOK,
+		map[string]any{"Nav": "apps", "CSRF": sess.CSRF, "TenantID": r.URL.Query().Get("tenant_id")})
 }
 
 // createApp：建应用走「一次性 secret」专管线——不经 doWrite，绝不 PRG。
@@ -100,20 +102,35 @@ func (h *Handler) setAppStatus(w http.ResponseWriter, r *http.Request) {
 		func(r *http.Request) string { return "/" })
 }
 
-// dashboard：ListApplications；PermissionDenied → 降级渲染「按 app ID 直达」表单（无枚举）。
+// dashboard：tenant 感知——先 ListMyTenants 定上下文，再 ListApplications(tenant_id)。
+// query tenant_id 优先；否则单租户隐式取首个；超管(无 membership)用 0 列全量。
+// ListApplications PermissionDenied → 降级渲染「按 app ID 直达」表单（无枚举）。
 func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 	principal, sess, ok := h.requireSession(w, r)
 	if !ok {
 		return
 	}
+	selfCtx := cp.WithOperator(r.Context(), principal)
+	mine, err := h.srv.ListMyTenants(selfCtx, &adminv1.ListMyTenantsRequest{})
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListMyTenants", err)
+		return
+	}
+	var tid uint64
+	if q := r.URL.Query().Get("tenant_id"); q != "" {
+		tid, _ = strconv.ParseUint(q, 10, 64)
+	} else if len(mine.Memberships) > 0 {
+		tid = mine.Memberships[0].TenantId
+	} // else tid=0（超管列全量；非超管将被授权拒绝并降级）
+
 	const fm = svc + "ListApplications"
-	msg := &adminv1.ListApplicationsRequest{}
+	msg := &adminv1.ListApplicationsRequest{TenantId: tid}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
 	if err != nil {
 		if status.Code(err) == codes.PermissionDenied {
 			// 降级：无枚举，只给「输入 App ID 直达」表单，绝不暴露任何 app 列表/存在性。
 			h.renderPage(w, r, "dashboard.html", http.StatusOK,
-				map[string]any{"Nav": "apps", "Degraded": true, "CSRF": sess.CSRF})
+				map[string]any{"Nav": "apps", "Degraded": true, "CSRF": sess.CSRF, "Tenants": mine.Memberships})
 			return
 		}
 		h.renderGRPCError(w, r, fm, err)
@@ -125,5 +142,6 @@ func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "dashboard.html", http.StatusOK, map[string]any{
-		"Nav": "apps", "Degraded": false, "Apps": resp.Applications, "CSRF": sess.CSRF})
+		"Nav": "apps", "Degraded": false, "Apps": resp.Applications, "CSRF": sess.CSRF,
+		"Tenants": mine.Memberships, "TenantID": tid})
 }

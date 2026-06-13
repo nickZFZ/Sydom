@@ -6,6 +6,7 @@
 {{if .Nav}}
 <header class="topbar"><span class="brand">司域 Sydom</span>
   <nav><a href="/" {{if eq .Nav "apps"}}class="active"{{end}}>应用</a>
+  <a href="/tenants" {{if eq .Nav "tenants"}}class="active"{{end}}>租户</a>
   <a href="/operators" {{if eq .Nav "system"}}class="active"{{end}}>系统</a></nav>
   <form method="post" action="/logout" class="logout"><button>登出</button></form>
 </header>{{end}}

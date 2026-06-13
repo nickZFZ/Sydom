@@ -1,0 +1,14 @@
+{{define "title"}}我的租户 · 司域 Console{{end}}
+{{define "content"}}
+<h2>我的租户</h2>
+{{if .IsOperatingPlane}}<p class="hint">运营平面（超级管理员）</p>{{end}}
+<ul class="tenant-list">
+{{range .Memberships}}
+<li>{{.TenantName}}（tier {{.Tier}}）—
+  <a href="/tenants/{{.TenantId}}/members">成员</a> ·
+  <a href="/?tenant_id={{.TenantId}}">应用</a></li>
+{{else}}
+<li>暂无租户，<a href="/register">注册一个</a></li>
+{{end}}
+</ul>
+{{end}}

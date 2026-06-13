@@ -1,0 +1,13 @@
+{{define "title"}}成员 · 司域 Console{{end}}
+{{define "content"}}
+<h2>成员（租户 {{.TenantID}}）</h2>
+<table><thead><tr><th>ID</th><th>标识</th><th>档位</th><th>状态</th></tr></thead>
+<tbody>{{range .Members}}<tr><td>{{.OperatorId}}</td><td>{{.Principal}}</td><td>{{.Tier}}</td>
+<td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td></tr>{{end}}</tbody></table>
+<h3>邀请成员</h3>
+<form method="post" action="/tenants/{{.TenantID}}/members" class="stacked-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<label>标识 <input name="principal" placeholder="principal" required></label>
+<button class="btn-primary">邀请</button>
+</form>
+{{end}}

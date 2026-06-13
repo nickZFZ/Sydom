@@ -3,7 +3,7 @@
 <h2>新建应用</h2>
 <form method="post" action="/apps" class="stacked-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
-<label>租户名 <input name="tenant_name" placeholder="tenant" required></label>
+<label>租户 <input name="tenant_id" value="{{.TenantID}}" placeholder="tenant_id" required></label>
 <label>Domain <input name="domain" placeholder="domain" required></label>
 <label>应用名 <input name="name" placeholder="名称" required></label>
 <label>App Key <input name="app_key" placeholder="app_key" required></label>

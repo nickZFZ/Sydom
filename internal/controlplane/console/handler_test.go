@@ -236,14 +236,16 @@ func TestGrants_CSRFMissing_Forbidden(t *testing.T) {
 // TestCreateApp_ShowsOneTimeSecret：建应用走「一次性 secret」专管线（非 PRG）。
 // 断言返回 200（不是 303）且页面渲染了 App Secret 一次性提示与明文密钥标签。
 func TestCreateApp_ShowsOneTimeSecret(t *testing.T) {
-	ts, store, _ := newConsole(t)
+	ts, store, db := newConsole(t)
+	var tID int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES('acme') RETURNING id`).Scan(&tID))
 	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
 	form := url.Values{
-		"csrf_token":  {csrf},
-		"tenant_name": {"acme"},
-		"domain":      {"acme"},
-		"name":        {"acme-app"},
-		"app_key":     {"ak_acme"},
+		"csrf_token": {csrf},
+		"tenant_id":  {fmt.Sprint(tID)},
+		"domain":     {"acme"},
+		"name":       {"acme-app"},
+		"app_key":    {"ak_acme"},
 	}
 	resp, err := c.PostForm(ts.URL+"/apps", form)
 	require.NoError(t, err)
@@ -380,12 +382,14 @@ func TestAdminRoles_CreateThenList(t *testing.T) {
 func mustCreateAppViaConsole(t *testing.T, c *http.Client, ts *httptest.Server, db *sql.DB,
 	csrf, tenant, domain, name, appKey string) int64 {
 	t.Helper()
+	var tID int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant(name) VALUES($1) RETURNING id`, tenant).Scan(&tID))
 	form := url.Values{
-		"csrf_token":  {csrf},
-		"tenant_name": {tenant},
-		"domain":      {domain},
-		"name":        {name},
-		"app_key":     {appKey},
+		"csrf_token": {csrf},
+		"tenant_id":  {fmt.Sprint(tID)},
+		"domain":     {domain},
+		"name":       {name},
+		"app_key":    {appKey},
 	}
 	resp, err := c.PostForm(ts.URL+"/apps", form)
 	require.NoError(t, err)
