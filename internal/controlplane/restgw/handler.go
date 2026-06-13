@@ -38,9 +38,11 @@ func NewHandler(srv *mgmt.AdminServer, resolver auth.SecretResolver, enf *admina
 	return mux
 }
 
-// serve 返回一条路由的中间件管线：读 body → 认证 → 解码 → 授权 → status 闸 → 直调 → 编码。
+// serve 返回一条路由的中间件管线：读 body →（非豁免则）认证 → 解码 →（非豁免则）授权+status 闸 → 直调 → 编码。
+// exempt（免鉴权）路由（RegisterTenant）跳过认证与授权，与 gRPC 端共用同一 mgmt.UnauthenticatedMethods 白名单。
 func (h *Handler) serve(rt route) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		exempt := mgmt.UnauthenticatedMethods[rt.fullMethod]
 		// 1. 读 body（上限 1 MiB；超限 → 400）。
 		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 		body, err := io.ReadAll(r.Body)
@@ -49,11 +51,15 @@ func (h *Handler) serve(rt route) http.HandlerFunc {
 				status.Error(codes.InvalidArgument, "request body too large"))
 			return
 		}
-		// 2. REST-HMAC 认证。
-		principal, err := authenticateHTTP(r, body, h.resolver, time.Now())
-		if err != nil {
-			writeError(w, h.logger, r.Header.Get(auth.HdrPrincipal), rt.fullMethod, err)
-			return
+		// 2. REST-HMAC 认证（豁免路由跳过，principal 留空）。
+		ctx := r.Context()
+		principal := ""
+		if !exempt {
+			principal, err = authenticateHTTP(r, body, h.resolver, time.Now())
+			if err != nil {
+				writeError(w, h.logger, r.Header.Get(auth.HdrPrincipal), rt.fullMethod, err)
+				return
+			}
 		}
 		// 3. 解码 path/query/body → proto（path 权威覆写）。
 		msg, err := rt.decode(r, body)
@@ -61,16 +67,17 @@ func (h *Handler) serve(rt route) http.HandlerFunc {
 			writeError(w, h.logger, principal, rt.fullMethod, err)
 			return
 		}
-		// 4. 共享授权核心（system→"*"，否则 path app_id）。
-		ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, rt.fullMethod, principal, msg)
-		if err != nil {
-			writeError(w, h.logger, principal, rt.fullMethod, err)
-			return
-		}
-		// 5. status 写闸（必在 authz 之后，否则泄露 app 存在性）。
-		if err := mgmt.CheckStatusWrite(ctx, h.db, rt.fullMethod, msg); err != nil {
-			writeError(w, h.logger, principal, rt.fullMethod, err)
-			return
+		// 4-5. 共享授权核心 + status 写闸（豁免路由跳过）。
+		if !exempt {
+			ctx, err = mgmt.AuthorizeRule(ctx, h.enf, rt.fullMethod, principal, msg)
+			if err != nil {
+				writeError(w, h.logger, principal, rt.fullMethod, err)
+				return
+			}
+			if err := mgmt.CheckStatusWrite(ctx, h.db, rt.fullMethod, msg); err != nil {
+				writeError(w, h.logger, principal, rt.fullMethod, err)
+				return
+			}
 		}
 		// 6. 直调 *AdminServer 方法（零网络跳，ctx 携 operator）。
 		resp, err := rt.invoke(ctx, h.srv, msg)

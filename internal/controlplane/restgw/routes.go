@@ -355,8 +355,12 @@ func applicationRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
 		{"GET", "/v1/applications", pfx + "ListApplications",
-			func(_ *http.Request, _ []byte) (proto.Message, error) {
-				return &adminv1.ListApplicationsRequest{}, nil
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				tid, err := queryInt64(r, "tenant_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListApplicationsRequest{TenantId: uint64(tid)}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListApplications(ctx, m.(*adminv1.ListApplicationsRequest))
@@ -482,11 +486,12 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 28 路由（app 域 18 + 应用管理 3 + system 域 7）。
+// allRoutes 汇总全部 32 路由（app 域 18 + 应用管理 3 + system 域 7 + 账户层 4）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
 	rs = append(rs, applicationRoutes()...)
 	rs = append(rs, systemRoutes()...)
+	rs = append(rs, accountRoutes()...)
 	return rs
 }

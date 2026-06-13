@@ -171,15 +171,11 @@ func TestREST_OneTimeSecrets(t *testing.T) {
 	c := rootClient(t, ts.URL)
 
 	// CreateApplication 响应含非空 app_secret。
-	resp, body := c.do("POST", "/v1/applications", map[string]any{
-		"tenantName": "t1", "domain": "d1", "name": "n1", "appKey": "k-once"})
-	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
-	var app adminv1.CreateApplicationResponse
-	require.NoError(t, protoUnmarshal(body, &app))
+	app := createApp(t, c, "t1", "d1", "n1", "k-once")
 	require.NotEmpty(t, app.AppSecret)
 
 	// CreateOperator 响应含非空 secret。
-	resp, body = c.do("POST", "/v1/operators", map[string]any{"principal": "op-rest"})
+	resp, body := c.do("POST", "/v1/operators", map[string]any{"principal": "op-rest"})
 	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
 	var op adminv1.CreateOperatorResponse
 	require.NoError(t, protoUnmarshal(body, &op))
@@ -337,11 +333,15 @@ func TestREST_ErrorMapping(t *testing.T) {
 	resp = postRaw(t, ts.URL, "/v1/applications", "root", []byte("root-secret"), big)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
-	// AlreadyExists→409（app_key 唯一冲突）。
+	// AlreadyExists→409（app_key 全局唯一冲突）。另建租户、用相同 app_key。
 	app := createApp(t, c, "tdup", "ddup", "ndup", "k-dup")
 	require.NotZero(t, app.AppId)
+	rresp, rbody := c.do("POST", "/v1/tenants", map[string]any{"tenantName": "tdup2", "ownerPrincipal": "tdup2-owner"})
+	require.Equal(t, http.StatusOK, rresp.StatusCode, string(rbody))
+	var reg2 adminv1.RegisterTenantResponse
+	require.NoError(t, protoUnmarshal(rbody, &reg2))
 	resp, _ = c.do("POST", "/v1/applications", map[string]any{
-		"tenantName": "tdup2", "domain": "ddup2", "name": "ndup2", "appKey": "k-dup"}) // app_key 唯一冲突
+		"tenantId": reg2.TenantId, "domain": "ddup2", "name": "ndup2", "appKey": "k-dup"}) // app_key 唯一冲突
 	require.Equal(t, http.StatusConflict, resp.StatusCode)
 }
 
@@ -350,8 +350,14 @@ const maxBodyForTest = 1 << 20
 
 func createApp(t *testing.T, c *restClient, tenant, domain, name, appKey string) *adminv1.CreateApplicationResponse {
 	t.Helper()
+	// 先注册租户拿 tenant_id（RegisterTenant 免鉴权；带签名请求亦放行）。
+	rresp, rbody := c.do("POST", "/v1/tenants", map[string]any{
+		"tenantName": tenant, "ownerPrincipal": tenant + "-owner"})
+	require.Equal(t, http.StatusOK, rresp.StatusCode, string(rbody))
+	var reg adminv1.RegisterTenantResponse
+	require.NoError(t, protoUnmarshal(rbody, &reg))
 	resp, body := c.do("POST", "/v1/applications", map[string]any{
-		"tenantName": tenant, "domain": domain, "name": name, "appKey": appKey})
+		"tenantId": reg.TenantId, "domain": domain, "name": name, "appKey": appKey})
 	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
 	var app adminv1.CreateApplicationResponse
 	require.NoError(t, protoUnmarshal(body, &app))
