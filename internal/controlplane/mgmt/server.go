@@ -120,7 +120,7 @@ func (s *AdminServer) DeleteDataPolicy(ctx context.Context, r *adminv1.DeleteDat
 // NewGRPCServer 装配认证→鉴权→status 三拦截器（按序）并注册 AdminService。
 func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB) *grpc.Server {
 	chain := grpc.ChainUnaryInterceptor(
-		auth.UnaryServerInterceptor(resolver), // 1. HMAC 认证 → 注入 principal（auth.AppIDFromContext）
+		auth.UnaryServerInterceptorExempt(resolver, UnauthenticatedMethods), // 1. HMAC 认证（RegisterTenant 免鉴权）→ 注入 principal
 		AuthzUnaryInterceptor(enf),            // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
 		StatusWriteUnaryInterceptor(db),       // 3. status 写拦截
 	)

@@ -72,6 +72,20 @@ func UnaryServerInterceptor(resolver SecretResolver) grpc.UnaryServerInterceptor
 	}
 }
 
+// UnaryServerInterceptorExempt 同 UnaryServerInterceptor，但 exempt 命中的 FullMethod 跳过 HMAC（用于公开 RPC）。
+func UnaryServerInterceptorExempt(resolver SecretResolver, exempt map[string]bool) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if exempt[info.FullMethod] {
+			return handler(ctx, req)
+		}
+		newCtx, err := authenticate(ctx, resolver, info.FullMethod, time.Now())
+		if err != nil {
+			return nil, err
+		}
+		return handler(newCtx, req)
+	}
+}
+
 // StreamServerInterceptor 校验流式 RPC 的 HMAC 凭据并注入 app_id。
 func StreamServerInterceptor(resolver SecretResolver) grpc.StreamServerInterceptor {
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
