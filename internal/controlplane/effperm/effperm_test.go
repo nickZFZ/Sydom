@@ -107,3 +107,22 @@ func TestCompute_EmptyAppNoError(t *testing.T) {
 	require.Empty(t, res.Permissions)
 	require.Empty(t, res.DataViews)
 }
+
+// 新人查自己权限的真实场景：user 无任何绑定，但 app 对其他 role 配了 data_policy。
+// 该 resource 仍要出现在预览里、且因主体不命中 → MatchNone（绝不漏报为"无策略"）。
+func TestCompute_UserWithoutBindingsSeesDataPolicyAsNone(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+
+	// bob 无 g 行；orders 仅对 sales 角色配了行过滤。
+	insertDataPolicy(t, db, appID, "role", "sales", "orders", "allow",
+		`{"op":"EQ","field":"region","value":"east"}`)
+
+	res, err := effperm.Compute(context.Background(), db, appID, "bob")
+	require.NoError(t, err)
+	require.Empty(t, res.Roles)
+	require.Empty(t, res.Permissions)
+	require.Len(t, res.DataViews, 1)
+	require.Equal(t, "orders", res.DataViews[0].Resource)
+	require.Equal(t, "none", res.DataViews[0].Match) // 配了但无 allow 命中 → 全拒
+}

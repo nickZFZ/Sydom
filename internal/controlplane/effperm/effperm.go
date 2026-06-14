@@ -41,6 +41,9 @@ type Result struct {
 // Compute 在调用方提供的只读 tx 内，对 (appID, user) 做瞬态求值。
 // 内部自读 application.domain 作为引擎单一域来源。
 // 任一步失败一律返回 error（fail-close），绝不返回空 Result 冒充「无权限」。
+//
+// 每调用建临时引擎（含 1024 槽 LRU + casbin 全量策略），灌策略后即弃；适合 Beta
+// 低频管理接口（查看用户有效权限）。M2 若需高并发，可引入引擎池或复用常驻实例（缓存留 M2）。
 func Compute(ctx context.Context, tx cp.DBTX, appID int64, user string) (Result, error) {
 	var domain string
 	if err := tx.QueryRowContext(ctx,
@@ -100,6 +103,7 @@ func toSnapshot(rules []cp.Rule, dps []cp.DataPolicy) kernel.Snapshot {
 			Effect:      d.Effect,
 		}
 	}
+	// Version 仅满足 Snapshot 非零约束令引擎 ready；临时引擎不走 ApplyDelta，无版本单调性需求。
 	return kernel.Snapshot{Version: 1, Rules: ks, DataPolicies: kd}
 }
 
