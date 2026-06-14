@@ -64,7 +64,7 @@ func queryInt64(r *http.Request, key string) (int64, error) {
 	return v, nil
 }
 
-// appRoutes 是 app 域 19 路由（授权域=path app_id；path 值权威覆写 body）。
+// appRoutes 是 app 域 20 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -94,6 +94,22 @@ func appRoutes() []route {
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.CreateRole(ctx, m.(*adminv1.CreateRoleRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/business-roles", pfx + "CreateBusinessRole",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.CreateBusinessRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // path 权威覆写
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.CreateBusinessRole(ctx, m.(*adminv1.CreateBusinessRoleRequest))
 			}},
 		{"DELETE", "/v1/apps/{app_id}/roles/{role_id}", pfx + "DeleteRole",
 			func(r *http.Request, _ []byte) (proto.Message, error) {
@@ -497,7 +513,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 33 路由（app 域 19 + 应用管理 3 + system 域 7 + 账户层 4）。
+// allRoutes 汇总全部 34 路由（app 域 20 + 应用管理 3 + system 域 7 + 账户层 4）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
