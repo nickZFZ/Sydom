@@ -1,0 +1,19 @@
+{{define "title"}}新建业务角色 · 运营台 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+</aside>
+<section><h2>新建业务角色</h2>
+<form method="post" action="/ops/apps/{{.AppID}}/roles">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<p><label>角色名称<br><input name="name" required placeholder="如：销售经理"></label></p>
+<fieldset><legend>包含的能力</legend>
+{{range .Permissions}}
+<label><input type="checkbox" name="permission_ids" value="{{.PermissionId}}"> {{if .Name}}{{.Name}}{{else}}{{.Resource}}:{{.Action}}{{end}}</label><br>
+{{end}}
+</fieldset>
+<button type="submit">创建</button>
+<a href="/ops/apps/{{.AppID}}/roles">取消</a>
+</form>
+</section></div>{{end}}

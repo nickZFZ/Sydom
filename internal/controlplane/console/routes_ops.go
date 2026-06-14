@@ -2,10 +2,16 @@ package console
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // registerOps 注册运营台路由（URL 前缀 /ops/）。
@@ -14,6 +20,11 @@ import (
 func (h *Handler) registerOps(mux *http.ServeMux) {
 	mux.HandleFunc("GET /ops/apps/{app_id}/people", h.opsPeople)
 	mux.HandleFunc("GET /ops/apps/{app_id}/people/view", h.opsPersonView)
+	mux.HandleFunc("GET /ops/apps/{app_id}/roles", h.opsRoles)
+	mux.HandleFunc("GET /ops/apps/{app_id}/roles/new", h.opsRoleNewForm)
+	mux.HandleFunc("POST /ops/apps/{app_id}/roles", h.opsCreateRole)
+	mux.HandleFunc("POST /ops/apps/{app_id}/people/assign", h.opsAssignRole)
+	mux.HandleFunc("POST /ops/apps/{app_id}/people/unassign", h.opsUnassignRole)
 }
 
 // ---- 业务语言映射辅助 ----
@@ -217,6 +228,126 @@ func (h *Handler) opsPersonView(w http.ResponseWriter, r *http.Request) {
 type dataScopeNote struct {
 	Resource string
 	Note     string
+}
+
+// ---- 业务角色页 ----
+
+// opsRoles：GET /ops/apps/{app_id}/roles
+// 列出业务角色（只渲染业务名，绝不渲染 code/role_id）。
+func (h *Handler) opsRoles(w http.ResponseWriter, r *http.Request) {
+	principal, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	appID, err := pathUint64(r, "app_id")
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	msg := &adminv1.ListRolesRequest{AppId: appID}
+	actx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListRoles", principal, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	resp, err := h.srv.ListRoles(actx, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	h.renderPage(w, r, "ops_roles.html", http.StatusOK, map[string]any{
+		"AppID": appID, "Roles": resp.Roles, "CSRF": sess.CSRF, "OpsNav": "roles",
+	})
+}
+
+// opsRoleNewForm：GET /ops/apps/{app_id}/roles/new
+// 新建业务角色表单（名称 + 能力复选框，展示权限点 name，隐藏技术原语）。
+func (h *Handler) opsRoleNewForm(w http.ResponseWriter, r *http.Request) {
+	principal, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	appID, err := pathUint64(r, "app_id")
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListPermissions", err)
+		return
+	}
+	msg := &adminv1.ListPermissionsRequest{AppId: appID}
+	actx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListPermissions", principal, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListPermissions", err)
+		return
+	}
+	resp, err := h.srv.ListPermissions(actx, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListPermissions", err)
+		return
+	}
+	h.renderPage(w, r, "ops_role_new.html", http.StatusOK, map[string]any{
+		"AppID": appID, "Permissions": resp.Permissions, "CSRF": sess.CSRF, "OpsNav": "roles",
+	})
+}
+
+// opsCreateRole：POST /ops/apps/{app_id}/roles
+// 建业务角色（doWrite + CreateBusinessRole 原子：建角色+批量授权）。
+// code 由后端生成；前端只传 name + permission_ids。
+func (h *Handler) opsCreateRole(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"CreateBusinessRole",
+		func(r *http.Request) (proto.Message, error) {
+			appID, err := pathUint64(r, "app_id")
+			if err != nil {
+				return nil, err
+			}
+			var permIDs []int64
+			for _, s := range r.Form["permission_ids"] {
+				id, err := strconv.ParseInt(s, 10, 64)
+				if err != nil {
+					return nil, status.Errorf(codes.InvalidArgument, "invalid permission_id %q", s)
+				}
+				permIDs = append(permIDs, id)
+			}
+			return &adminv1.CreateBusinessRoleRequest{
+				AppId:         appID,
+				Name:          r.FormValue("name"),
+				PermissionIds: permIDs,
+			}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.CreateBusinessRole(ctx, m.(*adminv1.CreateBusinessRoleRequest))
+		},
+		func(r *http.Request) string {
+			return fmt.Sprintf("/ops/apps/%s/roles", r.PathValue("app_id"))
+		})
+}
+
+// opsAssignRole：POST /ops/apps/{app_id}/people/assign
+// 分配业务角色给用户（doWrite + BindUserRole，复用 decodeUserRoleRequest），
+// 成功后重定向回人员视图形成闭环。
+func (h *Handler) opsAssignRole(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"BindUserRole",
+		decodeUserRoleRequest,
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.BindUserRole(ctx, m.(*adminv1.UserRoleRequest))
+		},
+		opsPersonRedirect)
+}
+
+// opsUnassignRole：POST /ops/apps/{app_id}/people/unassign
+// 移除业务角色（doWrite + UnbindUserRole），成功后重定向回人员视图。
+func (h *Handler) opsUnassignRole(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"UnbindUserRole",
+		decodeUserRoleRequest,
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.UnbindUserRole(ctx, m.(*adminv1.UserRoleRequest))
+		},
+		opsPersonRedirect)
+}
+
+// opsPersonRedirect 生成 /ops/apps/{id}/people/view?user_id=xxx 重定向 URL。
+// path 权威（app_id 取自 path），user_id 取自 form（经 URL 编码防注入）。
+func opsPersonRedirect(r *http.Request) string {
+	return fmt.Sprintf("/ops/apps/%s/people/view?user_id=%s",
+		r.PathValue("app_id"), url.QueryEscape(r.FormValue("user_id")))
 }
 
 // dataScopeNotes 查 ListDataPolicies，筛选适用于本人（subject=user:userID 或其隐式角色 code）

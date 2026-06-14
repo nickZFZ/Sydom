@@ -1,0 +1,16 @@
+{{define "title"}}业务角色 · 运营台 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+</aside>
+<section><h2>业务角色</h2>
+<a href="/ops/apps/{{.AppID}}/roles/new">+ 新建业务角色</a>
+{{if .Roles}}
+<table><thead><tr><th>角色名称</th></tr></thead><tbody>
+{{range .Roles}}<tr>
+<td>{{if .Name}}{{.Name}}{{else}}（未命名）{{end}}</td>
+</tr>{{end}}
+</tbody></table>
+{{else}}<p>暂无业务角色。</p>{{end}}
+</section></div>{{end}}

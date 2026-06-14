@@ -95,3 +95,82 @@ func TestOps_PersonView_DegradeNoEnumerate(t *testing.T) {
 	require.NotEqual(t, http.StatusOK, page.StatusCode)
 	require.False(t, strings.Contains(readBody(t, page), "查看订单"))
 }
+
+// TestOps_CreateBusinessRole_Then_ShowInList 验证运营台业务角色旅程：
+// 建角色勾能力 → 角色列表显示业务名 → 不漏原语（code/role_id）。
+func TestOps_CreateBusinessRole_Then_ShowInList(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	permID := mustCreatePermissionFull(t, c, ts, db, csrf, uint64(appID), "p_read", "orders", "read", "查看订单")
+
+	form := url.Values{
+		"csrf_token":     {csrf},
+		"name":           {"销售经理"},
+		"permission_ids": {fmt.Sprint(permID)},
+	}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/ops/apps/%d/roles", appID), form)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	page, err := c.Get(ts.URL + fmt.Sprintf("/ops/apps/%d/roles", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, "销售经理")       // 业务角色名可见
+	require.NotContains(t, body, "biz_role_") // 不漏系统生成的 code 前缀
+}
+
+// TestOps_AssignUnassign_Role 验证分配/移除业务角色闭环：
+// assign → 人员视图含角色名；unassign → 人员视图无该角色名。
+func TestOps_AssignUnassign_Role(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	// 建模台播种：权限点 + 业务角色（via CreateBusinessRole）。
+	permID := mustCreatePermissionFull(t, c, ts, db, csrf, uint64(appID), "p_write", "orders", "write", "创建订单")
+	createForm := url.Values{
+		"csrf_token":     {csrf},
+		"name":           {"运营专员"},
+		"permission_ids": {fmt.Sprint(permID)},
+	}
+	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/ops/apps/%d/roles", appID), createForm)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	// 取刚建的角色 id（查 DB）。
+	var roleID int64
+	require.NoError(t, db.QueryRow(`SELECT id FROM role WHERE app_id=$1 AND name=$2`, appID, "运营专员").Scan(&roleID))
+
+	// 分配给 bob。
+	assignForm := url.Values{
+		"csrf_token": {csrf},
+		"user_id":    {"bob"},
+		"role_id":    {fmt.Sprint(roleID)},
+	}
+	resp, err = c.PostForm(ts.URL+fmt.Sprintf("/ops/apps/%d/people/assign", appID), assignForm)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	// 人员视图验证角色可见。
+	page, err := c.Get(ts.URL + fmt.Sprintf("/ops/apps/%d/people/view?user_id=bob", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, "运营专员")
+
+	// 移除角色。
+	unassignForm := url.Values{
+		"csrf_token": {csrf},
+		"user_id":    {"bob"},
+		"role_id":    {fmt.Sprint(roleID)},
+	}
+	resp, err = c.PostForm(ts.URL+fmt.Sprintf("/ops/apps/%d/people/unassign", appID), unassignForm)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+
+	// 人员视图验证角色消失。
+	page2, err := c.Get(ts.URL + fmt.Sprintf("/ops/apps/%d/people/view?user_id=bob", appID))
+	require.NoError(t, err)
+	body2 := readBody(t, page2)
+	require.NotContains(t, body2, "运营专员")
+}
