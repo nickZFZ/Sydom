@@ -65,6 +65,7 @@ func (h *Handler) upsertDataPolicy(w http.ResponseWriter, r *http.Request) {
 				Resource:    r.FormValue("resource"),
 				Condition:   r.FormValue("condition"), // 原始 JSON 串：后端 fail-close
 				Effect:      r.FormValue("effect"),
+				Description: r.FormValue("description"),
 			}, nil
 		},
 		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {

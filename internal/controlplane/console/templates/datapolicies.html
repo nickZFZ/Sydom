@@ -11,9 +11,10 @@
 <button type="button" id="builder-toggle" style="display:none">专业模式（原始 JSON）</button>
 <div id="builder" style="display:none"></div>
 <textarea name="condition" id="cond-json" rows="4" placeholder='condition（原始 JSON），如 {"op":"and","children":[]}' required></textarea>
+<input name="description" placeholder="业务说明（运营台显示，如：仅限本人区域的订单）">
 <button>+ 保存策略</button></form>
-<table><thead><tr><th>ID</th><th>SubjectType</th><th>SubjectId</th><th>Resource</th><th>Effect</th><th>Condition</th><th></th></tr></thead><tbody>
-{{range .DataPolicies}}<tr><td>{{.DataPolicyId}}</td><td>{{.SubjectType}}</td><td>{{.SubjectId}}</td><td>{{.Resource}}</td><td>{{.Effect}}</td><td><code>{{.Condition}}</code></td>
+<table><thead><tr><th>ID</th><th>SubjectType</th><th>SubjectId</th><th>Resource</th><th>Effect</th><th>Condition</th><th>业务说明</th><th></th></tr></thead><tbody>
+{{range .DataPolicies}}<tr><td>{{.DataPolicyId}}</td><td>{{.SubjectType}}</td><td>{{.SubjectId}}</td><td>{{.Resource}}</td><td>{{.Effect}}</td><td><code>{{.Condition}}</code></td><td>{{.Description}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/data-policies/{{.DataPolicyId}}/delete" onsubmit="return confirm('删除？')">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <button class="danger">删除</button></form></td></tr>{{end}}
