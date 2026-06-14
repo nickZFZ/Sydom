@@ -1,0 +1,32 @@
+{{define "title"}}人员能力 · 运营台 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+</aside>
+<section><h2>查询人员能力</h2>
+<form method="get" action="/ops/apps/{{.AppID}}/people/view" class="inline-form">
+<input name="user_id" placeholder="用户 ID" value="{{.UserID}}">
+<button>查询</button>
+</form>
+
+{{if .Queried}}
+<h3>{{.UserID}} 的业务角色</h3>
+{{if .RoleNames}}
+<ul>{{range .RoleNames}}<li>{{.}}</li>{{end}}</ul>
+{{else}}<p>暂无角色绑定。</p>{{end}}
+
+<h3>{{.UserID}} 的能力</h3>
+{{if .Capabilities}}
+<ul>{{range .Capabilities}}<li>{{.Capability}}</li>{{end}}</ul>
+{{else}}<p>暂无可用能力。</p>{{end}}
+
+{{if .DataNotes}}
+<h3>数据范围</h3>
+<table><thead><tr><th>资源</th><th>范围说明</th></tr></thead><tbody>
+{{range .DataNotes}}<tr><td>{{.Resource}}</td><td>{{.Note}}</td></tr>{{end}}
+</tbody></table>
+{{end}}
+
+{{end}}
+</section></div>{{end}}

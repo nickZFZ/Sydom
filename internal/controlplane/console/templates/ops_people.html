@@ -1,0 +1,16 @@
+{{define "title"}}人员 · 运营台 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+</aside>
+<section><h2>人员</h2>
+{{if .People}}
+<table><thead><tr><th>用户</th><th>操作</th></tr></thead><tbody>
+{{range .People}}<tr>
+<td>{{.}}</td>
+<td><a href="/ops/apps/{{$.AppID}}/people/view?user_id={{.}}">查看能力</a></td>
+</tr>{{end}}
+</tbody></table>
+{{else}}<p>暂无绑定人员。</p>{{end}}
+</section></div>{{end}}
