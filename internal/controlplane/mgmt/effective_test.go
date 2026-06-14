@@ -8,8 +8,6 @@ import (
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
-	"github.com/nickZFZ/Sydom/internal/controlplane/outbox"
-	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
 	"github.com/nickZFZ/Sydom/internal/crypto"
 	"github.com/nickZFZ/Sydom/internal/dbtest"
 	"github.com/stretchr/testify/require"
@@ -17,19 +15,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// effSrv 构造一个 in-process *AdminServer，供 GetEffectivePermissions 单测直调（不经 gRPC 拦截器）。
-func effSrv(t *testing.T) (*mgmt.AdminServer, func() []byte) {
-	t.Helper()
-	db := dbtest.SetupSchema(t)
-	srv := mgmt.NewAdminServer(db, policy.NewPolicyManager(db, outbox.NewSink()), mk())
-	return srv, func() []byte { return nil } // db 关闭由 dbtest 的 t.Cleanup 处理，此处仅返回 srv
-}
-
 // TestGetEffectivePermissions_UserIDRequired：UserId 为空时返回 InvalidArgument（不需鉴权，直接调 handler）。
 func TestGetEffectivePermissions_UserIDRequired(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
-	srv := mgmt.NewAdminServer(db, policy.NewPolicyManager(db, outbox.NewSink()), mk())
+	srv := accountsSrv(db)
 
 	ctx := context.Background()
 	_, err := srv.GetEffectivePermissions(ctx, &adminv1.GetEffectivePermissionsRequest{AppId: uint64(appID)})
@@ -93,13 +83,10 @@ func TestGetEffectivePermissions_DisabledApp_ReadPassesThrough(t *testing.T) {
 	require.NoError(t, err, "只读 GetEffectivePermissions 不受 status 写拦截")
 
 	// handler 本身也能处理停用 app（能读到 domain 即可，不校验 status）。
-	srv := mgmt.NewAdminServer(db, policy.NewPolicyManager(db, outbox.NewSink()), mk())
+	srv := accountsSrv(db)
 	resp, err := srv.GetEffectivePermissions(ctx, &adminv1.GetEffectivePermissionsRequest{
 		AppId: uint64(appID), UserId: "u",
 	})
 	require.NoError(t, err, "停用 app 仍可调用只读 handler")
 	require.NotNil(t, resp)
 }
-
-// 确保 effSrv helper 真的存在；避免 unused import。
-var _ = effSrv
