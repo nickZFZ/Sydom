@@ -58,6 +58,26 @@ func TestFilterSymbolic_DenyOverrideShape(t *testing.T) {
 	}
 }
 
+// 覆盖 IN(含 $user.xxx 在列表内保留)/BETWEEN/IS NULL 三条渲染分支（render_sql 侧有对称测试）。
+func TestFilterSymbolic_INListAndOperators(t *testing.T) {
+	f := newFilterWith(
+		[]string{"sales"},
+		sdp("role", "sales", "orders", "allow", `{"op":"AND","children":[
+			{"op":"IN","field":"region","value":["$user.home_region","east"]},
+			{"op":"BETWEEN","field":"amount","value":[10,100]},
+			{"op":"IS_NULL","field":"deleted_at"}
+		]}`),
+	)
+	sr, err := f.FilterSymbolic("alice", "1", "orders")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	want := "(region IN ($user.home_region, 'east') AND amount BETWEEN 10 AND 100 AND deleted_at IS NULL)"
+	if sr.Match != MatchConditional || sr.Predicate != want {
+		t.Fatalf("got match=%q predicate=%q\nwant %q", sr.Match, sr.Predicate, want)
+	}
+}
+
 func TestFilterSymbolic_AllWhenUnconfigured(t *testing.T) {
 	f := newFilterWith(nil)
 	sr, _ := f.FilterSymbolic("alice", "1", "orders")

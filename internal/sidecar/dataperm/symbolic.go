@@ -69,6 +69,10 @@ func renderSymbolicLeaf(c *Condition, b *strings.Builder) {
 	case OpBetween:
 		if arr, ok := c.Value.([]any); ok && len(arr) == 2 {
 			fmt.Fprintf(b, "%s BETWEEN %s AND %s", c.Field, symbolicValue(arr[0]), symbolicValue(arr[1]))
+		} else {
+			// 解析期已保证 BETWEEN 为 2 元数组，此分支不可达；防御性给可见输出而非静默空串，
+			// 与 render_sql.go 的兜底风格对齐（彼处返回 error，符号路径无 error 通道故内联标记）。
+			fmt.Fprintf(b, "%s BETWEEN <invalid>", c.Field)
 		}
 	default: // 标量比较 / LIKE
 		fmt.Fprintf(b, "%s %s %s", c.Field, sqlComparator(c.Op), symbolicValue(c.Value))
