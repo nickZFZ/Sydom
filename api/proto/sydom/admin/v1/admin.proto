@@ -33,6 +33,9 @@ service AdminService {
   rpc GrantAdminRole(GrantAdminRoleRequest) returns (WriteResponse);
   rpc BindOperatorRole(BindOperatorRoleRequest) returns (WriteResponse);
 
+  // —— 业务语言运营台（M1.4）——
+  rpc CreateBusinessRole(CreateBusinessRoleRequest) returns (CreateBusinessRoleResponse);
+
   // —— 读面（SP1：只读 List，REST/Console 展示现状用）——
   rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
   rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
@@ -115,6 +118,7 @@ message UpsertDataPolicyRequest {
   string resource = 5;
   string condition = 6; // 条件树 JSON
   string effect = 7;    // "allow" / "deny"；空串按 "allow"
+  string description = 8; // 业务说明（运营台简记，纯元数据，不参与求值）
 }
 message UpsertDataPolicyResponse {
   int64 data_policy_id = 1;
@@ -246,6 +250,7 @@ message DataPolicySummary {
   string condition = 5; // 原始 JSON 串
   string effect = 6;    // allow|deny
   uint64 version = 7;
+  string description = 8;
 }
 message ListDataPoliciesRequest {
   uint64 app_id = 1;
@@ -303,4 +308,16 @@ message DataPolicyPreview {
   string resource = 1;
   string match = 2;     // all | none | conditional
   string predicate = 3; // 仅 match=conditional 非空
+}
+
+// CreateBusinessRole：业务语言建角色（命名 + 勾能力），后端原子建角色+批量授权。code 系统生成。
+message CreateBusinessRoleRequest {
+  uint64 app_id = 1;
+  string name = 2;
+  repeated int64 permission_ids = 3;
+}
+message CreateBusinessRoleResponse {
+  int64 role_id = 1;
+  uint64 version = 2;
+  bool changed = 3;
 }

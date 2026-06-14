@@ -38,6 +38,7 @@ const (
 	AdminService_CreateAdminRole_FullMethodName         = "/sydom.admin.v1.AdminService/CreateAdminRole"
 	AdminService_GrantAdminRole_FullMethodName          = "/sydom.admin.v1.AdminService/GrantAdminRole"
 	AdminService_BindOperatorRole_FullMethodName        = "/sydom.admin.v1.AdminService/BindOperatorRole"
+	AdminService_CreateBusinessRole_FullMethodName      = "/sydom.admin.v1.AdminService/CreateBusinessRole"
 	AdminService_ListRoles_FullMethodName               = "/sydom.admin.v1.AdminService/ListRoles"
 	AdminService_ListPermissions_FullMethodName         = "/sydom.admin.v1.AdminService/ListPermissions"
 	AdminService_ListGrants_FullMethodName              = "/sydom.admin.v1.AdminService/ListGrants"
@@ -79,6 +80,8 @@ type AdminServiceClient interface {
 	CreateAdminRole(ctx context.Context, in *CreateAdminRoleRequest, opts ...grpc.CallOption) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(ctx context.Context, in *GrantAdminRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	BindOperatorRole(ctx context.Context, in *BindOperatorRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	// —— 业务语言运营台（M1.4）——
+	CreateBusinessRole(ctx context.Context, in *CreateBusinessRoleRequest, opts ...grpc.CallOption) (*CreateBusinessRoleResponse, error)
 	// —— 读面（SP1：只读 List，REST/Console 展示现状用）——
 	ListRoles(ctx context.Context, in *ListRolesRequest, opts ...grpc.CallOption) (*ListRolesResponse, error)
 	ListPermissions(ctx context.Context, in *ListPermissionsRequest, opts ...grpc.CallOption) (*ListPermissionsResponse, error)
@@ -276,6 +279,15 @@ func (c *adminServiceClient) BindOperatorRole(ctx context.Context, in *BindOpera
 	return out, nil
 }
 
+func (c *adminServiceClient) CreateBusinessRole(ctx context.Context, in *CreateBusinessRoleRequest, opts ...grpc.CallOption) (*CreateBusinessRoleResponse, error) {
+	out := new(CreateBusinessRoleResponse)
+	err := c.cc.Invoke(ctx, AdminService_CreateBusinessRole_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) ListRoles(ctx context.Context, in *ListRolesRequest, opts ...grpc.CallOption) (*ListRolesResponse, error) {
 	out := new(ListRolesResponse)
 	err := c.cc.Invoke(ctx, AdminService_ListRoles_FullMethodName, in, out, opts...)
@@ -419,6 +431,8 @@ type AdminServiceServer interface {
 	CreateAdminRole(context.Context, *CreateAdminRoleRequest) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(context.Context, *GrantAdminRoleRequest) (*WriteResponse, error)
 	BindOperatorRole(context.Context, *BindOperatorRoleRequest) (*WriteResponse, error)
+	// —— 业务语言运营台（M1.4）——
+	CreateBusinessRole(context.Context, *CreateBusinessRoleRequest) (*CreateBusinessRoleResponse, error)
 	// —— 读面（SP1：只读 List，REST/Console 展示现状用）——
 	ListRoles(context.Context, *ListRolesRequest) (*ListRolesResponse, error)
 	ListPermissions(context.Context, *ListPermissionsRequest) (*ListPermissionsResponse, error)
@@ -498,6 +512,9 @@ func (UnimplementedAdminServiceServer) GrantAdminRole(context.Context, *GrantAdm
 }
 func (UnimplementedAdminServiceServer) BindOperatorRole(context.Context, *BindOperatorRoleRequest) (*WriteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BindOperatorRole not implemented")
+}
+func (UnimplementedAdminServiceServer) CreateBusinessRole(context.Context, *CreateBusinessRoleRequest) (*CreateBusinessRoleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateBusinessRole not implemented")
 }
 func (UnimplementedAdminServiceServer) ListRoles(context.Context, *ListRolesRequest) (*ListRolesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRoles not implemented")
@@ -893,6 +910,24 @@ func _AdminService_BindOperatorRole_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_CreateBusinessRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBusinessRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).CreateBusinessRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_CreateBusinessRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).CreateBusinessRole(ctx, req.(*CreateBusinessRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_ListRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRolesRequest)
 	if err := dec(in); err != nil {
@@ -1209,6 +1244,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BindOperatorRole",
 			Handler:    _AdminService_BindOperatorRole_Handler,
+		},
+		{
+			MethodName: "CreateBusinessRole",
+			Handler:    _AdminService_CreateBusinessRole_Handler,
 		},
 		{
 			MethodName: "ListRoles",
