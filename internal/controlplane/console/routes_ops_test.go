@@ -116,8 +116,8 @@ func TestOps_CreateBusinessRole_Then_ShowInList(t *testing.T) {
 	page, err := c.Get(ts.URL + fmt.Sprintf("/ops/apps/%d/roles", appID))
 	require.NoError(t, err)
 	body := readBody(t, page)
-	require.Contains(t, body, "销售经理")       // 业务角色名可见
-	require.NotContains(t, body, "biz_role_") // 不漏系统生成的 code 前缀
+	require.Contains(t, body, "销售经理")   // 业务角色名可见
+	require.NotContains(t, body, "br-") // 不漏系统生成的 code 前缀（generateRoleCode = "br-"+hex）
 }
 
 // TestOps_AssignUnassign_Role 验证分配/移除业务角色闭环：
@@ -156,7 +156,8 @@ func TestOps_AssignUnassign_Role(t *testing.T) {
 	page, err := c.Get(ts.URL + fmt.Sprintf("/ops/apps/%d/people/view?user_id=bob", appID))
 	require.NoError(t, err)
 	body := readBody(t, page)
-	require.Contains(t, body, "运营专员")
+	require.Contains(t, body, "运营专员")   // 角色名渲染
+	require.Contains(t, body, "当前直接分配") // bob 已有直绑角色 → 可移除区渲染
 
 	// 移除角色。
 	unassignForm := url.Values{
@@ -172,5 +173,7 @@ func TestOps_AssignUnassign_Role(t *testing.T) {
 	page2, err := c.Get(ts.URL + fmt.Sprintf("/ops/apps/%d/people/view?user_id=bob", appID))
 	require.NoError(t, err)
 	body2 := readBody(t, page2)
-	require.NotContains(t, body2, "运营专员")
+	// 注：角色名"运营专员"仍在分配下拉的 option 中，故不能用整页 NotContains。
+	require.NotContains(t, body2, "当前直接分配") // 可移除区不再渲染（bob 无直绑角色）
+	require.Contains(t, body2, "暂无角色绑定")    // bob 已无任何有效角色
 }

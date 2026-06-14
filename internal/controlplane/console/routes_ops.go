@@ -15,8 +15,7 @@ import (
 )
 
 // registerOps 注册运营台路由（URL 前缀 /ops/）。
-// 业务向界面：隐藏技术原语，给非技术业务管理员看「某人能做什么」。
-// 业务角色页（任务 8）路由将在此追加。
+// 业务向界面：隐藏技术原语，给非技术业务管理员看「某人能做什么」+ 建业务角色 + 分配。
 func (h *Handler) registerOps(mux *http.ServeMux) {
 	mux.HandleFunc("GET /ops/apps/{app_id}/people", h.opsPeople)
 	mux.HandleFunc("GET /ops/apps/{app_id}/people/view", h.opsPersonView)
@@ -61,17 +60,18 @@ func (m capName) label(resource, action string) string {
 	return resource + ":" + action
 }
 
-// roleNameMap 调 ListRoles 建 code→name 映射（显示业务角色名）。
+// roleNameMap 调 ListRoles 返回 code→name 映射（显示业务角色名）+ 原始角色列表
+// （供分配下拉 RoleId+Name 与 roleId→name 反查，单次 RPC 复用）。
 // eff.Roles 返回 casbin 角色码（code），需映射到展示名。
-func (h *Handler) roleNameMap(ctx context.Context, principal string, appID uint64) (map[string]string, error) {
+func (h *Handler) roleNameMap(ctx context.Context, principal string, appID uint64) (map[string]string, []*adminv1.RoleSummary, error) {
 	msg := &adminv1.ListRolesRequest{AppId: appID}
 	actx, err := mgmt.AuthorizeRule(ctx, h.enf, svc+"ListRoles", principal, msg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	resp, err := h.srv.ListRoles(actx, msg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	m := map[string]string{}
 	for _, r := range resp.Roles {
@@ -79,7 +79,7 @@ func (h *Handler) roleNameMap(ctx context.Context, principal string, appID uint6
 			m[r.Code] = r.Name // 无 name 不入 map；roleName() 统一回退到 code（单一回退点）
 		}
 	}
-	return m, nil
+	return m, resp.Roles, nil
 }
 
 // roleName 从 map 取显示名，缺省返回 code 自身（不回退到技术 id）。
@@ -136,6 +136,12 @@ func (h *Handler) opsPeople(w http.ResponseWriter, r *http.Request) {
 // capView 是渲染用的单条能力行（只含业务名，绝不含原语）。
 type capView struct{ Capability string }
 
+// boundRoleView 是某人一条直绑角色的渲染行：展示业务名，RoleID 仅作移除表单的功能值。
+type boundRoleView struct {
+	RoleID int64
+	Name   string
+}
+
 // opsPersonView：GET /ops/apps/{app_id}/people/view?user_id=xxx
 // 展示某人的业务角色名、能力（权限点 name）、数据范围简记（业务说明）。
 // 鉴权：ListPermissions(→capName) + ListRoles(→roleNames) + GetEffectivePermissions + ListUserBindings；
@@ -158,17 +164,18 @@ func (h *Handler) opsPersonView(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListPermissions", err)
 		return
 	}
-	roleNames, err := h.roleNameMap(r.Context(), principal, appID)
+	roleNames, allRoles, err := h.roleNameMap(r.Context(), principal, appID)
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListRoles", err)
 		return
 	}
 
 	data := map[string]any{
-		"AppID":  appID,
-		"UserID": userID,
-		"CSRF":   sess.CSRF,
-		"OpsNav": "people",
+		"AppID":           appID,
+		"UserID":          userID,
+		"CSRF":            sess.CSRF,
+		"OpsNav":          "people",
+		"AssignableRoles": allRoles, // 分配下拉（RoleId+Name）
 	}
 
 	if userID != "" {
@@ -213,11 +220,26 @@ func (h *Handler) opsPersonView(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// 直接绑定的角色（可移除）——区别于 RoleNames（含继承的有效角色，不可单独移除）。
+		// 解绑只能针对直绑（user→role），故用 ListUserBindings 而非 eff.Roles 闭包。
+		roleIDToName := map[int64]string{}
+		for _, rr := range allRoles {
+			roleIDToName[rr.RoleId] = rr.Name
+		}
+		var currentRoles []boundRoleView
+		for _, b := range bindResp.Bindings {
+			nm := roleIDToName[b.RoleId]
+			if nm == "" {
+				nm = "（未命名角色）" // 不漏 code/id：缺名给占位，role_id 仅作移除表单的功能值
+			}
+			currentRoles = append(currentRoles, boundRoleView{RoleID: b.RoleId, Name: nm})
+		}
+
 		data["Queried"] = true
-		data["RoleNames"] = roleDisplayNames // 业务角色名列表（已映射）
+		data["RoleNames"] = roleDisplayNames // 业务角色名列表（含继承，仅展示）
 		data["Capabilities"] = capRows
 		data["DataNotes"] = notes
-		data["Bindings"] = bindResp.Bindings
+		data["CurrentRoles"] = currentRoles // 直绑角色（可移除）
 	}
 	h.renderPage(w, r, "ops_person.html", http.StatusOK, data)
 }
@@ -302,7 +324,7 @@ func (h *Handler) opsCreateRole(w http.ResponseWriter, r *http.Request) {
 			for _, s := range r.Form["permission_ids"] {
 				id, err := strconv.ParseInt(s, 10, 64)
 				if err != nil {
-					return nil, status.Errorf(codes.InvalidArgument, "invalid permission_id %q", s)
+					return nil, status.Errorf(codes.InvalidArgument, "无效的 permission_id %q", s)
 				}
 				permIDs = append(permIDs, id)
 			}

@@ -16,6 +16,23 @@
 <ul>{{range .RoleNames}}<li>{{.}}</li>{{end}}</ul>
 {{else}}<p>暂无角色绑定。</p>{{end}}
 
+<h3>调整角色</h3>
+<form method="post" action="/ops/apps/{{.AppID}}/people/assign" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<input type="hidden" name="user_id" value="{{.UserID}}">
+<select name="role_id">{{range .AssignableRoles}}<option value="{{.RoleId}}">{{.Name}}</option>{{end}}</select>
+<button>分配该角色</button>
+</form>
+{{if .CurrentRoles}}
+<p>当前直接分配（可移除）：</p>
+<ul>{{range .CurrentRoles}}<li>{{.Name}}
+<form method="post" action="/ops/apps/{{$.AppID}}/people/unassign" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input type="hidden" name="user_id" value="{{$.UserID}}">
+<input type="hidden" name="role_id" value="{{.RoleID}}">
+<button>移除</button></form></li>{{end}}</ul>
+{{end}}
+
 <h3>{{.UserID}} 的能力</h3>
 {{if .Capabilities}}
 <ul>{{range .Capabilities}}<li>{{.Capability}}</li>{{end}}</ul>
