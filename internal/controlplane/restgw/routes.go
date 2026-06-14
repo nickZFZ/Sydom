@@ -64,7 +64,7 @@ func queryInt64(r *http.Request, key string) (int64, error) {
 	return v, nil
 }
 
-// appRoutes 是 app 域 18 路由（授权域=path app_id；path 值权威覆写 body）。
+// appRoutes 是 app 域 19 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -252,6 +252,17 @@ func appRoutes() []route {
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListUserBindings(ctx, m.(*adminv1.ListUserBindingsRequest))
+			}},
+		{"GET", "/v1/apps/{app_id}/effective-permissions", pfx + "GetEffectivePermissions",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.GetEffectivePermissionsRequest{AppId: id, UserId: r.URL.Query().Get("user_id")}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.GetEffectivePermissions(ctx, m.(*adminv1.GetEffectivePermissionsRequest))
 			}},
 		{"POST", "/v1/apps/{app_id}/users/{user_id}/roles", pfx + "BindUserRole",
 			func(r *http.Request, body []byte) (proto.Message, error) {
@@ -486,7 +497,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 32 路由（app 域 18 + 应用管理 3 + system 域 7 + 账户层 4）。
+// allRoutes 汇总全部 33 路由（app 域 19 + 应用管理 3 + system 域 7 + 账户层 4）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
