@@ -1,0 +1,109 @@
+package effperm_test
+
+import (
+	"context"
+	"database/sql"
+	"testing"
+
+	"github.com/nickZFZ/Sydom/internal/controlplane/effperm"
+	"github.com/nickZFZ/Sydom/internal/dbtest"
+	"github.com/stretchr/testify/require"
+)
+
+// insertRule 直插一条 casbin_rule（dom 用 dbtest.SeedDomain）。
+// p 行: v0=sub, v1=dom, v2=obj, v3=act, v4=eft
+// g 行: v0=child, v1=parent, v2=dom
+// version=1（测试用固定版本，满足 NOT NULL 约束）。
+func insertRule(t *testing.T, db *sql.DB, appID int64, ptype string, v ...string) {
+	t.Helper()
+	cols := [6]string{}
+	copy(cols[:], v)
+	_, err := db.Exec(
+		`INSERT INTO casbin_rule (app_id, ptype, v0, v1, v2, v3, v4, v5, version)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+		appID, ptype, cols[0], cols[1], cols[2], cols[3], cols[4], cols[5], 1)
+	require.NoError(t, err)
+}
+
+func insertDataPolicy(t *testing.T, db *sql.DB, appID int64, subjType, subjID, resource, effect, condJSON string) {
+	t.Helper()
+	_, err := db.Exec(
+		`INSERT INTO data_policy (app_id, subject_type, subject_id, resource, condition, effect, version)
+		 VALUES ($1,$2,$3,$4,$5::jsonb,$6,1)`,
+		appID, subjType, subjID, resource, condJSON, effect)
+	require.NoError(t, err)
+}
+
+func TestCompute_DirectBindingAndInheritance(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+
+	// sales 继承 viewer；viewer 可 read orders；sales 可 export orders；alice→sales。
+	insertRule(t, db, appID, "p", "viewer", dom, "orders", "read", "allow")
+	insertRule(t, db, appID, "p", "sales", dom, "orders", "export", "allow")
+	insertRule(t, db, appID, "g", "sales", "viewer", dom) // child=sales 继承 parent=viewer
+	insertRule(t, db, appID, "g", "alice", "sales", dom)  // alice→sales
+
+	res, err := effperm.Compute(context.Background(), db, appID, "alice")
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{"sales", "viewer"}, res.Roles)
+	require.ElementsMatch(t, []effperm.Perm{
+		{Resource: "orders", Action: "read"},
+		{Resource: "orders", Action: "export"},
+	}, res.Permissions)
+}
+
+func TestCompute_DenyOverride(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+
+	insertRule(t, db, appID, "p", "sales", dom, "orders", "read", "allow")
+	insertRule(t, db, appID, "p", "sales", dom, "orders", "read", "deny")
+	insertRule(t, db, appID, "g", "alice", "sales", dom)
+
+	res, err := effperm.Compute(context.Background(), db, appID, "alice")
+	require.NoError(t, err)
+	require.Empty(t, res.Permissions) // deny 覆盖后不在允许集
+}
+
+func TestCompute_DataPolicySymbolicPreview(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+
+	insertRule(t, db, appID, "g", "alice", "sales", dom)
+	insertDataPolicy(t, db, appID, "role", "sales", "orders", "allow",
+		`{"op":"EQ","field":"region","value":"$user.region"}`)
+
+	res, err := effperm.Compute(context.Background(), db, appID, "alice")
+	require.NoError(t, err)
+	require.Len(t, res.DataViews, 1)
+	require.Equal(t, "orders", res.DataViews[0].Resource)
+	require.Equal(t, "conditional", res.DataViews[0].Match)
+	require.Equal(t, "region = $user.region", res.DataViews[0].Predicate)
+}
+
+func TestCompute_PoisonedDataPolicyFailClose(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+
+	insertRule(t, db, appID, "g", "alice", "sales", dom)
+	insertDataPolicy(t, db, appID, "role", "sales", "orders", "allow", `{"op":"BOGUS"}`)
+
+	_, err := effperm.Compute(context.Background(), db, appID, "alice")
+	require.Error(t, err) // 命中中毒 → fail-close
+}
+
+func TestCompute_EmptyAppNoError(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+
+	res, err := effperm.Compute(context.Background(), db, appID, "nobody")
+	require.NoError(t, err)
+	require.Empty(t, res.Roles)
+	require.Empty(t, res.Permissions)
+	require.Empty(t, res.DataViews)
+}
