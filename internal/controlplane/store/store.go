@@ -182,16 +182,16 @@ func UpsertDataPolicy(ctx context.Context, ex cp.DBTX, appID int64, p cp.DataPol
 	}
 	if p.ID == 0 {
 		err = ex.QueryRowContext(ctx, `
-			INSERT INTO data_policy (app_id, subject_type, subject_id, resource, condition, effect, version)
-			VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7) RETURNING id`,
-			appID, p.SubjectType, p.SubjectID, p.Resource, p.Condition, effect, version).Scan(&id)
+			INSERT INTO data_policy (app_id, subject_type, subject_id, resource, condition, effect, description, version)
+			VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8) RETURNING id`,
+			appID, p.SubjectType, p.SubjectID, p.Resource, p.Condition, effect, p.Description, version).Scan(&id)
 		return id, true, err
 	}
 	res, err := ex.ExecContext(ctx, `
 		UPDATE data_policy SET subject_type=$1, subject_id=$2, resource=$3, condition=$4::jsonb,
-		       effect=$5, version=$6, updated_at=now()
-		WHERE app_id=$7 AND id=$8`,
-		p.SubjectType, p.SubjectID, p.Resource, p.Condition, effect, version, appID, p.ID)
+		       effect=$5, description=$6, version=$7, updated_at=now()
+		WHERE app_id=$8 AND id=$9`,
+		p.SubjectType, p.SubjectID, p.Resource, p.Condition, effect, p.Description, version, appID, p.ID)
 	if err != nil {
 		return p.ID, false, err
 	}

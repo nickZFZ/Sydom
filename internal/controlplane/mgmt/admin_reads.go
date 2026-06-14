@@ -133,10 +133,10 @@ func (s *AdminServer) ListDataPolicies(ctx context.Context, r *adminv1.ListDataP
 	var err error
 	if r.Resource == "" {
 		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, subject_type, subject_id, resource, condition::text, effect, version FROM data_policy WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
+			`SELECT id, subject_type, subject_id, resource, condition::text, effect, COALESCE(description,''), version FROM data_policy WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
 	} else {
 		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, subject_type, subject_id, resource, condition::text, effect, version FROM data_policy WHERE app_id=$1 AND resource=$2 ORDER BY id`, int64(r.AppId), r.Resource)
+			`SELECT id, subject_type, subject_id, resource, condition::text, effect, COALESCE(description,''), version FROM data_policy WHERE app_id=$1 AND resource=$2 ORDER BY id`, int64(r.AppId), r.Resource)
 	}
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list data policies: %v", err)
@@ -146,7 +146,7 @@ func (s *AdminServer) ListDataPolicies(ctx context.Context, r *adminv1.ListDataP
 	for rows.Next() {
 		var x adminv1.DataPolicySummary
 		var ver int64
-		if err := rows.Scan(&x.DataPolicyId, &x.SubjectType, &x.SubjectId, &x.Resource, &x.Condition, &x.Effect, &ver); err != nil {
+		if err := rows.Scan(&x.DataPolicyId, &x.SubjectType, &x.SubjectId, &x.Resource, &x.Condition, &x.Effect, &x.Description, &ver); err != nil {
 			return nil, status.Errorf(codes.Internal, "scan data policy: %v", err)
 		}
 		x.Version = uint64(ver)

@@ -35,6 +35,7 @@ type DataPolicy struct {
 	Resource    string
 	Condition   string // 条件树 JSON
 	Effect      string // "allow" | "deny"；空串按 "allow"（对齐 DB 默认）
+	Description string // 业务说明（运营台简记）；纯元数据，不参与投影/求值
 }
 
 // DataPolicyChange 是一次 data_policy 变更。
