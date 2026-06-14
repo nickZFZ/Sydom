@@ -3,7 +3,9 @@ package policy
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
@@ -172,6 +174,41 @@ func (m *PolicyManager) CreateRole(ctx context.Context, appID int64, code, name 
 			id, e := store.InsertRole(ctx, tx, appID, code, name)
 			roleID = id
 			return nil, e
+		},
+	})
+	return roleID, d, err
+}
+
+// generateRoleCode 生成系统内部唯一角色 code（业务管理员永不见/不填）。
+// 纯随机避免中文 name slug 复杂度；唯一性由 uq_role_app_code 兜底。
+func generateRoleCode() (string, error) {
+	b := make([]byte, 6)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return "br-" + hex.EncodeToString(b), nil
+}
+
+// CreateBusinessRole 业务语言建角色：单事务内建角色 + 批量授权（原子，杜绝半授权空角色）。
+func (m *PolicyManager) CreateBusinessRole(ctx context.Context, appID int64, name string, permIDs []int64) (roleID int64, d *cp.Delta, err error) {
+	code, err := generateRoleCode()
+	if err != nil {
+		return 0, nil, fmt.Errorf("policy: gen role code: %w", err)
+	}
+	d, err = m.runVersionedWrite(ctx, appID, writeOp{
+		action: "create_business_role", entityType: "role", entityID: code,
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			id, e := store.InsertRole(ctx, tx, appID, code, name)
+			if e != nil {
+				return nil, e
+			}
+			roleID = id
+			for _, pid := range permIDs {
+				if e := store.InsertRolePermission(ctx, tx, appID, id, pid, cp.EffectAllow); e != nil {
+					return nil, e
+				}
+			}
+			return nil, nil
 		},
 	})
 	return roleID, d, err
