@@ -318,20 +318,24 @@ func (h *Handler) listBindings(w http.ResponseWriter, r *http.Request) {
 		"Nav": "apps", "AppID": appID, "Tab": "bindings", "Bindings": resp.Bindings, "CSRF": sess.CSRF})
 }
 
+// decodeUserRoleRequest 从 path(app_id) + form(role_id/user_id) 解码 UserRoleRequest。
+// bindings 页与有效权限页的 bind/unbind 四处 handler 共用，消除字节级相同的 decode 闭包。
+func decodeUserRoleRequest(r *http.Request) (proto.Message, error) {
+	appID, err := pathUint64(r, "app_id")
+	if err != nil {
+		return nil, err
+	}
+	roleID, err := formInt64(r, "role_id")
+	if err != nil {
+		return nil, err
+	}
+	return &adminv1.UserRoleRequest{AppId: appID, UserId: r.FormValue("user_id"), RoleId: roleID}, nil
+}
+
 // bindUser：写动作走 doWrite。
 func (h *Handler) bindUser(w http.ResponseWriter, r *http.Request) {
 	h.doWrite(w, r, svc+"BindUserRole",
-		func(r *http.Request) (proto.Message, error) {
-			appID, err := pathUint64(r, "app_id")
-			if err != nil {
-				return nil, err
-			}
-			roleID, err := formInt64(r, "role_id")
-			if err != nil {
-				return nil, err
-			}
-			return &adminv1.UserRoleRequest{AppId: appID, UserId: r.FormValue("user_id"), RoleId: roleID}, nil
-		},
+		decodeUserRoleRequest,
 		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 			return s.BindUserRole(ctx, m.(*adminv1.UserRoleRequest))
 		},
@@ -341,17 +345,7 @@ func (h *Handler) bindUser(w http.ResponseWriter, r *http.Request) {
 // unbindUser：写动作走 doWrite（同 UserRoleRequest 类型）。
 func (h *Handler) unbindUser(w http.ResponseWriter, r *http.Request) {
 	h.doWrite(w, r, svc+"UnbindUserRole",
-		func(r *http.Request) (proto.Message, error) {
-			appID, err := pathUint64(r, "app_id")
-			if err != nil {
-				return nil, err
-			}
-			roleID, err := formInt64(r, "role_id")
-			if err != nil {
-				return nil, err
-			}
-			return &adminv1.UserRoleRequest{AppId: appID, UserId: r.FormValue("user_id"), RoleId: roleID}, nil
-		},
+		decodeUserRoleRequest,
 		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 			return s.UnbindUserRole(ctx, m.(*adminv1.UserRoleRequest))
 		},

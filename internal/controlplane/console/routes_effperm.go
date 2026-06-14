@@ -95,17 +95,7 @@ func effectiveRedirect(r *http.Request) string {
 // bindUserOnEffective：复用 doWrite + BindUserRole，重定向回 effective 页。
 func (h *Handler) bindUserOnEffective(w http.ResponseWriter, r *http.Request) {
 	h.doWrite(w, r, svc+"BindUserRole",
-		func(r *http.Request) (proto.Message, error) {
-			appID, err := pathUint64(r, "app_id")
-			if err != nil {
-				return nil, err
-			}
-			roleID, err := formInt64(r, "role_id")
-			if err != nil {
-				return nil, err
-			}
-			return &adminv1.UserRoleRequest{AppId: appID, UserId: r.FormValue("user_id"), RoleId: roleID}, nil
-		},
+		decodeUserRoleRequest,
 		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 			return s.BindUserRole(ctx, m.(*adminv1.UserRoleRequest))
 		},
@@ -115,17 +105,7 @@ func (h *Handler) bindUserOnEffective(w http.ResponseWriter, r *http.Request) {
 // unbindUserOnEffective：复用 doWrite + UnbindUserRole，重定向回 effective 页。
 func (h *Handler) unbindUserOnEffective(w http.ResponseWriter, r *http.Request) {
 	h.doWrite(w, r, svc+"UnbindUserRole",
-		func(r *http.Request) (proto.Message, error) {
-			appID, err := pathUint64(r, "app_id")
-			if err != nil {
-				return nil, err
-			}
-			roleID, err := formInt64(r, "role_id")
-			if err != nil {
-				return nil, err
-			}
-			return &adminv1.UserRoleRequest{AppId: appID, UserId: r.FormValue("user_id"), RoleId: roleID}, nil
-		},
+		decodeUserRoleRequest,
 		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 			return s.UnbindUserRole(ctx, m.(*adminv1.UserRoleRequest))
 		},

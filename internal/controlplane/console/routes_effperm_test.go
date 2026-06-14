@@ -53,7 +53,8 @@ func TestEffectivePermissions_WithUser_ShowsResult(t *testing.T) {
 // 降级无枚举：body 绝不含 "alice@corp"（真实用户数据）或 "sales-mgr"（角色串）。
 func TestEffectivePermissions_WrongApp_NoEnumerate(t *testing.T) {
 	ts, store, db := newConsole(t)
-	// 建两个 app；以受限操作员身份登录——只有 appA 授权，访问 appB 有效权限页。
+	// 以 root 登录：root 是全域超管，但对不存在的 app，TenantDomainOf 查无此 app → fail-close
+	// PermissionDenied（root 也不绕过）。证明降级路径不依赖"非超管"前提、对任意越权 app 都无枚举。
 	appID := dbtest.SeedApp(t, db)
 	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
 
