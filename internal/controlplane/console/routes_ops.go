@@ -65,9 +65,7 @@ func (h *Handler) roleNameMap(ctx context.Context, principal string, appID uint6
 	m := map[string]string{}
 	for _, r := range resp.Roles {
 		if r.Name != "" {
-			m[r.Code] = r.Name
-		} else {
-			m[r.Code] = r.Code
+			m[r.Code] = r.Name // 无 name 不入 map；roleName() 统一回退到 code（单一回退点）
 		}
 	}
 	return m, nil

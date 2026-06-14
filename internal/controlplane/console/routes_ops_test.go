@@ -78,9 +78,10 @@ func TestOps_PersonView_BusinessLanguage(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, page.StatusCode)
 	body := readBody(t, page)
-	require.Contains(t, body, "销售经理")         // 业务角色名（来自 ListRoles name 映射）
-	require.Contains(t, body, "查看订单")         // 能力业务名（来自 ListPermissions name 映射）
-	require.NotContains(t, body, "orders:read") // 不漏技术原语
+	require.Contains(t, body, "销售经理")           // 业务角色名（来自 ListRoles name 映射）
+	require.Contains(t, body, "查看订单")           // 能力业务名（来自 ListPermissions name 映射）
+	require.NotContains(t, body, "orders:read") // 不漏技术原语（权限点 resource:action）
+	require.NotContains(t, body, "sales")       // 不漏角色 code（防 roleNameMap 回归）
 }
 
 // TestOps_PersonView_DegradeNoEnumerate 验证越权访问运营台时降级无枚举：
