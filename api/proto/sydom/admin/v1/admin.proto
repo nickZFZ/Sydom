@@ -43,6 +43,9 @@ service AdminService {
   rpc ListOperators(ListOperatorsRequest) returns (ListOperatorsResponse);
   rpc ListAdminRoles(ListAdminRolesRequest) returns (ListAdminRolesResponse);
 
+  // —— 反查 / 有效权限（M1.3）——
+  rpc GetEffectivePermissions(GetEffectivePermissionsRequest) returns (GetEffectivePermissionsResponse);
+
   // —— M1.2 账户层 ——
   rpc RegisterTenant(RegisterTenantRequest) returns (RegisterTenantResponse); // 免鉴权
   rpc ListMyTenants(ListMyTenantsRequest)   returns (ListMyTenantsResponse);  // self
@@ -281,3 +284,23 @@ message InviteMemberResponse { uint64 operator_id = 1; string principal = 2; str
 message ListMembersRequest  { uint64 tenant_id = 1; }
 message MemberSummary       { uint64 operator_id = 1; string principal = 2; uint32 tier = 3; uint32 status = 4; }
 message ListMembersResponse { repeated MemberSummary members = 1; }
+
+// GetEffectivePermissions：反查「某 user 在某 app 能做什么」。app 域 / tenant-scoped 只读。
+message GetEffectivePermissionsRequest {
+  uint64 app_id = 1;
+  string user_id = 2;
+}
+message GetEffectivePermissionsResponse {
+  repeated string roles = 1;                       // 隐式角色闭包（含继承）
+  repeated EffectivePermission permissions = 2;    // deny 覆盖后的功能允许集
+  repeated DataPolicyPreview data_previews = 3;    // 每 resource 的符号行过滤
+}
+message EffectivePermission {
+  string resource = 1;
+  string action = 2;
+}
+message DataPolicyPreview {
+  string resource = 1;
+  string match = 2;     // all | none | conditional
+  string predicate = 3; // 仅 match=conditional 非空
+}

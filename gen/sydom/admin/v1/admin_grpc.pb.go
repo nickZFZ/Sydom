@@ -19,37 +19,38 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AdminService_CreateRole_FullMethodName            = "/sydom.admin.v1.AdminService/CreateRole"
-	AdminService_DeleteRole_FullMethodName            = "/sydom.admin.v1.AdminService/DeleteRole"
-	AdminService_UpsertPermission_FullMethodName      = "/sydom.admin.v1.AdminService/UpsertPermission"
-	AdminService_GrantPermission_FullMethodName       = "/sydom.admin.v1.AdminService/GrantPermission"
-	AdminService_RevokePermission_FullMethodName      = "/sydom.admin.v1.AdminService/RevokePermission"
-	AdminService_AddRoleInheritance_FullMethodName    = "/sydom.admin.v1.AdminService/AddRoleInheritance"
-	AdminService_RemoveRoleInheritance_FullMethodName = "/sydom.admin.v1.AdminService/RemoveRoleInheritance"
-	AdminService_BindUserRole_FullMethodName          = "/sydom.admin.v1.AdminService/BindUserRole"
-	AdminService_UnbindUserRole_FullMethodName        = "/sydom.admin.v1.AdminService/UnbindUserRole"
-	AdminService_UpsertDataPolicy_FullMethodName      = "/sydom.admin.v1.AdminService/UpsertDataPolicy"
-	AdminService_DeleteDataPolicy_FullMethodName      = "/sydom.admin.v1.AdminService/DeleteDataPolicy"
-	AdminService_CreateApplication_FullMethodName     = "/sydom.admin.v1.AdminService/CreateApplication"
-	AdminService_SetApplicationStatus_FullMethodName  = "/sydom.admin.v1.AdminService/SetApplicationStatus"
-	AdminService_ListApplications_FullMethodName      = "/sydom.admin.v1.AdminService/ListApplications"
-	AdminService_CreateOperator_FullMethodName        = "/sydom.admin.v1.AdminService/CreateOperator"
-	AdminService_SetOperatorStatus_FullMethodName     = "/sydom.admin.v1.AdminService/SetOperatorStatus"
-	AdminService_CreateAdminRole_FullMethodName       = "/sydom.admin.v1.AdminService/CreateAdminRole"
-	AdminService_GrantAdminRole_FullMethodName        = "/sydom.admin.v1.AdminService/GrantAdminRole"
-	AdminService_BindOperatorRole_FullMethodName      = "/sydom.admin.v1.AdminService/BindOperatorRole"
-	AdminService_ListRoles_FullMethodName             = "/sydom.admin.v1.AdminService/ListRoles"
-	AdminService_ListPermissions_FullMethodName       = "/sydom.admin.v1.AdminService/ListPermissions"
-	AdminService_ListGrants_FullMethodName            = "/sydom.admin.v1.AdminService/ListGrants"
-	AdminService_ListRoleInheritances_FullMethodName  = "/sydom.admin.v1.AdminService/ListRoleInheritances"
-	AdminService_ListUserBindings_FullMethodName      = "/sydom.admin.v1.AdminService/ListUserBindings"
-	AdminService_ListDataPolicies_FullMethodName      = "/sydom.admin.v1.AdminService/ListDataPolicies"
-	AdminService_ListOperators_FullMethodName         = "/sydom.admin.v1.AdminService/ListOperators"
-	AdminService_ListAdminRoles_FullMethodName        = "/sydom.admin.v1.AdminService/ListAdminRoles"
-	AdminService_RegisterTenant_FullMethodName        = "/sydom.admin.v1.AdminService/RegisterTenant"
-	AdminService_ListMyTenants_FullMethodName         = "/sydom.admin.v1.AdminService/ListMyTenants"
-	AdminService_InviteMember_FullMethodName          = "/sydom.admin.v1.AdminService/InviteMember"
-	AdminService_ListMembers_FullMethodName           = "/sydom.admin.v1.AdminService/ListMembers"
+	AdminService_CreateRole_FullMethodName              = "/sydom.admin.v1.AdminService/CreateRole"
+	AdminService_DeleteRole_FullMethodName              = "/sydom.admin.v1.AdminService/DeleteRole"
+	AdminService_UpsertPermission_FullMethodName        = "/sydom.admin.v1.AdminService/UpsertPermission"
+	AdminService_GrantPermission_FullMethodName         = "/sydom.admin.v1.AdminService/GrantPermission"
+	AdminService_RevokePermission_FullMethodName        = "/sydom.admin.v1.AdminService/RevokePermission"
+	AdminService_AddRoleInheritance_FullMethodName      = "/sydom.admin.v1.AdminService/AddRoleInheritance"
+	AdminService_RemoveRoleInheritance_FullMethodName   = "/sydom.admin.v1.AdminService/RemoveRoleInheritance"
+	AdminService_BindUserRole_FullMethodName            = "/sydom.admin.v1.AdminService/BindUserRole"
+	AdminService_UnbindUserRole_FullMethodName          = "/sydom.admin.v1.AdminService/UnbindUserRole"
+	AdminService_UpsertDataPolicy_FullMethodName        = "/sydom.admin.v1.AdminService/UpsertDataPolicy"
+	AdminService_DeleteDataPolicy_FullMethodName        = "/sydom.admin.v1.AdminService/DeleteDataPolicy"
+	AdminService_CreateApplication_FullMethodName       = "/sydom.admin.v1.AdminService/CreateApplication"
+	AdminService_SetApplicationStatus_FullMethodName    = "/sydom.admin.v1.AdminService/SetApplicationStatus"
+	AdminService_ListApplications_FullMethodName        = "/sydom.admin.v1.AdminService/ListApplications"
+	AdminService_CreateOperator_FullMethodName          = "/sydom.admin.v1.AdminService/CreateOperator"
+	AdminService_SetOperatorStatus_FullMethodName       = "/sydom.admin.v1.AdminService/SetOperatorStatus"
+	AdminService_CreateAdminRole_FullMethodName         = "/sydom.admin.v1.AdminService/CreateAdminRole"
+	AdminService_GrantAdminRole_FullMethodName          = "/sydom.admin.v1.AdminService/GrantAdminRole"
+	AdminService_BindOperatorRole_FullMethodName        = "/sydom.admin.v1.AdminService/BindOperatorRole"
+	AdminService_ListRoles_FullMethodName               = "/sydom.admin.v1.AdminService/ListRoles"
+	AdminService_ListPermissions_FullMethodName         = "/sydom.admin.v1.AdminService/ListPermissions"
+	AdminService_ListGrants_FullMethodName              = "/sydom.admin.v1.AdminService/ListGrants"
+	AdminService_ListRoleInheritances_FullMethodName    = "/sydom.admin.v1.AdminService/ListRoleInheritances"
+	AdminService_ListUserBindings_FullMethodName        = "/sydom.admin.v1.AdminService/ListUserBindings"
+	AdminService_ListDataPolicies_FullMethodName        = "/sydom.admin.v1.AdminService/ListDataPolicies"
+	AdminService_ListOperators_FullMethodName           = "/sydom.admin.v1.AdminService/ListOperators"
+	AdminService_ListAdminRoles_FullMethodName          = "/sydom.admin.v1.AdminService/ListAdminRoles"
+	AdminService_GetEffectivePermissions_FullMethodName = "/sydom.admin.v1.AdminService/GetEffectivePermissions"
+	AdminService_RegisterTenant_FullMethodName          = "/sydom.admin.v1.AdminService/RegisterTenant"
+	AdminService_ListMyTenants_FullMethodName           = "/sydom.admin.v1.AdminService/ListMyTenants"
+	AdminService_InviteMember_FullMethodName            = "/sydom.admin.v1.AdminService/InviteMember"
+	AdminService_ListMembers_FullMethodName             = "/sydom.admin.v1.AdminService/ListMembers"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -87,6 +88,8 @@ type AdminServiceClient interface {
 	ListDataPolicies(ctx context.Context, in *ListDataPoliciesRequest, opts ...grpc.CallOption) (*ListDataPoliciesResponse, error)
 	ListOperators(ctx context.Context, in *ListOperatorsRequest, opts ...grpc.CallOption) (*ListOperatorsResponse, error)
 	ListAdminRoles(ctx context.Context, in *ListAdminRolesRequest, opts ...grpc.CallOption) (*ListAdminRolesResponse, error)
+	// —— 反查 / 有效权限（M1.3）——
+	GetEffectivePermissions(ctx context.Context, in *GetEffectivePermissionsRequest, opts ...grpc.CallOption) (*GetEffectivePermissionsResponse, error)
 	// —— M1.2 账户层 ——
 	RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error)
 	ListMyTenants(ctx context.Context, in *ListMyTenantsRequest, opts ...grpc.CallOption) (*ListMyTenantsResponse, error)
@@ -345,6 +348,15 @@ func (c *adminServiceClient) ListAdminRoles(ctx context.Context, in *ListAdminRo
 	return out, nil
 }
 
+func (c *adminServiceClient) GetEffectivePermissions(ctx context.Context, in *GetEffectivePermissionsRequest, opts ...grpc.CallOption) (*GetEffectivePermissionsResponse, error) {
+	out := new(GetEffectivePermissionsResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetEffectivePermissions_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error) {
 	out := new(RegisterTenantResponse)
 	err := c.cc.Invoke(ctx, AdminService_RegisterTenant_FullMethodName, in, out, opts...)
@@ -416,6 +428,8 @@ type AdminServiceServer interface {
 	ListDataPolicies(context.Context, *ListDataPoliciesRequest) (*ListDataPoliciesResponse, error)
 	ListOperators(context.Context, *ListOperatorsRequest) (*ListOperatorsResponse, error)
 	ListAdminRoles(context.Context, *ListAdminRolesRequest) (*ListAdminRolesResponse, error)
+	// —— 反查 / 有效权限（M1.3）——
+	GetEffectivePermissions(context.Context, *GetEffectivePermissionsRequest) (*GetEffectivePermissionsResponse, error)
 	// —— M1.2 账户层 ——
 	RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error)
 	ListMyTenants(context.Context, *ListMyTenantsRequest) (*ListMyTenantsResponse, error)
@@ -508,6 +522,9 @@ func (UnimplementedAdminServiceServer) ListOperators(context.Context, *ListOpera
 }
 func (UnimplementedAdminServiceServer) ListAdminRoles(context.Context, *ListAdminRolesRequest) (*ListAdminRolesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAdminRoles not implemented")
+}
+func (UnimplementedAdminServiceServer) GetEffectivePermissions(context.Context, *GetEffectivePermissionsRequest) (*GetEffectivePermissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEffectivePermissions not implemented")
 }
 func (UnimplementedAdminServiceServer) RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterTenant not implemented")
@@ -1020,6 +1037,24 @@ func _AdminService_ListAdminRoles_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_GetEffectivePermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEffectivePermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetEffectivePermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetEffectivePermissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetEffectivePermissions(ctx, req.(*GetEffectivePermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_RegisterTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterTenantRequest)
 	if err := dec(in); err != nil {
@@ -1206,6 +1241,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListAdminRoles",
 			Handler:    _AdminService_ListAdminRoles_Handler,
+		},
+		{
+			MethodName: "GetEffectivePermissions",
+			Handler:    _AdminService_GetEffectivePermissions_Handler,
 		},
 		{
 			MethodName: "RegisterTenant",
