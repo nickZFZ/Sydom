@@ -44,6 +44,7 @@ var UnauthenticatedMethods = map[string]bool{
 // 只读：初始化后不得修改（无锁并发读安全）。
 var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/CreateRole":              {"role", "create", true, scopeApp},
+	"/sydom.admin.v1.AdminService/CreateBusinessRole":      {"role", "create", true, scopeApp},
 	"/sydom.admin.v1.AdminService/DeleteRole":              {"role", "delete", true, scopeApp},
 	"/sydom.admin.v1.AdminService/UpsertPermission":        {"permission", "update", true, scopeApp},
 	"/sydom.admin.v1.AdminService/GrantPermission":         {"grant", "create", true, scopeApp},
