@@ -34,9 +34,9 @@ type plan struct {
 	tree *Condition // 仅 modeTree
 }
 
-// buildPlan 跑规格 §5 流水线（除最终方言渲染外）：
-// tier-1 守卫 → 主体展开 → 遍历命中（中毒 fail-close + 变量解析）拆 allow/deny → 空 allow 守卫 → 合并。
-func (f *Filter) buildPlan(user, dom, resource string, attrs map[string]any) (plan, error) {
+// selectAndMerge 跑「主体匹配 + 中毒 fail-close + allow/deny 合并」，不解析变量。
+// 产出含 $user.xxx 的原始合并树，供 SQL/raw 路径后置解析、符号路径直接渲染共用。
+func (f *Filter) selectAndMerge(user, dom, resource string) (plan, error) {
 	bucket, configured := f.table.Lookup(resource)
 	if !configured {
 		return plan{mode: modeNoFilter}, nil
@@ -49,23 +49,18 @@ func (f *Filter) buildPlan(user, dom, resource string, attrs map[string]any) (pl
 	for _, r := range roles {
 		roleSet[r] = struct{}{}
 	}
-
 	var allow, deny []*Condition
 	for _, s := range bucket {
 		if !subjectMatches(s, user, roleSet) {
 			continue
 		}
 		if s.parseErr != nil {
-			return plan{}, s.parseErr // 命中中毒策略 → fail-close（绝不静默丢，丢 deny 会扩权）
-		}
-		resolved, err := resolveVars(s.cond, attrs)
-		if err != nil {
-			return plan{}, err // ErrMissingVar
+			return plan{}, s.parseErr // 命中中毒策略 → fail-close
 		}
 		if s.effect == effectDeny {
-			deny = append(deny, resolved)
+			deny = append(deny, s.cond)
 		} else {
-			allow = append(allow, resolved)
+			allow = append(allow, s.cond)
 		}
 	}
 	if len(allow) == 0 {
@@ -79,6 +74,20 @@ func (f *Filter) buildPlan(user, dom, resource string, attrs map[string]any) (pl
 		}}
 	}
 	return plan{mode: modeTree, tree: merged}, nil
+}
+
+// buildPlan 在 selectAndMerge 之上后置解析变量（行为等价于原实现：合并为结构操作、
+// 解析为逐叶纯函数，先合并后解析与先解析后合并结果一致；ErrMissingVar 仍 fail-close）。
+func (f *Filter) buildPlan(user, dom, resource string, attrs map[string]any) (plan, error) {
+	p, err := f.selectAndMerge(user, dom, resource)
+	if err != nil || p.mode != modeTree {
+		return p, err
+	}
+	resolved, err := resolveVars(p.tree, attrs)
+	if err != nil {
+		return plan{}, err // ErrMissingVar
+	}
+	return plan{mode: modeTree, tree: resolved}, nil
 }
 
 // subjectMatches 判定一条策略的主体是否落在请求用户的主体集内。
