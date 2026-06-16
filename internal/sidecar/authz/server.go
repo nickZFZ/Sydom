@@ -30,8 +30,9 @@ type PermissionRelay interface {
 func NewServer(a *Authorizer, relay PermissionRelay) *Server { return &Server{a: a, relay: relay} }
 
 // NewGRPCServer 装配带 AuthService 的 grpc.Server（供 cmd 监听本地端点）。
-func NewGRPCServer(a *Authorizer, relay PermissionRelay) *grpc.Server {
-	g := grpc.NewServer()
+// opts 供注入额外 ServerOption（如 grpc.Creds 启用 TLS）。
+func NewGRPCServer(a *Authorizer, relay PermissionRelay, opts ...grpc.ServerOption) *grpc.Server {
+	g := grpc.NewServer(opts...)
 	authv1.RegisterAuthServiceServer(g, NewServer(a, relay))
 	return g
 }

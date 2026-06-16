@@ -118,13 +118,15 @@ func (s *AdminServer) DeleteDataPolicy(ctx context.Context, r *adminv1.DeleteDat
 }
 
 // NewGRPCServer 装配认证→鉴权→status 三拦截器（按序）并注册 AdminService。
-func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB) *grpc.Server {
+// opts 供调用方注入额外 ServerOption（如 grpc.Creds 启用 TLS）。
+func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB, opts ...grpc.ServerOption) *grpc.Server {
 	chain := grpc.ChainUnaryInterceptor(
 		auth.UnaryServerInterceptorExempt(resolver, UnauthenticatedMethods), // 1. HMAC 认证（RegisterTenant 免鉴权）→ 注入 principal
 		AuthzUnaryInterceptor(enf),            // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
 		StatusWriteUnaryInterceptor(db),       // 3. status 写拦截
 	)
-	g := grpc.NewServer(grpc.MaxRecvMsgSize(maxMsgSize), grpc.MaxSendMsgSize(maxMsgSize), chain)
+	base := []grpc.ServerOption{grpc.MaxRecvMsgSize(maxMsgSize), grpc.MaxSendMsgSize(maxMsgSize), chain}
+	g := grpc.NewServer(append(base, opts...)...)
 	adminv1.RegisterAdminServiceServer(g, srv)
 	return g
 }

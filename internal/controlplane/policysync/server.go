@@ -157,13 +157,15 @@ func (s *Server) Subscribe(req *syncv1.SubscribeRequest, stream syncv1.PolicySyn
 }
 
 // NewGRPCServer 组装带认证拦截器与 64MB 消息上限的 grpc.Server 并注册 PolicySync。
-func NewGRPCServer(srv *Server, res auth.SecretResolver) *grpc.Server {
-	g := grpc.NewServer(
+// opts 供注入额外 ServerOption（如 grpc.Creds）。
+func NewGRPCServer(srv *Server, res auth.SecretResolver, opts ...grpc.ServerOption) *grpc.Server {
+	base := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(maxMsgSize),
 		grpc.MaxSendMsgSize(maxMsgSize),
 		grpc.UnaryInterceptor(auth.UnaryServerInterceptor(res)),
 		grpc.StreamInterceptor(auth.StreamServerInterceptor(res)),
-	)
+	}
+	g := grpc.NewServer(append(base, opts...)...)
 	syncv1.RegisterPolicySyncServer(g, srv)
 	return g
 }
