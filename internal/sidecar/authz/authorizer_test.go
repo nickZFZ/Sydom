@@ -1,6 +1,7 @@
 package authz
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -144,4 +145,22 @@ func TestAuthorizer_FilterRaw_MergedTree(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, dataperm.MatchConditional, res.Match)
 	require.NotNil(t, res.Tree, "命中应返回合并条件树")
+}
+
+func TestReadyReflectsCheckFresh(t *testing.T) {
+	// 未就绪 → ErrNotReady
+	a := newAuthorizer(t, Config{}, fakeFresh{ready: false})
+	if err := a.Ready(); !errors.Is(err, kernel.ErrNotReady) {
+		t.Fatalf("not-ready want ErrNotReady, got %v", err)
+	}
+	// 就绪且新鲜 → nil
+	a = newAuthorizer(t, Config{}, fakeFresh{ready: true, last: time.Now()})
+	if err := a.Ready(); err != nil {
+		t.Fatalf("fresh want nil, got %v", err)
+	}
+	// 就绪但超陈旧阈 → ErrTooStale
+	a = newAuthorizer(t, Config{MaxStaleness: time.Minute}, fakeFresh{ready: true, last: time.Now().Add(-time.Hour)})
+	if err := a.Ready(); !errors.Is(err, ErrTooStale) {
+		t.Fatalf("stale want ErrTooStale, got %v", err)
+	}
 }

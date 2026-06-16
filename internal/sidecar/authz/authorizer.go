@@ -62,6 +62,12 @@ func (a *Authorizer) checkFresh() error {
 	return nil
 }
 
+// Ready 暴露陈旧守卫供健康探针复用：返回 nil 即就绪，否则为 ErrNotReady/ErrTooStale。
+// 与 Check/BatchCheck/FilterSQL/FilterRaw 完全同源，不引入第二套就绪判定。
+func (a *Authorizer) Ready() error {
+	return a.checkFresh()
+}
+
 // Check 判定 (subject, object, action)；域由 pin。守卫不通过即 fail-close。
 func (a *Authorizer) Check(subject, object, action string) (bool, error) {
 	if err := a.checkFresh(); err != nil {
