@@ -24,25 +24,27 @@ services:
     command: ["-config", "/config.yaml"]
     volumes: ["./cp.config.yaml:/config.yaml:ro"]
     ports: ["${CP_ADMIN_HOST_PORT:-8081}:8081", "${CP_HEARTBEAT_HOST_PORT:-8082}:8082"]
+    healthcheck: { test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1:8083/readyz"], interval: 2s, timeout: 3s, retries: 30 }
     restart: on-failure
   seeder:
     build: { context: .., dockerfile: deploy/Dockerfile.seed }
     profiles: ["tools"]
-    depends_on: { controlplane: { condition: service_started } }
+    depends_on: { controlplane: { condition: service_healthy } }
   sidecar:
     build: { context: .., dockerfile: deploy/Dockerfile.sidecar }
-    depends_on: { controlplane: { condition: service_started } }
+    depends_on: { controlplane: { condition: service_healthy } }
     environment:
       SYDOM_APP_SECRET: ${SYDOM_APP_SECRET}
     command: ["-config", "/config.yaml"]
     volumes: ["./sidecar.config.yaml:/config.yaml:ro"]
     ports: ["${SIDECAR_HOST_PORT:-8090}:8090"]
+    healthcheck: { test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1:8091/readyz"], interval: 2s, timeout: 3s, retries: 30 }
     restart: on-failure
   orderservice:
     build: { context: .., dockerfile: deploy/Dockerfile.orderservice }
     # 显式声明对 PG 的就绪依赖（启动即 EnsureSchema 直连 PG），不靠链式传递。
     depends_on:
-      sidecar: { condition: service_started }
+      sidecar: { condition: service_healthy }
       postgres: { condition: service_healthy }
     environment:
       DATABASE_DSN: "postgres://sydom:sydom@postgres:5432/sydom?sslmode=disable"
