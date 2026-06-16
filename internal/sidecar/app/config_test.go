@@ -99,3 +99,18 @@ max_staleness: "0s"
 	require.NoError(t, err)
 	require.Equal(t, time.Duration(0), cfg.MaxStaleness)
 }
+
+func TestLoadConfigParsesTLSAndHealth(t *testing.T) {
+	body := "control_plane_addr: cp:8082\napp_key: k\ndomain: shop\nauth_addr: \":8090\"\n" +
+		"tls_cert_file: /c/cert.pem\ntls_key_file: /c/key.pem\n" +
+		"control_plane_tls: true\ncontrol_plane_ca_file: /c/ca.pem\nhealth_addr: \":8091\"\n"
+	path := writeConfig(t, body)
+	getenv := envFunc(map[string]string{"SYDOM_APP_SECRET": "appsecret"})
+	cfg, err := app.LoadConfig(path, getenv)
+	require.NoError(t, err)
+	require.Equal(t, "/c/cert.pem", cfg.TLSCertFile)
+	require.Equal(t, "/c/key.pem", cfg.TLSKeyFile)
+	require.True(t, cfg.ControlPlaneTLS)
+	require.Equal(t, "/c/ca.pem", cfg.ControlPlaneCAFile)
+	require.Equal(t, ":8091", cfg.HealthAddr)
+}

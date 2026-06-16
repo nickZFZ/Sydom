@@ -20,6 +20,11 @@ type Config struct {
 	MaxStaleness     time.Duration // 陈旧守卫上限（零值=关闭）
 	BackoffInitial   time.Duration // syncclient 退避初值（零值用 500ms）
 	BackoffMax       time.Duration // syncclient 退避上限（零值用 30s）
+	TLSCertFile        string // serve auth 口（SDK→sidecar）证书；空=明文，与 TLSKeyFile 须同设
+	TLSKeyFile         string
+	ControlPlaneTLS    bool   // dial 控制面 sync 是否走 TLS
+	ControlPlaneCAFile string // 信任 CA；空=系统根
+	HealthAddr         string // 空=不起健康口
 
 	Secret []byte // env SYDOM_APP_SECRET（HMAC 密钥，原始字节）
 }
@@ -32,6 +37,11 @@ type fileConfig struct {
 	MaxStaleness     string `yaml:"max_staleness"`
 	BackoffInitial   string `yaml:"backoff_initial"`
 	BackoffMax       string `yaml:"backoff_max"`
+	TLSCertFile        string `yaml:"tls_cert_file"`
+	TLSKeyFile         string `yaml:"tls_key_file"`
+	ControlPlaneTLS    bool   `yaml:"control_plane_tls"`
+	ControlPlaneCAFile string `yaml:"control_plane_ca_file"`
+	HealthAddr         string `yaml:"health_addr"`
 }
 
 // LoadConfig 读 YAML + env 覆盖密钥/可选项 + 校验（任一不满足 fail-close 返错）。
@@ -47,10 +57,15 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 	}
 
 	cfg := Config{
-		ControlPlaneAddr: firstNonEmpty(getenv("SYDOM_CONTROL_PLANE_ADDR"), fc.ControlPlaneAddr),
-		AppKey:           fc.AppKey,
-		Domain:           fc.Domain,
-		AuthAddr:         fc.AuthAddr,
+		ControlPlaneAddr:   firstNonEmpty(getenv("SYDOM_CONTROL_PLANE_ADDR"), fc.ControlPlaneAddr),
+		AppKey:             fc.AppKey,
+		Domain:             fc.Domain,
+		AuthAddr:           fc.AuthAddr,
+		TLSCertFile:        fc.TLSCertFile,
+		TLSKeyFile:         fc.TLSKeyFile,
+		ControlPlaneTLS:    fc.ControlPlaneTLS,
+		ControlPlaneCAFile: fc.ControlPlaneCAFile,
+		HealthAddr:         fc.HealthAddr,
 	}
 	if cfg.MaxStaleness, err = parseDurationDefault(fc.MaxStaleness, 0); err != nil {
 		return Config{}, fmt.Errorf("max_staleness: %w", err)
