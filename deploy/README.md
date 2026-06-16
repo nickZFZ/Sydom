@@ -11,13 +11,9 @@
 在 `deploy/` 目录下创建 `.env` 文件，填入三把密钥：
 
 ```bash
-# 生成示例（在 deploy/ 目录执行）
-cat > .env <<'EOF'
-SYDOM_MASTER_KEY=$(openssl rand -base64 32)
-SYDOM_ROOT_SECRET=$(openssl rand -base64 32)
-SYDOM_APP_SECRET=$(openssl rand -base64 32)
-EOF
-# 上面用了 $() 需要展开，直接执行会写成字面量，建议逐行运行：
+# 在 deploy/ 目录执行：先把 $() 展开成真实随机值，再写盘 .env
+# （切勿用引号 heredoc 如 <<'EOF'——那会把 $(openssl ...) 原样写成字面量，
+#  生成可预测的弱密钥且能通过非空校验，属安全隐患）
 MASTER_KEY=$(openssl rand -base64 32)
 ROOT_SECRET=$(openssl rand -base64 32)
 APP_SECRET=$(openssl rand -base64 32)
