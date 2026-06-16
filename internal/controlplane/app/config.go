@@ -27,6 +27,10 @@ type Config struct {
 	ConsoleSessionTTL     time.Duration // 默认 30m
 	ConsoleCookieInsecure bool          // true=允许非 HTTPS 下发 cookie（本地/明文测试）
 
+	TLSCertFile string // 空=明文；与 TLSKeyFile 须同设（tlsconfig.Server 校验）
+	TLSKeyFile  string
+	HealthAddr  string // 空=不起健康口（向后兼容）；明文、免鉴权
+
 	MasterKey  []byte // env SYDOM_MASTER_KEY（base64，解码须 32 字节）
 	RootSecret []byte // env SYDOM_ROOT_SECRET（原始字节）
 }
@@ -44,6 +48,10 @@ type fileConfig struct {
 	ConsoleAddr           string `yaml:"console_addr"`
 	ConsoleSessionTTL     string `yaml:"console_session_ttl"`
 	ConsoleCookieInsecure bool   `yaml:"console_cookie_insecure"`
+
+	TLSCertFile string `yaml:"tls_cert_file"`
+	TLSKeyFile  string `yaml:"tls_key_file"`
+	HealthAddr  string `yaml:"health_addr"`
 }
 
 // LoadConfig 读 YAML + env 覆盖密钥/可选项 + 校验（任一不满足 fail-close 返错）。
@@ -68,6 +76,10 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 
 		ConsoleAddr:           fc.ConsoleAddr,
 		ConsoleCookieInsecure: fc.ConsoleCookieInsecure,
+
+		TLSCertFile: fc.TLSCertFile,
+		TLSKeyFile:  fc.TLSKeyFile,
+		HealthAddr:  fc.HealthAddr,
 	}
 	if cfg.HeartbeatInterval, err = parseDurationDefault(fc.HeartbeatInterval, 30*time.Second); err != nil {
 		return Config{}, fmt.Errorf("heartbeat_interval: %w", err)

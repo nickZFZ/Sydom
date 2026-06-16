@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"errors"
 	"flag"
@@ -25,7 +26,11 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/policysync"
 	"github.com/nickZFZ/Sydom/internal/controlplane/restgw"
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
+	"github.com/nickZFZ/Sydom/internal/health"
+	"github.com/nickZFZ/Sydom/internal/tlsconfig"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Run 装配并运行控制面，阻塞至 ctx 取消后优雅关闭。adminLis/syncLis/restLis/consoleLis 由调用方注入（测试用 :0）。
@@ -63,11 +68,21 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 		return fmt.Errorf("admin enforcer: %w", err)
 	}
 
+	srvTLS, err := tlsconfig.Server(cfg.TLSCertFile, cfg.TLSKeyFile)
+	if err != nil {
+		return fmt.Errorf("server tls: %w", err) // fail-close：半配置/证书不可读即拒绝启动
+	}
+	var grpcOpts []grpc.ServerOption
+	if srvTLS != nil {
+		grpcOpts = append(grpcOpts, grpc.Creds(credentials.NewTLS(srvTLS)))
+		logger.Info("control plane TLS enabled")
+	}
+
 	mgr := policy.NewPolicyManager(db, outbox.NewSink())
 	adminSrv := mgmt.NewAdminServer(db, mgr, cfg.MasterKey)
-	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db)
+	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db, grpcOpts...)
 	syncCore := policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval}, mgr)
-	syncSrv := policysync.NewGRPCServer(syncCore, appResolver)
+	syncSrv := policysync.NewGRPCServer(syncCore, appResolver, grpcOpts...)
 	pub := broadcast.NewRedisPublisher(rdb)
 	sub := broadcast.NewRedisSubscriber(rdb)
 
@@ -78,7 +93,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var wg sync.WaitGroup
-	errCh := make(chan error, 6)
+	errCh := make(chan error, 8)
 	launch := func(name string, fn func() error) {
 		wg.Add(1)
 		go func() {
@@ -96,6 +111,9 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 
 	var restSrv *http.Server
 	if restLis != nil {
+		if srvTLS != nil {
+			restLis = tls.NewListener(restLis, srvTLS)
+		}
 		restSrv = &http.Server{Handler: restgw.NewHandler(adminSrv, operatorResolver, enforcer, db, logger)}
 		logger.Info("control plane REST enabled", "rest_addr", restLis.Addr().String())
 		launch("rest-serve", func() error {
@@ -108,12 +126,31 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 
 	var consoleSrv *http.Server
 	if consoleLis != nil {
+		if srvTLS != nil {
+			consoleLis = tls.NewListener(consoleLis, srvTLS)
+		}
 		store := console.NewRedisStore(rdb, cfg.ConsoleSessionTTL)
 		consoleSrv = &http.Server{Handler: console.NewHandler(
 			adminSrv, operatorResolver, enforcer, db, store, logger, !cfg.ConsoleCookieInsecure)}
 		logger.Info("control plane Console enabled", "console_addr", consoleLis.Addr().String())
 		launch("console-serve", func() error {
 			if e := consoleSrv.Serve(consoleLis); e != nil && !errors.Is(e, http.ErrServerClosed) {
+				return e
+			}
+			return nil
+		})
+	}
+
+	var healthSrv *http.Server
+	if cfg.HealthAddr != "" {
+		healthLis, lerr := net.Listen("tcp", cfg.HealthAddr)
+		if lerr != nil {
+			return fmt.Errorf("listen health: %w", lerr)
+		}
+		healthSrv = &http.Server{Handler: health.Handler(cpReadiness(db, rdb))}
+		logger.Info("control plane health enabled", "health_addr", cfg.HealthAddr)
+		launch("health-serve", func() error {
+			if e := healthSrv.Serve(healthLis); e != nil && !errors.Is(e, http.ErrServerClosed) {
 				return e
 			}
 			return nil
@@ -131,6 +168,11 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 		shutdownCtx, scancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer scancel()
 		_ = consoleSrv.Shutdown(shutdownCtx)
+	}
+	if healthSrv != nil {
+		shutdownCtx, scancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer scancel()
+		_ = healthSrv.Shutdown(shutdownCtx)
 	}
 	grpcSrv.GracefulStop()
 	syncSrv.GracefulStop()
@@ -189,4 +231,16 @@ func Main() int {
 		return 1
 	}
 	return 0
+}
+
+// cpReadiness 构造控制面就绪 checker：DB Ping + Redis Ping 皆通即就绪（fail-close）。
+func cpReadiness(db *sql.DB, rdb *redis.Client) health.Checker {
+	return func(ctx context.Context) error {
+		pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		if err := db.PingContext(pingCtx); err != nil {
+			return err
+		}
+		return rdb.Ping(pingCtx).Err()
+	}
 }

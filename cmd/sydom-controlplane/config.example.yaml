@@ -9,6 +9,11 @@ relay_poll_interval: "1s"
 # console_addr: ":8084"
 # console_session_ttl: "30m"        # 会话/CSRF 有效期，默认 30m
 # console_cookie_insecure: false    # true 仅用于本地明文 HTTP 调试（生产保持 false）
+# 可选 TLS（cert/key 须同设，半配置启动失败；缺省=明文，仅本地/测试）：
+# tls_cert_file: "/etc/sydom/tls/cert.pem"
+# tls_key_file:  "/etc/sydom/tls/key.pem"
+# 可选健康口（明文、免鉴权，仅 /healthz + /readyz；缺省不起）：
+# health_addr: ":8083"
 # 敏感项只走环境变量（不写本文件）：
 #   SYDOM_MASTER_KEY  = base64(32 字节 AES-256 主密钥)
 #   SYDOM_ROOT_SECRET = root operator 初始 HMAC 密钥

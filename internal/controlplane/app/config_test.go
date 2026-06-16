@@ -168,3 +168,18 @@ root_principal: "root@sydom"
 	require.Equal(t, 15*time.Minute, cfg.ConsoleSessionTTL)
 	require.True(t, cfg.ConsoleCookieInsecure)
 }
+
+func TestLoadConfigParsesTLSAndHealth(t *testing.T) {
+	body := "database_dsn: postgres://x\nredis_addr: r:6379\nadmin_addr: \":1\"\nsync_addr: \":2\"\n" +
+		"root_principal: root@sydom\ntls_cert_file: /c/cert.pem\ntls_key_file: /c/key.pem\nhealth_addr: \":8083\"\n"
+	path := writeConfig(t, body)
+	getenv := envFunc(map[string]string{
+		"SYDOM_MASTER_KEY":  base64.StdEncoding.EncodeToString(make([]byte, crypto.KeySize)),
+		"SYDOM_ROOT_SECRET": "rootsecret",
+	})
+	cfg, err := app.LoadConfig(path, getenv)
+	require.NoError(t, err)
+	require.Equal(t, "/c/cert.pem", cfg.TLSCertFile)
+	require.Equal(t, "/c/key.pem", cfg.TLSKeyFile)
+	require.Equal(t, ":8083", cfg.HealthAddr)
+}
