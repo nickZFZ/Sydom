@@ -207,3 +207,49 @@ func (s *AdminServer) BindOperatorRole(ctx context.Context, r *adminv1.BindOpera
 	}
 	return &adminv1.WriteResponse{Changed: true}, nil
 }
+
+// RevokeAdminGrant 撤一条管理授权（GrantAdminRole 的逆）。原子事务 + 必 bump（撤权立即生效）。
+// 撤不存在的授权 → 回滚 + NotFound（严格，不幂等；防版本跳变 / 幽灵 delta）。
+func (s *AdminServer) RevokeAdminGrant(ctx context.Context, r *adminv1.RevokeAdminGrantRequest) (*adminv1.WriteResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+	if err := adminauthz.DeleteRoleGrant(ctx, tx, r.RoleId, r.Domain, r.Resource, r.Action); err != nil {
+		if errors.Is(err, adminauthz.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "grant not found")
+		}
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+	}
+	return &adminv1.WriteResponse{Changed: true}, nil
+}
+
+// UnbindOperatorRole 解绑操作员与管理角色（BindOperatorRole 的逆）。原子事务 + 必 bump。
+// 解绑不存在的绑定 → 回滚 + NotFound。
+func (s *AdminServer) UnbindOperatorRole(ctx context.Context, r *adminv1.UnbindOperatorRoleRequest) (*adminv1.WriteResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+	if err := adminauthz.DeleteSubjectRole(ctx, tx, r.OperatorId, r.RoleId, r.Domain); err != nil {
+		if errors.Is(err, adminauthz.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "binding not found")
+		}
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+	}
+	return &adminv1.WriteResponse{Changed: true}, nil
+}

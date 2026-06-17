@@ -63,6 +63,8 @@ var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/CreateAdminRole":         {"admin", "create", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/GrantAdminRole":          {"admin", "update", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/BindOperatorRole":        {"admin", "update", false, scopeSystem},
+	"/sydom.admin.v1.AdminService/RevokeAdminGrant":        {"admin", "update", false, scopeSystem},
+	"/sydom.admin.v1.AdminService/UnbindOperatorRole":      {"admin", "update", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/ListRoles":               {"role", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/ListPermissions":         {"permission", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/ListGrants":              {"grant", "read", false, scopeApp},
