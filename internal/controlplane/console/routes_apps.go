@@ -22,6 +22,7 @@ func (h *Handler) registerApps(mux *http.ServeMux) {
 	mux.HandleFunc("POST /apps", h.createApp)
 	mux.HandleFunc("GET /apps/redirect", h.appRedirect)
 	mux.HandleFunc("POST /apps/{app_id}/status", h.setAppStatus)
+	mux.HandleFunc("POST /apps/{app_id}/rotate-secret", h.rotateAppSecret)
 }
 
 // appNewForm：建应用表单页（仅需会话；授权延后到 POST）。
@@ -100,6 +101,40 @@ func (h *Handler) setAppStatus(w http.ResponseWriter, r *http.Request) {
 			return s.SetApplicationStatus(ctx, m.(*adminv1.SetApplicationStatusRequest))
 		},
 		func(r *http.Request) string { return "/" })
+}
+
+// rotateAppSecret：轮换 app 凭据走「一次性 secret」专管线——不经 doWrite，绝不 PRG。
+// 新 App Secret 仅此一次返回，必须当场渲染；旧 secret 即刻失效（使用旧 secret 的 sidecar
+// 将认证失败，直到配置更新）。该明文绝不日志、绝不落盘。RotateApplicationSecret 豁免 status
+// 写闸（isWrite=false），故停用 app 也可轮换。
+func (h *Handler) rotateAppSecret(w http.ResponseWriter, r *http.Request) {
+	principal, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	if !h.checkCSRF(r, sess) {
+		h.renderError(w, r, codes.PermissionDenied, "CSRF 校验失败", nil)
+		return
+	}
+	const fm = svc + "RotateApplicationSecret"
+	appID, err := pathUint64(r, "app_id")
+	if err != nil {
+		h.renderGRPCError(w, r, fm, err)
+		return
+	}
+	msg := &adminv1.RotateApplicationSecretRequest{AppId: appID}
+	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, fm, err)
+		return
+	}
+	resp, err := h.srv.RotateApplicationSecret(ctx, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, fm, err)
+		return
+	}
+	h.renderPage(w, r, "app_secret_rotated.html", http.StatusOK, map[string]any{
+		"Nav": "apps", "AppID": appID, "AppSecret": resp.AppSecret}) // 一次性展示，绝不日志/落盘
 }
 
 // dashboard：tenant 感知——先 ListMyTenants 定上下文，再 ListApplications(tenant_id)。

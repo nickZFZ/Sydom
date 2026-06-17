@@ -15,6 +15,14 @@
 <input name="role_id" placeholder="role_id">
 <input name="domain" placeholder="domain(app_id 或 *)">
 <button>绑定角色</button></form>
+<form method="post" action="/operators/{{.OperatorId}}/unbind-role" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input name="role_id" placeholder="role_id">
+<input name="domain" placeholder="domain(app_id 或 *)">
+<button>解绑角色</button></form>
+<form method="post" action="/operators/{{.OperatorId}}/reset-secret" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<button>重置密钥</button></form>
 </td></tr>{{end}}
 </tbody></table>
 {{end}}

@@ -22,6 +22,9 @@ func (h *Handler) registerSystem(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin-roles", h.listAdminRoles)
 	mux.HandleFunc("POST /admin-roles", h.createAdminRole)
 	mux.HandleFunc("POST /admin-roles/{role_id}/grants", h.grantAdminRole)
+	mux.HandleFunc("POST /admin-roles/{role_id}/revoke-grant", h.revokeAdminGrant)
+	mux.HandleFunc("POST /operators/{operator_id}/unbind-role", h.unbindOperatorRole)
+	mux.HandleFunc("POST /operators/{operator_id}/reset-secret", h.resetOperatorSecret)
 }
 
 // listOperators：系统读页内联范式（会话 → 授权 → 直调 → 渲染）。
@@ -178,4 +181,77 @@ func (h *Handler) grantAdminRole(w http.ResponseWriter, r *http.Request) {
 			return s.GrantAdminRole(ctx, m.(*adminv1.GrantAdminRoleRequest))
 		},
 		func(*http.Request) string { return "/admin-roles" })
+}
+
+// revokeAdminGrant：撤管理授权走 doWrite。role_id 取自 path（权威），domain/resource/action 取表单。
+func (h *Handler) revokeAdminGrant(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"RevokeAdminGrant",
+		func(r *http.Request) (proto.Message, error) {
+			roleID, err := pathInt64(r, "role_id")
+			if err != nil {
+				return nil, err
+			}
+			return &adminv1.RevokeAdminGrantRequest{
+				RoleId:   roleID,
+				Domain:   r.FormValue("domain"),
+				Resource: r.FormValue("resource"),
+				Action:   r.FormValue("action"),
+			}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.RevokeAdminGrant(ctx, m.(*adminv1.RevokeAdminGrantRequest))
+		},
+		func(*http.Request) string { return "/admin-roles" })
+}
+
+// unbindOperatorRole：解绑角色走 doWrite。operator_id 取自 path（权威），role_id/domain 取表单。
+func (h *Handler) unbindOperatorRole(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"UnbindOperatorRole",
+		func(r *http.Request) (proto.Message, error) {
+			opID, err := pathInt64(r, "operator_id")
+			if err != nil {
+				return nil, err
+			}
+			roleID, err := formInt64(r, "role_id")
+			if err != nil {
+				return nil, err
+			}
+			return &adminv1.UnbindOperatorRoleRequest{OperatorId: opID, RoleId: roleID, Domain: r.FormValue("domain")}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.UnbindOperatorRole(ctx, m.(*adminv1.UnbindOperatorRoleRequest))
+		},
+		func(*http.Request) string { return "/operators" })
+}
+
+// resetOperatorSecret：重置 operator 凭据走「一次性 secret」专管线——不经 doWrite，绝不 PRG。
+// 新明文 secret 仅此一次返回，必须当场渲染；旧凭据即刻失效。该明文绝不日志、绝不落盘。
+func (h *Handler) resetOperatorSecret(w http.ResponseWriter, r *http.Request) {
+	principal, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	if !h.checkCSRF(r, sess) {
+		h.renderError(w, r, codes.PermissionDenied, "CSRF 校验失败", nil)
+		return
+	}
+	const fm = svc + "ResetOperatorSecret"
+	opID, err := pathInt64(r, "operator_id")
+	if err != nil {
+		h.renderGRPCError(w, r, fm, err)
+		return
+	}
+	msg := &adminv1.ResetOperatorSecretRequest{OperatorId: opID}
+	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, fm, err)
+		return
+	}
+	resp, err := h.srv.ResetOperatorSecret(ctx, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, fm, err)
+		return
+	}
+	h.renderPage(w, r, "operator_secret_reset.html", http.StatusOK, map[string]any{
+		"Nav": "system", "OperatorID": opID, "Secret": resp.Secret}) // 一次性展示，绝不日志/落盘
 }
