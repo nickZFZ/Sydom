@@ -27,7 +27,7 @@ func TestConsole_RegisterPost_CreatesTenant(t *testing.T) {
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	body := readBody(t, resp)
-	require.Contains(t, body, "owner1")     // 渲染管理员标识
+	require.Contains(t, body, "owner1") // 渲染管理员标识
 	require.Contains(t, body, "仅显示这一次") // 一次性凭据强警示文案
 }
 

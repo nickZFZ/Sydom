@@ -13,14 +13,14 @@ import (
 
 // Config 是 Sidecar 进程运行参数。非敏感项来自 YAML，敏感项（Secret）只来自 env。
 type Config struct {
-	ControlPlaneAddr string        // 控制面 PolicySync 地址
-	AppKey           string        // app_key：HMAC 认证标识 + 流路由（→ syncclient.AppID）
-	Domain           string        // casbin 域（= application.domain，→ kernel.New 域）
-	AuthAddr         string        // 本地 AuthService 监听地址（如 "127.0.0.1:8090"）
-	MaxStaleness     time.Duration // 陈旧守卫上限（零值=关闭）
-	BackoffInitial   time.Duration // syncclient 退避初值（零值用 500ms）
-	BackoffMax       time.Duration // syncclient 退避上限（零值用 30s）
-	TLSCertFile        string // serve auth 口（SDK→sidecar）证书；空=明文，与 TLSKeyFile 须同设
+	ControlPlaneAddr   string        // 控制面 PolicySync 地址
+	AppKey             string        // app_key：HMAC 认证标识 + 流路由（→ syncclient.AppID）
+	Domain             string        // casbin 域（= application.domain，→ kernel.New 域）
+	AuthAddr           string        // 本地 AuthService 监听地址（如 "127.0.0.1:8090"）
+	MaxStaleness       time.Duration // 陈旧守卫上限（零值=关闭）
+	BackoffInitial     time.Duration // syncclient 退避初值（零值用 500ms）
+	BackoffMax         time.Duration // syncclient 退避上限（零值用 30s）
+	TLSCertFile        string        // serve auth 口（SDK→sidecar）证书；空=明文，与 TLSKeyFile 须同设
 	TLSKeyFile         string
 	ControlPlaneTLS    bool   // dial 控制面 sync 是否走 TLS
 	ControlPlaneCAFile string // 信任 CA；空=系统根
@@ -30,13 +30,13 @@ type Config struct {
 }
 
 type fileConfig struct {
-	ControlPlaneAddr string `yaml:"control_plane_addr"`
-	AppKey           string `yaml:"app_key"`
-	Domain           string `yaml:"domain"`
-	AuthAddr         string `yaml:"auth_addr"`
-	MaxStaleness     string `yaml:"max_staleness"`
-	BackoffInitial   string `yaml:"backoff_initial"`
-	BackoffMax       string `yaml:"backoff_max"`
+	ControlPlaneAddr   string `yaml:"control_plane_addr"`
+	AppKey             string `yaml:"app_key"`
+	Domain             string `yaml:"domain"`
+	AuthAddr           string `yaml:"auth_addr"`
+	MaxStaleness       string `yaml:"max_staleness"`
+	BackoffInitial     string `yaml:"backoff_initial"`
+	BackoffMax         string `yaml:"backoff_max"`
 	TLSCertFile        string `yaml:"tls_cert_file"`
 	TLSKeyFile         string `yaml:"tls_key_file"`
 	ControlPlaneTLS    bool   `yaml:"control_plane_tls"`

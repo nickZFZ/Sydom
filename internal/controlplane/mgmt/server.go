@@ -122,8 +122,8 @@ func (s *AdminServer) DeleteDataPolicy(ctx context.Context, r *adminv1.DeleteDat
 func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB, opts ...grpc.ServerOption) *grpc.Server {
 	chain := grpc.ChainUnaryInterceptor(
 		auth.UnaryServerInterceptorExempt(resolver, UnauthenticatedMethods), // 1. HMAC 认证（RegisterTenant 免鉴权）→ 注入 principal
-		AuthzUnaryInterceptor(enf),            // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
-		StatusWriteUnaryInterceptor(db),       // 3. status 写拦截
+		AuthzUnaryInterceptor(enf),      // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
+		StatusWriteUnaryInterceptor(db), // 3. status 写拦截
 	)
 	base := []grpc.ServerOption{grpc.MaxRecvMsgSize(maxMsgSize), grpc.MaxSendMsgSize(maxMsgSize), chain}
 	g := grpc.NewServer(append(base, opts...)...)

@@ -42,8 +42,12 @@ func TestAccountLayer_CrossTenantIsolation(t *testing.T) {
 		members   = "/sydom.admin.v1.AdminService/ListMembers"
 		createOp  = "/sydom.admin.v1.AdminService/CreateOperator"
 	)
-	appReq := func(tid uint64) *adminv1.CreateApplicationRequest { return &adminv1.CreateApplicationRequest{TenantId: tid} }
-	listReq := func(tid uint64) *adminv1.ListApplicationsRequest { return &adminv1.ListApplicationsRequest{TenantId: tid} }
+	appReq := func(tid uint64) *adminv1.CreateApplicationRequest {
+		return &adminv1.CreateApplicationRequest{TenantId: tid}
+	}
+	listReq := func(tid uint64) *adminv1.ListApplicationsRequest {
+		return &adminv1.ListApplicationsRequest{TenantId: tid}
+	}
 	invReq := func(tid uint64) *adminv1.InviteMemberRequest {
 		return &adminv1.InviteMemberRequest{TenantId: tid, Principal: "x"}
 	}
