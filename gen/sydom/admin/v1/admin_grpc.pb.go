@@ -38,6 +38,10 @@ const (
 	AdminService_CreateAdminRole_FullMethodName         = "/sydom.admin.v1.AdminService/CreateAdminRole"
 	AdminService_GrantAdminRole_FullMethodName          = "/sydom.admin.v1.AdminService/GrantAdminRole"
 	AdminService_BindOperatorRole_FullMethodName        = "/sydom.admin.v1.AdminService/BindOperatorRole"
+	AdminService_RevokeAdminGrant_FullMethodName        = "/sydom.admin.v1.AdminService/RevokeAdminGrant"
+	AdminService_UnbindOperatorRole_FullMethodName      = "/sydom.admin.v1.AdminService/UnbindOperatorRole"
+	AdminService_RotateApplicationSecret_FullMethodName = "/sydom.admin.v1.AdminService/RotateApplicationSecret"
+	AdminService_ResetOperatorSecret_FullMethodName     = "/sydom.admin.v1.AdminService/ResetOperatorSecret"
 	AdminService_CreateBusinessRole_FullMethodName      = "/sydom.admin.v1.AdminService/CreateBusinessRole"
 	AdminService_ListRoles_FullMethodName               = "/sydom.admin.v1.AdminService/ListRoles"
 	AdminService_ListPermissions_FullMethodName         = "/sydom.admin.v1.AdminService/ListPermissions"
@@ -80,6 +84,11 @@ type AdminServiceClient interface {
 	CreateAdminRole(ctx context.Context, in *CreateAdminRoleRequest, opts ...grpc.CallOption) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(ctx context.Context, in *GrantAdminRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	BindOperatorRole(ctx context.Context, in *BindOperatorRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	// —— M2.1 撤权对称 + Secret 硬切换 ——
+	RevokeAdminGrant(ctx context.Context, in *RevokeAdminGrantRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	UnbindOperatorRole(ctx context.Context, in *UnbindOperatorRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	RotateApplicationSecret(ctx context.Context, in *RotateApplicationSecretRequest, opts ...grpc.CallOption) (*RotateApplicationSecretResponse, error)
+	ResetOperatorSecret(ctx context.Context, in *ResetOperatorSecretRequest, opts ...grpc.CallOption) (*ResetOperatorSecretResponse, error)
 	// —— 业务语言运营台（M1.4）——
 	CreateBusinessRole(ctx context.Context, in *CreateBusinessRoleRequest, opts ...grpc.CallOption) (*CreateBusinessRoleResponse, error)
 	// —— 读面（SP1：只读 List，REST/Console 展示现状用）——
@@ -279,6 +288,42 @@ func (c *adminServiceClient) BindOperatorRole(ctx context.Context, in *BindOpera
 	return out, nil
 }
 
+func (c *adminServiceClient) RevokeAdminGrant(ctx context.Context, in *RevokeAdminGrantRequest, opts ...grpc.CallOption) (*WriteResponse, error) {
+	out := new(WriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_RevokeAdminGrant_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) UnbindOperatorRole(ctx context.Context, in *UnbindOperatorRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error) {
+	out := new(WriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_UnbindOperatorRole_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) RotateApplicationSecret(ctx context.Context, in *RotateApplicationSecretRequest, opts ...grpc.CallOption) (*RotateApplicationSecretResponse, error) {
+	out := new(RotateApplicationSecretResponse)
+	err := c.cc.Invoke(ctx, AdminService_RotateApplicationSecret_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ResetOperatorSecret(ctx context.Context, in *ResetOperatorSecretRequest, opts ...grpc.CallOption) (*ResetOperatorSecretResponse, error) {
+	out := new(ResetOperatorSecretResponse)
+	err := c.cc.Invoke(ctx, AdminService_ResetOperatorSecret_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) CreateBusinessRole(ctx context.Context, in *CreateBusinessRoleRequest, opts ...grpc.CallOption) (*CreateBusinessRoleResponse, error) {
 	out := new(CreateBusinessRoleResponse)
 	err := c.cc.Invoke(ctx, AdminService_CreateBusinessRole_FullMethodName, in, out, opts...)
@@ -431,6 +476,11 @@ type AdminServiceServer interface {
 	CreateAdminRole(context.Context, *CreateAdminRoleRequest) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(context.Context, *GrantAdminRoleRequest) (*WriteResponse, error)
 	BindOperatorRole(context.Context, *BindOperatorRoleRequest) (*WriteResponse, error)
+	// —— M2.1 撤权对称 + Secret 硬切换 ——
+	RevokeAdminGrant(context.Context, *RevokeAdminGrantRequest) (*WriteResponse, error)
+	UnbindOperatorRole(context.Context, *UnbindOperatorRoleRequest) (*WriteResponse, error)
+	RotateApplicationSecret(context.Context, *RotateApplicationSecretRequest) (*RotateApplicationSecretResponse, error)
+	ResetOperatorSecret(context.Context, *ResetOperatorSecretRequest) (*ResetOperatorSecretResponse, error)
 	// —— 业务语言运营台（M1.4）——
 	CreateBusinessRole(context.Context, *CreateBusinessRoleRequest) (*CreateBusinessRoleResponse, error)
 	// —— 读面（SP1：只读 List，REST/Console 展示现状用）——
@@ -512,6 +562,18 @@ func (UnimplementedAdminServiceServer) GrantAdminRole(context.Context, *GrantAdm
 }
 func (UnimplementedAdminServiceServer) BindOperatorRole(context.Context, *BindOperatorRoleRequest) (*WriteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BindOperatorRole not implemented")
+}
+func (UnimplementedAdminServiceServer) RevokeAdminGrant(context.Context, *RevokeAdminGrantRequest) (*WriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeAdminGrant not implemented")
+}
+func (UnimplementedAdminServiceServer) UnbindOperatorRole(context.Context, *UnbindOperatorRoleRequest) (*WriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnbindOperatorRole not implemented")
+}
+func (UnimplementedAdminServiceServer) RotateApplicationSecret(context.Context, *RotateApplicationSecretRequest) (*RotateApplicationSecretResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RotateApplicationSecret not implemented")
+}
+func (UnimplementedAdminServiceServer) ResetOperatorSecret(context.Context, *ResetOperatorSecretRequest) (*ResetOperatorSecretResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetOperatorSecret not implemented")
 }
 func (UnimplementedAdminServiceServer) CreateBusinessRole(context.Context, *CreateBusinessRoleRequest) (*CreateBusinessRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBusinessRole not implemented")
@@ -910,6 +972,78 @@ func _AdminService_BindOperatorRole_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_RevokeAdminGrant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeAdminGrantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RevokeAdminGrant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RevokeAdminGrant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RevokeAdminGrant(ctx, req.(*RevokeAdminGrantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_UnbindOperatorRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnbindOperatorRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).UnbindOperatorRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_UnbindOperatorRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).UnbindOperatorRole(ctx, req.(*UnbindOperatorRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_RotateApplicationSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RotateApplicationSecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).RotateApplicationSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_RotateApplicationSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).RotateApplicationSecret(ctx, req.(*RotateApplicationSecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ResetOperatorSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetOperatorSecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ResetOperatorSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ResetOperatorSecret_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ResetOperatorSecret(ctx, req.(*ResetOperatorSecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_CreateBusinessRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateBusinessRoleRequest)
 	if err := dec(in); err != nil {
@@ -1244,6 +1378,22 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BindOperatorRole",
 			Handler:    _AdminService_BindOperatorRole_Handler,
+		},
+		{
+			MethodName: "RevokeAdminGrant",
+			Handler:    _AdminService_RevokeAdminGrant_Handler,
+		},
+		{
+			MethodName: "UnbindOperatorRole",
+			Handler:    _AdminService_UnbindOperatorRole_Handler,
+		},
+		{
+			MethodName: "RotateApplicationSecret",
+			Handler:    _AdminService_RotateApplicationSecret_Handler,
+		},
+		{
+			MethodName: "ResetOperatorSecret",
+			Handler:    _AdminService_ResetOperatorSecret_Handler,
 		},
 		{
 			MethodName: "CreateBusinessRole",

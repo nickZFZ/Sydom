@@ -33,6 +33,12 @@ service AdminService {
   rpc GrantAdminRole(GrantAdminRoleRequest) returns (WriteResponse);
   rpc BindOperatorRole(BindOperatorRoleRequest) returns (WriteResponse);
 
+  // —— M2.1 撤权对称 + Secret 硬切换 ——
+  rpc RevokeAdminGrant(RevokeAdminGrantRequest) returns (WriteResponse);
+  rpc UnbindOperatorRole(UnbindOperatorRoleRequest) returns (WriteResponse);
+  rpc RotateApplicationSecret(RotateApplicationSecretRequest) returns (RotateApplicationSecretResponse);
+  rpc ResetOperatorSecret(ResetOperatorSecretRequest) returns (ResetOperatorSecretResponse);
+
   // —— 业务语言运营台（M1.4）——
   rpc CreateBusinessRole(CreateBusinessRoleRequest) returns (CreateBusinessRoleResponse);
 
@@ -188,6 +194,23 @@ message BindOperatorRoleRequest {
   int64 role_id = 2;
   string domain = 3;
 }
+
+// —— M2.1 撤权对称 + Secret 硬切换 ——
+message RevokeAdminGrantRequest {
+  int64 role_id = 1;
+  string domain = 2;   // app_id 字符串或 "*"
+  string resource = 3;
+  string action = 4;
+}
+message UnbindOperatorRoleRequest {
+  int64 operator_id = 1;
+  int64 role_id = 2;
+  string domain = 3;
+}
+message RotateApplicationSecretRequest { uint64 app_id = 1; }
+message RotateApplicationSecretResponse { string app_secret = 1; } // 明文仅此一次返回，服务端只存加密
+message ResetOperatorSecretRequest { int64 operator_id = 1; }
+message ResetOperatorSecretResponse { string secret = 1; } // 明文仅此一次返回
 
 // —— SP1 读面消息（app-域 6 个）——
 message RoleSummary {
