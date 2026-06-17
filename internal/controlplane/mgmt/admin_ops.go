@@ -231,6 +231,51 @@ func (s *AdminServer) RevokeAdminGrant(ctx context.Context, r *adminv1.RevokeAdm
 	return &adminv1.WriteResponse{Changed: true}, nil
 }
 
+// RotateApplicationSecret 硬切换 app 的 HMAC 凭据：生成新 secret、加密、覆盖 app_secret_enc、
+// 旧 secret 即刻失效（resolver 每请求查库，无缓存）。不 bump（secret 非 casbin 策略）。
+// 单语句 UPDATE 本身原子，无需事务（镜像 SetApplicationStatus）。新 secret 一次性返回。
+func (s *AdminServer) RotateApplicationSecret(ctx context.Context, r *adminv1.RotateApplicationSecretRequest) (*adminv1.RotateApplicationSecretResponse, error) {
+	secret, err := genSecret()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "gen secret: %v", err)
+	}
+	enc, err := crypto.Encrypt(s.masterKey, []byte(secret))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
+	}
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE application SET app_secret_enc=$1 WHERE id=$2`, enc, int64(r.AppId))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "rotate app secret: %v", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return nil, status.Error(codes.NotFound, "unknown application")
+	}
+	return &adminv1.RotateApplicationSecretResponse{AppSecret: secret}, nil
+}
+
+// ResetOperatorSecret 硬切换 operator 的 HMAC 凭据：生成新 secret、加密、覆盖 secret_enc、
+// 旧 secret 即刻失效。不 bump。单语句 UPDATE 本身原子（镜像 SetOperatorStatus 去掉 bump/tx）。
+func (s *AdminServer) ResetOperatorSecret(ctx context.Context, r *adminv1.ResetOperatorSecretRequest) (*adminv1.ResetOperatorSecretResponse, error) {
+	secret, err := genSecret()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "gen secret: %v", err)
+	}
+	enc, err := crypto.Encrypt(s.masterKey, []byte(secret))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
+	}
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE admin_operator SET secret_enc=$1 WHERE id=$2`, enc, r.OperatorId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "reset operator secret: %v", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return nil, status.Error(codes.NotFound, "unknown operator")
+	}
+	return &adminv1.ResetOperatorSecretResponse{Secret: secret}, nil
+}
+
 // UnbindOperatorRole 解绑操作员与管理角色（BindOperatorRole 的逆）。原子事务 + 必 bump。
 // 解绑不存在的绑定 → 回滚 + NotFound。
 func (s *AdminServer) UnbindOperatorRole(ctx context.Context, r *adminv1.UnbindOperatorRoleRequest) (*adminv1.WriteResponse, error) {
