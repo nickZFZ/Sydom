@@ -4,10 +4,15 @@ package adminauthz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 )
+
+// ErrNotFound 表示 Delete* 未命中任何行。fail-close：撤不存在的授权/绑定时，
+// 上层据此映射 NotFound、回滚事务、绝不 bump 版本（防幽灵 delta / 版本跳变）。
+var ErrNotFound = errors.New("adminauthz: not found")
 
 // InsertOperator 建管理操作者，返回 id。secretEnc 为已加密的凭据字节。
 func InsertOperator(ctx context.Context, q cp.DBTX, principal string, secretEnc []byte) (int64, error) {
@@ -52,6 +57,44 @@ func InsertSubjectRole(ctx context.Context, q cp.DBTX, operatorID, roleID int64,
 		operatorID, roleID, domain)
 	if err != nil {
 		return fmt.Errorf("adminauthz: insert subject role: %w", err)
+	}
+	return nil
+}
+
+// DeleteRoleGrant 撤角色一条管理权（casbin p 行），镜像 InsertRoleGrant。
+// 命中 0 行 → ErrNotFound（不静默）。
+func DeleteRoleGrant(ctx context.Context, q cp.DBTX, roleID int64, domain, resource, action string) error {
+	res, err := q.ExecContext(ctx,
+		`DELETE FROM admin_role_grant WHERE role_id=$1 AND domain=$2 AND resource=$3 AND action=$4`,
+		roleID, domain, resource, action)
+	if err != nil {
+		return fmt.Errorf("adminauthz: delete role grant: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("adminauthz: delete role grant rows affected: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// DeleteSubjectRole 解绑操作者与角色（casbin g 行），镜像 InsertSubjectRole。
+// 命中 0 行 → ErrNotFound。
+func DeleteSubjectRole(ctx context.Context, q cp.DBTX, operatorID, roleID int64, domain string) error {
+	res, err := q.ExecContext(ctx,
+		`DELETE FROM admin_subject_role WHERE operator_id=$1 AND role_id=$2 AND domain=$3`,
+		operatorID, roleID, domain)
+	if err != nil {
+		return fmt.Errorf("adminauthz: delete subject role: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("adminauthz: delete subject role rows affected: %w", err)
+	}
+	if n == 0 {
+		return ErrNotFound
 	}
 	return nil
 }
