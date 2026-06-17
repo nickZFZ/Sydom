@@ -377,7 +377,7 @@ func appRoutes() []route {
 	}
 }
 
-// applicationRoutes 是 §3.2 应用管理 3 路由。
+// applicationRoutes 是 §3.2 应用管理 4 路由。
 func applicationRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -419,10 +419,21 @@ func applicationRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.SetApplicationStatus(ctx, m.(*adminv1.SetApplicationStatusRequest))
 			}},
+		{"POST", "/v1/applications/{app_id}/secret", pfx + "RotateApplicationSecret",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.RotateApplicationSecretRequest{AppId: id}, nil // path 权威
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.RotateApplicationSecret(ctx, m.(*adminv1.RotateApplicationSecretRequest))
+			}},
 	}
 }
 
-// systemRoutes 是 §3.3 管理员/admin-role 域 7 路由（授权域 "*"）。
+// systemRoutes 是 §3.3 管理员/admin-role 域 10 路由（授权域 "*"）。
 func systemRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -510,10 +521,54 @@ func systemRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.GrantAdminRole(ctx, m.(*adminv1.GrantAdminRoleRequest))
 			}},
+		{"DELETE", "/v1/admin-roles/{role_id}/grants", pfx + "RevokeAdminGrant",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.RevokeAdminGrantRequest{ // role_id path 权威；其余键走 query（含 "*"）
+					RoleId:   id,
+					Domain:   r.URL.Query().Get("domain"),
+					Resource: r.URL.Query().Get("resource"),
+					Action:   r.URL.Query().Get("action"),
+				}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.RevokeAdminGrant(ctx, m.(*adminv1.RevokeAdminGrantRequest))
+			}},
+		{"DELETE", "/v1/operators/{operator_id}/roles/{role_id}", pfx + "UnbindOperatorRole",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				opID, err := pathInt64(r, "operator_id")
+				if err != nil {
+					return nil, err
+				}
+				roleID, err := pathInt64(r, "role_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.UnbindOperatorRoleRequest{ // 两 id path 权威；domain 走 query（含 "*"）
+					OperatorId: opID, RoleId: roleID, Domain: r.URL.Query().Get("domain"),
+				}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.UnbindOperatorRole(ctx, m.(*adminv1.UnbindOperatorRoleRequest))
+			}},
+		{"POST", "/v1/operators/{operator_id}/secret", pfx + "ResetOperatorSecret",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathInt64(r, "operator_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ResetOperatorSecretRequest{OperatorId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ResetOperatorSecret(ctx, m.(*adminv1.ResetOperatorSecretRequest))
+			}},
 	}
 }
 
-// allRoutes 汇总全部 34 路由（app 域 20 + 应用管理 3 + system 域 7 + 账户层 4）。
+// allRoutes 汇总全部 38 路由（app 域 20 + 应用管理 4 + system 域 10 + 账户层 4）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
