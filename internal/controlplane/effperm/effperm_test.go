@@ -126,3 +126,68 @@ func TestCompute_UserWithoutBindingsSeesDataPolicyAsNone(t *testing.T) {
 	require.Equal(t, "orders", res.DataViews[0].Resource)
 	require.Equal(t, "none", res.DataViews[0].Match) // 配了但无 allow 命中 → 全拒
 }
+
+func TestExplain_AllowGrantedViaInheritance(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+	insertRule(t, db, appID, "p", "viewer", dom, "orders", "read", "allow")
+	insertRule(t, db, appID, "g", "sales", "viewer", dom) // sales 继承 viewer
+	insertRule(t, db, appID, "g", "alice", "sales", dom)  // alice→sales
+
+	exp, err := effperm.Explain(context.Background(), db, appID, "alice", "orders", "read")
+	require.NoError(t, err)
+	require.True(t, exp.Allowed)
+	require.Equal(t, effperm.ReasonAllowGranted, exp.Reason)
+	require.NotNil(t, exp.DecidingRule)
+	require.Equal(t, "viewer", exp.DecidingRole) // 携权角色 viewer（经 sales 继承）
+	require.Equal(t, "allow", exp.DecidingRule.Effect)
+	require.ElementsMatch(t, []string{"sales", "viewer"}, exp.Roles)
+}
+
+func TestExplain_DenyOverridden(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+	insertRule(t, db, appID, "p", "sales", dom, "orders", "read", "allow")
+	insertRule(t, db, appID, "p", "sales", dom, "orders", "read", "deny")
+	insertRule(t, db, appID, "g", "alice", "sales", dom)
+
+	exp, err := effperm.Explain(context.Background(), db, appID, "alice", "orders", "read")
+	require.NoError(t, err)
+	require.False(t, exp.Allowed)
+	require.Equal(t, effperm.ReasonDenyOverridden, exp.Reason)
+	require.NotNil(t, exp.DecidingRule)
+	require.Equal(t, "deny", exp.DecidingRule.Effect)
+}
+
+func TestExplain_DenyNoMatch(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+	insertRule(t, db, appID, "g", "alice", "sales", dom) // 有角色但无任何 grant
+
+	exp, err := effperm.Explain(context.Background(), db, appID, "alice", "orders", "read")
+	require.NoError(t, err)
+	require.False(t, exp.Allowed)
+	require.Equal(t, effperm.ReasonDenyNoMatch, exp.Reason)
+	require.Nil(t, exp.DecidingRule)
+	require.Equal(t, "", exp.DecidingRole)
+	require.Contains(t, exp.Roles, "sales") // 仍列出用户角色（帮助排障）
+}
+
+func TestExplain_DataScopeSymbolic(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+	insertRule(t, db, appID, "p", "sales", dom, "orders", "read", "allow")
+	insertRule(t, db, appID, "g", "alice", "sales", dom)
+	insertDataPolicy(t, db, appID, "role", "sales", "orders", "allow",
+		`{"op":"EQ","field":"region","value":"$user.region"}`)
+
+	exp, err := effperm.Explain(context.Background(), db, appID, "alice", "orders", "read")
+	require.NoError(t, err)
+	require.True(t, exp.Allowed)
+	require.Equal(t, "conditional", exp.DataScope.Match)
+	require.Contains(t, exp.DataScope.Predicate, "$user.region") // 符号谓词保留
+}

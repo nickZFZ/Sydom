@@ -38,6 +38,33 @@ type Result struct {
 	DataViews   []DataView
 }
 
+// buildEngine 在只读 tx 内从 DB 物化策略、建瞬态引擎（Compute/Explain 共用，杜绝两份漂移）。
+// 返回引擎、数据策略表、原始 rules/dps（供 Compute 枚举）、域。
+func buildEngine(ctx context.Context, tx cp.DBTX, appID int64) (*kernel.Engine, *dataperm.Table, []cp.Rule, []cp.DataPolicy, string, error) {
+	var domain string
+	if err := tx.QueryRowContext(ctx,
+		`SELECT domain FROM application WHERE id=$1`, appID).Scan(&domain); err != nil {
+		return nil, nil, nil, nil, "", fmt.Errorf("effperm: read domain: %w", err)
+	}
+	rules, err := store.ReadAppRules(ctx, tx, appID)
+	if err != nil {
+		return nil, nil, nil, nil, "", fmt.Errorf("effperm: read rules: %w", err)
+	}
+	dps, err := store.ReadAppDataPolicies(ctx, tx, appID)
+	if err != nil {
+		return nil, nil, nil, nil, "", fmt.Errorf("effperm: read data policies: %w", err)
+	}
+	table := dataperm.NewTable()
+	eng, err := kernel.New(domain, nil, table)
+	if err != nil {
+		return nil, nil, nil, nil, "", fmt.Errorf("effperm: new engine: %w", err)
+	}
+	if err := eng.ApplySnapshot(toSnapshot(rules, dps)); err != nil {
+		return nil, nil, nil, nil, "", fmt.Errorf("effperm: apply snapshot: %w", err)
+	}
+	return eng, table, rules, dps, domain, nil
+}
+
 // Compute 在调用方提供的只读 tx 内，对 (appID, user) 做瞬态求值。
 // 内部自读 application.domain 作为引擎单一域来源。
 // 任一步失败一律返回 error（fail-close），绝不返回空 Result 冒充「无权限」。
@@ -45,28 +72,9 @@ type Result struct {
 // 每调用建临时引擎（含 1024 槽 LRU + casbin 全量策略），灌策略后即弃；适合 Beta
 // 低频管理接口（查看用户有效权限）。M2 若需高并发，可引入引擎池或复用常驻实例（缓存留 M2）。
 func Compute(ctx context.Context, tx cp.DBTX, appID int64, user string) (Result, error) {
-	var domain string
-	if err := tx.QueryRowContext(ctx,
-		`SELECT domain FROM application WHERE id=$1`, appID).Scan(&domain); err != nil {
-		return Result{}, fmt.Errorf("effperm: read domain: %w", err)
-	}
-
-	rules, err := store.ReadAppRules(ctx, tx, appID)
+	eng, table, rules, dps, domain, err := buildEngine(ctx, tx, appID)
 	if err != nil {
-		return Result{}, fmt.Errorf("effperm: read rules: %w", err)
-	}
-	dps, err := store.ReadAppDataPolicies(ctx, tx, appID)
-	if err != nil {
-		return Result{}, fmt.Errorf("effperm: read data policies: %w", err)
-	}
-
-	table := dataperm.NewTable()
-	eng, err := kernel.New(domain, nil, table)
-	if err != nil {
-		return Result{}, fmt.Errorf("effperm: new engine: %w", err)
-	}
-	if err := eng.ApplySnapshot(toSnapshot(rules, dps)); err != nil {
-		return Result{}, fmt.Errorf("effperm: apply snapshot: %w", err)
+		return Result{}, err
 	}
 
 	roles, err := eng.GetImplicitRolesForUser(user, domain)
@@ -84,6 +92,77 @@ func Compute(ctx context.Context, tx cp.DBTX, appID int64, user string) (Result,
 		return Result{}, err
 	}
 	return Result{Roles: roles, Permissions: perms, DataViews: views}, nil
+}
+
+// reason 分类（决策可解释性）。
+const (
+	ReasonAllowGranted   = "ALLOW_GRANTED"   // 命中 allow 授权
+	ReasonDenyOverridden = "DENY_OVERRIDDEN" // 命中 deny 规则覆盖
+	ReasonDenyNoMatch    = "DENY_NO_MATCH"   // 无任何规则命中（默认拒绝）
+)
+
+// DecidingRule 是判定的 casbin p 规则（解构自 EnforceEx 的 [sub,dom,obj,act,eft]）。
+type DecidingRule struct {
+	Subject  string
+	Resource string
+	Action   string
+	Effect   string // allow | deny
+}
+
+// Explanation 是一次单决策 explain 结果。
+type Explanation struct {
+	Allowed      bool
+	Reason       string
+	DecidingRule *DecidingRule // 默认拒绝时为 nil
+	DecidingRole string        // 默认拒绝时为 ""
+	Roles        []string      // 用户有效角色(含继承)，排序稳定
+	DataScope    DataView      // 该 resource 数据策略符号预览(复用 DataView)
+}
+
+// Explain 在只读 tx 内对单条 (appID, user, resource, action) 做瞬态求值并解释。
+// 复用与 Compute 同一引擎栈（buildEngine），杜绝第二套决策逻辑。任一步失败一律返 error（fail-close），
+// 绝不返回空 Explanation 冒充「拒绝」。
+func Explain(ctx context.Context, tx cp.DBTX, appID int64, user, resource, action string) (Explanation, error) {
+	eng, table, _, _, domain, err := buildEngine(ctx, tx, appID)
+	if err != nil {
+		return Explanation{}, err
+	}
+
+	roles, err := eng.GetImplicitRolesForUser(user, domain)
+	if err != nil {
+		return Explanation{}, fmt.Errorf("effperm: implicit roles: %w", err)
+	}
+	sort.Strings(roles)
+
+	allowed, rule, err := eng.EnforceEx(user, domain, resource, action)
+	if err != nil {
+		return Explanation{}, fmt.Errorf("effperm: enforce ex: %w", err)
+	}
+
+	exp := Explanation{Allowed: allowed, Roles: roles}
+	if len(rule) == 0 {
+		exp.Reason = ReasonDenyNoMatch // 无规则命中
+	} else {
+		// rule = [sub, dom, obj, act, eft]（Sydom p 行 5 段）。
+		exp.DecidingRole = rule[0]
+		dr := &DecidingRule{Subject: rule[0]}
+		if len(rule) >= 5 {
+			dr.Resource, dr.Action, dr.Effect = rule[2], rule[3], rule[4]
+		}
+		exp.DecidingRule = dr
+		if allowed {
+			exp.Reason = ReasonAllowGranted
+		} else {
+			exp.Reason = ReasonDenyOverridden
+		}
+	}
+
+	sr, err := dataperm.NewFilter(eng, table).FilterSymbolic(user, domain, resource)
+	if err != nil {
+		return Explanation{}, fmt.Errorf("effperm: symbolic filter %q: %w", resource, err)
+	}
+	exp.DataScope = DataView{Resource: resource, Match: sr.Match, Predicate: sr.Predicate}
+	return exp, nil
 }
 
 // toSnapshot 把控制面 Rule/DataPolicy 转为 kernel.Snapshot。
