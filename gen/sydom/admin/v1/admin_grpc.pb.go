@@ -52,6 +52,7 @@ const (
 	AdminService_ListOperators_FullMethodName           = "/sydom.admin.v1.AdminService/ListOperators"
 	AdminService_ListAdminRoles_FullMethodName          = "/sydom.admin.v1.AdminService/ListAdminRoles"
 	AdminService_GetEffectivePermissions_FullMethodName = "/sydom.admin.v1.AdminService/GetEffectivePermissions"
+	AdminService_ExplainDecision_FullMethodName         = "/sydom.admin.v1.AdminService/ExplainDecision"
 	AdminService_RegisterTenant_FullMethodName          = "/sydom.admin.v1.AdminService/RegisterTenant"
 	AdminService_ListMyTenants_FullMethodName           = "/sydom.admin.v1.AdminService/ListMyTenants"
 	AdminService_InviteMember_FullMethodName            = "/sydom.admin.v1.AdminService/InviteMember"
@@ -102,6 +103,8 @@ type AdminServiceClient interface {
 	ListAdminRoles(ctx context.Context, in *ListAdminRolesRequest, opts ...grpc.CallOption) (*ListAdminRolesResponse, error)
 	// —— 反查 / 有效权限（M1.3）——
 	GetEffectivePermissions(ctx context.Context, in *GetEffectivePermissionsRequest, opts ...grpc.CallOption) (*GetEffectivePermissionsResponse, error)
+	// —— M2.2 决策可解释性 ——
+	ExplainDecision(ctx context.Context, in *ExplainDecisionRequest, opts ...grpc.CallOption) (*ExplainDecisionResponse, error)
 	// —— M1.2 账户层 ——
 	RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error)
 	ListMyTenants(ctx context.Context, in *ListMyTenantsRequest, opts ...grpc.CallOption) (*ListMyTenantsResponse, error)
@@ -414,6 +417,15 @@ func (c *adminServiceClient) GetEffectivePermissions(ctx context.Context, in *Ge
 	return out, nil
 }
 
+func (c *adminServiceClient) ExplainDecision(ctx context.Context, in *ExplainDecisionRequest, opts ...grpc.CallOption) (*ExplainDecisionResponse, error) {
+	out := new(ExplainDecisionResponse)
+	err := c.cc.Invoke(ctx, AdminService_ExplainDecision_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error) {
 	out := new(RegisterTenantResponse)
 	err := c.cc.Invoke(ctx, AdminService_RegisterTenant_FullMethodName, in, out, opts...)
@@ -494,6 +506,8 @@ type AdminServiceServer interface {
 	ListAdminRoles(context.Context, *ListAdminRolesRequest) (*ListAdminRolesResponse, error)
 	// —— 反查 / 有效权限（M1.3）——
 	GetEffectivePermissions(context.Context, *GetEffectivePermissionsRequest) (*GetEffectivePermissionsResponse, error)
+	// —— M2.2 决策可解释性 ——
+	ExplainDecision(context.Context, *ExplainDecisionRequest) (*ExplainDecisionResponse, error)
 	// —— M1.2 账户层 ——
 	RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error)
 	ListMyTenants(context.Context, *ListMyTenantsRequest) (*ListMyTenantsResponse, error)
@@ -604,6 +618,9 @@ func (UnimplementedAdminServiceServer) ListAdminRoles(context.Context, *ListAdmi
 }
 func (UnimplementedAdminServiceServer) GetEffectivePermissions(context.Context, *GetEffectivePermissionsRequest) (*GetEffectivePermissionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEffectivePermissions not implemented")
+}
+func (UnimplementedAdminServiceServer) ExplainDecision(context.Context, *ExplainDecisionRequest) (*ExplainDecisionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExplainDecision not implemented")
 }
 func (UnimplementedAdminServiceServer) RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterTenant not implemented")
@@ -1224,6 +1241,24 @@ func _AdminService_GetEffectivePermissions_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ExplainDecision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExplainDecisionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ExplainDecision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ExplainDecision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ExplainDecision(ctx, req.(*ExplainDecisionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_RegisterTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterTenantRequest)
 	if err := dec(in); err != nil {
@@ -1434,6 +1469,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEffectivePermissions",
 			Handler:    _AdminService_GetEffectivePermissions_Handler,
+		},
+		{
+			MethodName: "ExplainDecision",
+			Handler:    _AdminService_ExplainDecision_Handler,
 		},
 		{
 			MethodName: "RegisterTenant",

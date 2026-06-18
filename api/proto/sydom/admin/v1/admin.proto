@@ -55,6 +55,9 @@ service AdminService {
   // —— 反查 / 有效权限（M1.3）——
   rpc GetEffectivePermissions(GetEffectivePermissionsRequest) returns (GetEffectivePermissionsResponse);
 
+  // —— M2.2 决策可解释性 ——
+  rpc ExplainDecision(ExplainDecisionRequest) returns (ExplainDecisionResponse);
+
   // —— M1.2 账户层 ——
   rpc RegisterTenant(RegisterTenantRequest) returns (RegisterTenantResponse); // 免鉴权
   rpc ListMyTenants(ListMyTenantsRequest)   returns (ListMyTenantsResponse);  // self
@@ -331,6 +334,32 @@ message DataPolicyPreview {
   string resource = 1;
   string match = 2;     // all | none | conditional
   string predicate = 3; // 仅 match=conditional 非空
+}
+
+// —— M2.2 决策可解释性 ——
+message ExplainDecisionRequest {
+  uint64 app_id   = 1;
+  string user_id  = 2;
+  string resource = 3;
+  string action   = 4;
+}
+message DecidingRule {                 // 由 EnforceEx 的 [sub,dom,obj,act,eft] 解构；默认拒绝时为空
+  string subject  = 1;                 // 携带判定的角色码（或 user 直授）
+  string resource = 2;
+  string action   = 3;
+  string effect   = 4;                 // allow | deny
+}
+message DecisionDataScope {
+  string match     = 1;                // all | none | conditional
+  string predicate = 2;                // 仅 conditional 非空（符号，$user.xxx 保留）
+}
+message ExplainDecisionResponse {
+  bool   allowed                = 1;
+  string reason                 = 2;   // ALLOW_GRANTED | DENY_OVERRIDDEN | DENY_NO_MATCH
+  DecidingRule deciding_rule    = 3;
+  string deciding_role          = 4;
+  repeated string roles         = 5;   // 用户有效角色(含继承, casbin 角色码)
+  DecisionDataScope data_scope  = 6;
 }
 
 // CreateBusinessRole：业务语言建角色（命名 + 勾能力），后端原子建角色+批量授权。code 系统生成。
