@@ -62,6 +62,21 @@ func (e *Engine) Enforce(sub, dom, obj, act string) (bool, error) {
 	return e.ce.Enforce(sub, dom, obj, act)
 }
 
+// EnforceEx 判定 (sub,dom,obj,act) 并返回判定规则（explain，[]string=[sub,dom,obj,act,eft]；
+// 默认拒绝时为空）。未就绪/越域/出错一律 fail-close。
+//
+// 仅供 effperm 瞬态（每请求新建、非共享）引擎调用：EnforceEx 落 casbin 基类、不走
+// SyncedCachedEnforcer 的锁与决策缓存；production 共享 Sidecar 引擎不调用本方法。
+func (e *Engine) EnforceEx(sub, dom, obj, act string) (bool, []string, error) {
+	if !e.ready.Load() {
+		return false, nil, ErrNotReady
+	}
+	if dom != e.domain {
+		return false, nil, ErrForeignDomain
+	}
+	return e.ce.EnforceEx(sub, dom, obj, act)
+}
+
 // ApplySnapshot 全量重建内核状态：校验越域→ClearPolicy→分段灌入→路由数据策略→全量清缓存→记版本就绪。
 // 越域行整笔拒绝（pre-clear，状态不变）；进入重建后任何失败一律 fail-close（ready=false），等 ④-3 重试。
 //

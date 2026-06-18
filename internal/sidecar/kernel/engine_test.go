@@ -267,3 +267,34 @@ func TestEngine_Domain_ReturnsPinnedDomain(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "dom1", e.Domain(), "Domain() 应返回构造时 pin 的域")
 }
+
+func TestEngine_EnforceEx_ReturnsDecidingRule(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(3)))
+
+	// allow：命中 manager 的 (order,read,allow) 规则；bool 与 Enforce 同输入一致。
+	allow, rule, err := e.EnforceEx("alice", "dom1", "order", "read")
+	require.NoError(t, err)
+	require.True(t, allow)
+	require.Equal(t, []string{"manager", "dom1", "order", "read", "allow"}, rule)
+
+	plain, err := e.Enforce("alice", "dom1", "order", "read")
+	require.NoError(t, err)
+	require.Equal(t, plain, allow) // DX-2 引擎层 parity：EnforceEx.bool ≡ Enforce
+
+	// 默认拒绝：无规则命中 → explain 空。
+	allow2, rule2, err := e.EnforceEx("alice", "dom1", "order", "delete")
+	require.NoError(t, err)
+	require.False(t, allow2)
+	require.Empty(t, rule2)
+}
+
+func TestEngine_EnforceEx_FailClose(t *testing.T) {
+	e, _ := New("dom1", nil, nil)
+	_, _, err := e.EnforceEx("alice", "dom1", "order", "read") // 未就绪
+	require.ErrorIs(t, err, ErrNotReady)
+
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+	_, _, err = e.EnforceEx("alice", "other", "order", "read") // 越域
+	require.ErrorIs(t, err, ErrForeignDomain)
+}
