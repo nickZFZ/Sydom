@@ -74,6 +74,7 @@ var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/ListUserBindings":        {"binding", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/ListDataPolicies":        {"data_policy", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/GetEffectivePermissions": {"effective_permission", "read", false, scopeApp},
+	"/sydom.admin.v1.AdminService/ExplainDecision":         {"effective_permission", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/ListOperators":           {"admin", "read", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/ListAdminRoles":          {"admin", "read", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/ListMyTenants":           {"", "", false, scopeSelf},
