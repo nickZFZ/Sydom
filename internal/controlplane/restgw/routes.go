@@ -64,7 +64,7 @@ func queryInt64(r *http.Request, key string) (int64, error) {
 	return v, nil
 }
 
-// appRoutes 是 app 域 20 路由（授权域=path app_id；path 值权威覆写 body）。
+// appRoutes 是 app 域 21 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -374,6 +374,22 @@ func appRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.DeleteDataPolicy(ctx, m.(*adminv1.DeleteDataPolicyRequest))
 			}},
+		{"GET", "/v1/apps/{app_id}/decision", pfx + "ExplainDecision",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ExplainDecisionRequest{ // app_id path 权威；其余取 query
+					AppId:    id,
+					UserId:   r.URL.Query().Get("user_id"),
+					Resource: r.URL.Query().Get("resource"),
+					Action:   r.URL.Query().Get("action"),
+				}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ExplainDecision(ctx, m.(*adminv1.ExplainDecisionRequest))
+			}},
 	}
 }
 
@@ -568,7 +584,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 38 路由（app 域 20 + 应用管理 4 + system 域 10 + 账户层 4）。
+// allRoutes 汇总全部 39 路由（app 域 21 + 应用管理 4 + system 域 10 + 账户层 4）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
