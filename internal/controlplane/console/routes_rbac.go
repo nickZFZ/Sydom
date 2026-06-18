@@ -30,6 +30,7 @@ func (h *Handler) registerRBAC(mux *http.ServeMux) {
 	mux.HandleFunc("GET /apps/{app_id}/effective", h.effectivePermissions)
 	mux.HandleFunc("POST /apps/{app_id}/effective/bind", h.bindUserOnEffective)
 	mux.HandleFunc("POST /apps/{app_id}/effective/unbind", h.unbindUserOnEffective)
+	mux.HandleFunc("GET /apps/{app_id}/decision", h.decisionExplainer)
 }
 
 // appListRedirect：PRG 重定向回 /apps/{app_id}/{seg}（app_id 取自 path，权威）。
