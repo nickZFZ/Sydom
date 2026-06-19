@@ -5,10 +5,15 @@
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="user_id" placeholder="user_id" required><input name="role_id" placeholder="role_id" required>
 <button>+ 绑定用户</button></form>
-<table><thead><tr><th>ID</th><th>UserId</th><th>RoleId</th><th></th></tr></thead><tbody>
+{{template "searchbox" .Pager}}
+<table><thead><tr>
+<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
+<th><a href="?sort=user_id&order=asc">UserId ↑</a> <a href="?sort=user_id&order=desc">↓</a></th>
+<th>RoleId</th><th></th></tr></thead><tbody>
 {{range .Bindings}}<tr><td>{{.BindingId}}</td><td>{{.UserId}}</td><td>{{.RoleId}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/bindings/unbind" onsubmit="return confirm('解绑？')">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="user_id" value="{{.UserId}}"><input type="hidden" name="role_id" value="{{.RoleId}}">
 <button class="danger">解绑</button></form></td></tr>{{end}}
-</tbody></table></section></div>{{end}}
+</tbody></table>
+{{template "pager" .Pager}}</section></div>{{end}}

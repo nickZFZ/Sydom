@@ -5,10 +5,15 @@
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="role_id" placeholder="role_id" required><input name="permission_id" placeholder="permission_id" required>
 <input name="eft" placeholder="allow/deny，留空=allow"><button>+ 新增授权</button></form>
-<table><thead><tr><th>ID</th><th>RoleId</th><th>PermissionId</th><th>Eft</th><th></th></tr></thead><tbody>
+{{template "searchbox" .Pager}}
+<table><thead><tr>
+<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
+<th><a href="?sort=role_id&order=asc">RoleId ↑</a> <a href="?sort=role_id&order=desc">↓</a></th>
+<th>PermissionId</th><th>Eft</th><th></th></tr></thead><tbody>
 {{range .Grants}}<tr><td>{{.GrantId}}</td><td>{{.RoleId}}</td><td>{{.PermissionId}}</td><td>{{.Eft}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/grants/revoke" onsubmit="return confirm('撤销？')">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="role_id" value="{{.RoleId}}"><input type="hidden" name="permission_id" value="{{.PermissionId}}">
 <button class="danger">撤销</button></form></td></tr>{{end}}
-</tbody></table></section></div>{{end}}
+</tbody></table>
+{{template "pager" .Pager}}</section></div>{{end}}

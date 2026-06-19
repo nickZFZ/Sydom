@@ -6,7 +6,17 @@
 <input name="code" placeholder="code" required><input name="resource" placeholder="resource">
 <input name="action" placeholder="action"><input name="ptype" placeholder="ptype">
 <input name="name" placeholder="名称"><button>+ 新增权限点</button></form>
-<table><thead><tr><th>ID</th><th>Code</th><th>Resource</th><th>Action</th><th>Ptype</th><th>名称</th><th>来源</th></tr></thead><tbody>
+{{template "searchbox" .Pager}}
+<table><thead><tr>
+<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
+<th><a href="?sort=code&order=asc">Code ↑</a> <a href="?sort=code&order=desc">↓</a></th>
+<th><a href="?sort=resource&order=asc">Resource ↑</a> <a href="?sort=resource&order=desc">↓</a></th>
+<th><a href="?sort=action&order=asc">Action ↑</a> <a href="?sort=action&order=desc">↓</a></th>
+<th>Ptype</th>
+<th>名称</th>
+<th><a href="?sort=source&order=asc">来源 ↑</a> <a href="?sort=source&order=desc">↓</a></th>
+</tr></thead><tbody>
 {{range .Permissions}}<tr><td>{{.PermissionId}}</td><td>{{.Code}}</td><td>{{.Resource}}</td>
 <td>{{.Action}}</td><td>{{.Ptype}}</td><td>{{.Name}}</td><td>{{.Source}}</td></tr>{{end}}
-</tbody></table></section></div>{{end}}
+</tbody></table>
+{{template "pager" .Pager}}</section></div>{{end}}

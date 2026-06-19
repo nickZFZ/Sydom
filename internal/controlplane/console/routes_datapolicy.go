@@ -30,7 +30,7 @@ func (h *Handler) listDataPolicies(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListDataPolicies", err)
 		return
 	}
-	msg := &adminv1.ListDataPoliciesRequest{AppId: appID, Resource: r.FormValue("resource")}
+	msg := &adminv1.ListDataPoliciesRequest{AppId: appID, Resource: r.FormValue("resource"), Page: listPageFromReq(r)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListDataPolicies", principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListDataPolicies", err)
@@ -42,7 +42,8 @@ func (h *Handler) listDataPolicies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "datapolicies.html", http.StatusOK, map[string]any{
-		"Nav": "apps", "AppID": appID, "Tab": "datapolicies", "DataPolicies": resp.DataPolicies, "CSRF": sess.CSRF})
+		"Nav": "apps", "AppID": appID, "Tab": "datapolicies", "DataPolicies": resp.DataPolicies,
+		"CSRF": sess.CSRF, "Pager": pagerData(r, resp.Total)})
 }
 
 // upsertDataPolicy：写动作走 doWrite。id=0 即插入；condition 原样透传（绝不预解析/校验）。

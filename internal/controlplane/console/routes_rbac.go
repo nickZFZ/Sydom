@@ -49,7 +49,7 @@ func (h *Handler) listRoles(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListRoles", err)
 		return
 	}
-	msg := &adminv1.ListRolesRequest{AppId: appID}
+	msg := &adminv1.ListRolesRequest{AppId: appID, Page: listPageFromReq(r)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListRoles", principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListRoles", err)
@@ -61,7 +61,8 @@ func (h *Handler) listRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "roles.html", http.StatusOK, map[string]any{
-		"Nav": "apps", "AppID": appID, "Tab": "roles", "Roles": resp.Roles, "CSRF": sess.CSRF})
+		"Nav": "apps", "AppID": appID, "Tab": "roles", "Roles": resp.Roles,
+		"CSRF": sess.CSRF, "Pager": pagerData(r, resp.Total)})
 }
 
 // createRole：写动作走 doWrite（CSRF → 授权 → status 闸 → 直调 → PRG）。
@@ -105,7 +106,7 @@ func (h *Handler) listPermissions(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListPermissions", err)
 		return
 	}
-	msg := &adminv1.ListPermissionsRequest{AppId: appID}
+	msg := &adminv1.ListPermissionsRequest{AppId: appID, Page: listPageFromReq(r)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListPermissions", principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListPermissions", err)
@@ -117,7 +118,8 @@ func (h *Handler) listPermissions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "permissions.html", http.StatusOK, map[string]any{
-		"Nav": "apps", "AppID": appID, "Tab": "permissions", "Permissions": resp.Permissions, "CSRF": sess.CSRF})
+		"Nav": "apps", "AppID": appID, "Tab": "permissions", "Permissions": resp.Permissions,
+		"CSRF": sess.CSRF, "Pager": pagerData(r, resp.Total)})
 }
 
 // upsertPermission：写动作走 doWrite。app_id 从 path 取；其余字段取表单。
@@ -156,7 +158,7 @@ func (h *Handler) listGrants(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListGrants", err)
 		return
 	}
-	msg := &adminv1.ListGrantsRequest{AppId: appID, RoleId: roleFilter}
+	msg := &adminv1.ListGrantsRequest{AppId: appID, RoleId: roleFilter, Page: listPageFromReq(r)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListGrants", principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListGrants", err)
@@ -168,7 +170,8 @@ func (h *Handler) listGrants(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "grants.html", http.StatusOK, map[string]any{
-		"Nav": "apps", "AppID": appID, "Tab": "grants", "Grants": resp.Grants, "CSRF": sess.CSRF})
+		"Nav": "apps", "AppID": appID, "Tab": "grants", "Grants": resp.Grants,
+		"CSRF": sess.CSRF, "Pager": pagerData(r, resp.Total)})
 }
 
 // grantPermission：写动作走 doWrite。eft 空串透传，后端按 allow。
@@ -230,7 +233,7 @@ func (h *Handler) listInheritances(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListRoleInheritances", err)
 		return
 	}
-	msg := &adminv1.ListRoleInheritancesRequest{AppId: appID}
+	msg := &adminv1.ListRoleInheritancesRequest{AppId: appID, Page: listPageFromReq(r)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListRoleInheritances", principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListRoleInheritances", err)
@@ -242,7 +245,8 @@ func (h *Handler) listInheritances(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "inheritances.html", http.StatusOK, map[string]any{
-		"Nav": "apps", "AppID": appID, "Tab": "inheritances", "Inheritances": resp.Inheritances, "CSRF": sess.CSRF})
+		"Nav": "apps", "AppID": appID, "Tab": "inheritances", "Inheritances": resp.Inheritances,
+		"CSRF": sess.CSRF, "Pager": pagerData(r, resp.Total)})
 }
 
 // addInheritance：写动作走 doWrite。
@@ -304,7 +308,7 @@ func (h *Handler) listBindings(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListUserBindings", err)
 		return
 	}
-	msg := &adminv1.ListUserBindingsRequest{AppId: appID, UserId: r.FormValue("user_id")}
+	msg := &adminv1.ListUserBindingsRequest{AppId: appID, UserId: r.FormValue("user_id"), Page: listPageFromReq(r)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListUserBindings", principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListUserBindings", err)
@@ -316,7 +320,8 @@ func (h *Handler) listBindings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "bindings.html", http.StatusOK, map[string]any{
-		"Nav": "apps", "AppID": appID, "Tab": "bindings", "Bindings": resp.Bindings, "CSRF": sess.CSRF})
+		"Nav": "apps", "AppID": appID, "Tab": "bindings", "Bindings": resp.Bindings,
+		"CSRF": sess.CSRF, "Pager": pagerData(r, resp.Total)})
 }
 
 // decodeUserRoleRequest 从 path(app_id) + form(role_id/user_id) 解码 UserRoleRequest。
