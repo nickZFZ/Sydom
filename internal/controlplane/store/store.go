@@ -67,12 +67,18 @@ func BumpAppVersion(ctx context.Context, ex cp.DBTX, appID, vNew int64) error {
 }
 
 // InsertAudit 写一条审计记录。diff 为变更内容 JSON（可为 nil → 落 NULL）。
+// 用 interface{} 承载 diff：nil []byte 经 pq 驱动会被当成空串触发 JSONB 语法错误，
+// 故 nil 时传 interface{}(nil) 使其正确映射为 SQL NULL（与 adminauthz.InsertAdminAudit 一致）。
 func InsertAudit(ctx context.Context, ex cp.DBTX, appID int64,
 	operator, action, entityType, entityID string, diff []byte, version int64) error {
+	var diffVal interface{}
+	if diff != nil {
+		diffVal = diff
+	}
 	_, err := ex.ExecContext(ctx, `
 		INSERT INTO policy_audit_log (app_id, operator, action, entity_type, entity_id, diff, version)
 		VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-		appID, operator, action, entityType, entityID, diff, version)
+		appID, operator, action, entityType, entityID, diffVal, version)
 	return err
 }
 
