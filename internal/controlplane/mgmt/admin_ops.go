@@ -6,9 +6,11 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"github.com/lib/pq"
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
+	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/crypto"
 	"google.golang.org/grpc/codes"
@@ -39,8 +41,13 @@ func (s *AdminServer) CreateApplication(ctx context.Context, r *adminv1.CreateAp
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
 	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
 	var appID int64
-	err = s.db.QueryRowContext(ctx,
+	err = tx.QueryRowContext(ctx,
 		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
 		 VALUES ($1,$2,$3,$4,$5) RETURNING id`,
 		int64(r.TenantId), r.Domain, r.Name, r.AppKey, enc).Scan(&appID)
@@ -53,6 +60,17 @@ func (s *AdminServer) CreateApplication(ctx context.Context, r *adminv1.CreateAp
 		}
 		return nil, status.Errorf(codes.Internal, "create application: %v", err)
 	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx,
+		sql.NullInt64{Int64: int64(r.TenantId), Valid: true}, cp.OperatorFromContext(ctx),
+		"create", "application", fmt.Sprintf("%d", appID),
+		auditJSON(map[string]any{"after": map[string]any{
+			"name": r.Name, "app_key": r.AppKey, "domain": r.Domain, "tenant_id": r.TenantId}}),
+		sql.NullInt64{}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+	}
 	return &adminv1.CreateApplicationResponse{AppId: uint64(appID), AppSecret: secret}, nil
 }
 
@@ -63,13 +81,36 @@ func isForeignKeyViolation(err error) bool {
 }
 
 func (s *AdminServer) SetApplicationStatus(ctx context.Context, r *adminv1.SetApplicationStatusRequest) (*adminv1.WriteResponse, error) {
-	res, err := s.db.ExecContext(ctx,
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+	var before int16
+	var tid sql.NullInt64
+	if err := tx.QueryRowContext(ctx,
+		`SELECT status, tenant_id FROM application WHERE id=$1`, int64(r.AppId)).Scan(&before, &tid); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "unknown application")
+		}
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	res, err := tx.ExecContext(ctx,
 		`UPDATE application SET status=$1 WHERE id=$2`, int16(r.Status), int64(r.AppId))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "set status: %v", err)
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return nil, status.Error(codes.NotFound, "unknown application")
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, tid, cp.OperatorFromContext(ctx),
+		"set_status", "application", fmt.Sprintf("%d", r.AppId),
+		auditJSON(map[string]any{"before": before, "after": r.Status}),
+		sql.NullInt64{}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
 	}
 	return &adminv1.WriteResponse{Changed: true}, nil
 }
@@ -131,6 +172,16 @@ func (s *AdminServer) CreateOperator(ctx context.Context, r *adminv1.CreateOpera
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
 		return nil, status.Errorf(codes.Internal, "bump: %v", err)
 	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, sql.NullInt64{}, cp.OperatorFromContext(ctx),
+		"create", "operator", fmt.Sprintf("%d", id),
+		auditJSON(map[string]any{"after": map[string]any{"principal": r.Principal}}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, status.Errorf(codes.Internal, "commit: %v", err)
 	}
@@ -144,6 +195,14 @@ func (s *AdminServer) SetOperatorStatus(ctx context.Context, r *adminv1.SetOpera
 		return nil, status.Errorf(codes.Internal, "begin: %v", err)
 	}
 	defer tx.Rollback()
+	var before int16
+	if err := tx.QueryRowContext(ctx,
+		`SELECT status FROM admin_operator WHERE id=$1`, r.OperatorId).Scan(&before); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "unknown operator")
+		}
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
 	res, err := tx.ExecContext(ctx,
 		`UPDATE admin_operator SET status=$1 WHERE id=$2`, int16(r.Status), r.OperatorId)
 	if err != nil {
@@ -154,6 +213,16 @@ func (s *AdminServer) SetOperatorStatus(ctx context.Context, r *adminv1.SetOpera
 	}
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
 		return nil, status.Errorf(codes.Internal, "bump: %v", err)
+	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, sql.NullInt64{}, cp.OperatorFromContext(ctx),
+		"set_status", "operator", fmt.Sprintf("%d", r.OperatorId),
+		auditJSON(map[string]any{"before": before, "after": r.Status}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, status.Errorf(codes.Internal, "commit: %v", err)
@@ -184,6 +253,17 @@ func (s *AdminServer) GrantAdminRole(ctx context.Context, r *adminv1.GrantAdminR
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, domainTenant(r.Domain), cp.OperatorFromContext(ctx),
+		"grant", "admin_grant", fmt.Sprintf("%d", r.RoleId),
+		auditJSON(map[string]any{"after": map[string]any{
+			"role_id": r.RoleId, "domain": r.Domain, "resource": r.Resource, "action": r.Action}}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, status.Errorf(codes.Internal, "commit: %v", err)
 	}
@@ -200,6 +280,17 @@ func (s *AdminServer) BindOperatorRole(ctx context.Context, r *adminv1.BindOpera
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, domainTenant(r.Domain), cp.OperatorFromContext(ctx),
+		"bind", "admin_binding", fmt.Sprintf("%d", r.OperatorId),
+		auditJSON(map[string]any{"after": map[string]any{
+			"operator_id": r.OperatorId, "role_id": r.RoleId, "domain": r.Domain}}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -225,6 +316,17 @@ func (s *AdminServer) RevokeAdminGrant(ctx context.Context, r *adminv1.RevokeAdm
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, domainTenant(r.Domain), cp.OperatorFromContext(ctx),
+		"revoke", "admin_grant", fmt.Sprintf("%d", r.RoleId),
+		auditJSON(map[string]any{"before": map[string]any{
+			"role_id": r.RoleId, "domain": r.Domain, "resource": r.Resource, "action": r.Action}}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
 	if err := tx.Commit(); err != nil {
 		return nil, status.Errorf(codes.Internal, "commit: %v", err)
 	}
@@ -243,13 +345,31 @@ func (s *AdminServer) RotateApplicationSecret(ctx context.Context, r *adminv1.Ro
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
 	}
-	res, err := s.db.ExecContext(ctx,
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx,
 		`UPDATE application SET app_secret_enc=$1 WHERE id=$2`, enc, int64(r.AppId))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "rotate app secret: %v", err)
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return nil, status.Error(codes.NotFound, "unknown application")
+	}
+	var tid sql.NullInt64
+	if err := tx.QueryRowContext(ctx,
+		`SELECT tenant_id FROM application WHERE id=$1`, int64(r.AppId)).Scan(&tid); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, tid, cp.OperatorFromContext(ctx),
+		"rotate_secret", "application", fmt.Sprintf("%d", r.AppId),
+		auditJSON(map[string]any{"rotated": true}), sql.NullInt64{}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
 	}
 	return &adminv1.RotateApplicationSecretResponse{AppSecret: secret}, nil
 }
@@ -265,13 +385,26 @@ func (s *AdminServer) ResetOperatorSecret(ctx context.Context, r *adminv1.ResetO
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
 	}
-	res, err := s.db.ExecContext(ctx,
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx,
 		`UPDATE admin_operator SET secret_enc=$1 WHERE id=$2`, enc, r.OperatorId)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "reset operator secret: %v", err)
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return nil, status.Error(codes.NotFound, "unknown operator")
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, sql.NullInt64{}, cp.OperatorFromContext(ctx),
+		"reset_secret", "operator", fmt.Sprintf("%d", r.OperatorId),
+		auditJSON(map[string]any{"reset": true}), sql.NullInt64{}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
 	}
 	return &adminv1.ResetOperatorSecretResponse{Secret: secret}, nil
 }
@@ -291,6 +424,17 @@ func (s *AdminServer) UnbindOperatorRole(ctx context.Context, r *adminv1.UnbindO
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx, domainTenant(r.Domain), cp.OperatorFromContext(ctx),
+		"unbind", "admin_binding", fmt.Sprintf("%d", r.OperatorId),
+		auditJSON(map[string]any{"before": map[string]any{
+			"operator_id": r.OperatorId, "role_id": r.RoleId, "domain": r.Domain}}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := tx.Commit(); err != nil {

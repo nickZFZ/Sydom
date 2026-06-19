@@ -2,6 +2,8 @@ package mgmt
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
@@ -54,6 +56,18 @@ func (s *AdminServer) RegisterTenant(ctx context.Context, r *adminv1.RegisterTen
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx,
+		sql.NullInt64{Int64: tenantID, Valid: true}, r.OwnerPrincipal,
+		"register", "tenant", fmt.Sprintf("%d", tenantID),
+		auditJSON(map[string]any{"after": map[string]any{
+			"tenant_name": r.TenantName, "owner": r.OwnerPrincipal}}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -117,6 +131,18 @@ func (s *AdminServer) InviteMember(ctx context.Context, r *adminv1.InviteMemberR
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx,
+		sql.NullInt64{Int64: int64(r.TenantId), Valid: true}, cp.OperatorFromContext(ctx),
+		"invite", "membership", fmt.Sprintf("%d", opID),
+		auditJSON(map[string]any{"after": map[string]any{
+			"principal": r.Principal, "tier": "admin"}}),
+		sql.NullInt64{Int64: ver, Valid: true}); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if err := tx.Commit(); err != nil {
