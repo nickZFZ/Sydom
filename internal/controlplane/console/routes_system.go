@@ -35,7 +35,11 @@ func (h *Handler) listOperators(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	const fm = svc + "ListOperators"
-	msg := &adminv1.ListOperatorsRequest{}
+	stat, err := formInt64(r, "status")
+	if err != nil {
+		stat = 0
+	}
+	msg := &adminv1.ListOperatorsRequest{Page: listPageFromReq(r), Status: int32(stat)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, fm, err) // PermissionDenied → 403，绝不降级
@@ -47,7 +51,8 @@ func (h *Handler) listOperators(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "operators.html", http.StatusOK, map[string]any{
-		"Nav": "system", "Operators": resp.Operators, "CSRF": sess.CSRF})
+		"Nav": "system", "Operators": resp.Operators, "CSRF": sess.CSRF,
+		"Pager": pagerData(r, resp.Total)})
 }
 
 // operatorNewForm：建操作员表单页（仅需会话；授权延后到 POST）。
@@ -135,7 +140,7 @@ func (h *Handler) listAdminRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	const fm = svc + "ListAdminRoles"
-	msg := &adminv1.ListAdminRolesRequest{}
+	msg := &adminv1.ListAdminRolesRequest{Page: listPageFromReq(r)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, fm, err)
@@ -147,7 +152,8 @@ func (h *Handler) listAdminRoles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "admin_roles.html", http.StatusOK, map[string]any{
-		"Nav": "system", "Roles": resp.Roles, "CSRF": sess.CSRF})
+		"Nav": "system", "Roles": resp.Roles, "CSRF": sess.CSRF,
+		"Pager": pagerData(r, resp.Total)})
 }
 
 // createAdminRole：建管理角色走 doWrite（无一次性 secret，故走 PRG）。

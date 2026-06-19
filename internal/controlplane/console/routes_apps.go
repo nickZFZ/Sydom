@@ -146,7 +146,8 @@ func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	selfCtx := cp.WithOperator(r.Context(), principal)
-	mine, err := h.srv.ListMyTenants(selfCtx, &adminv1.ListMyTenantsRequest{})
+	// ListMyTenants 用于下拉选择器，固定 limit=200，不接用户分页参数。
+	mine, err := h.srv.ListMyTenants(selfCtx, &adminv1.ListMyTenantsRequest{Page: &adminv1.ListPage{Limit: 200}})
 	if err != nil {
 		h.renderGRPCError(w, r, svc+"ListMyTenants", err)
 		return
@@ -158,8 +159,12 @@ func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 		tid = mine.Memberships[0].TenantId
 	} // else tid=0（超管列全量；非超管将被授权拒绝并降级）
 
+	stat, err := formInt64(r, "status")
+	if err != nil {
+		stat = 0
+	}
 	const fm = svc + "ListApplications"
-	msg := &adminv1.ListApplicationsRequest{TenantId: tid}
+	msg := &adminv1.ListApplicationsRequest{TenantId: tid, Page: listPageFromReq(r), Status: int32(stat)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
 	if err != nil {
 		if status.Code(err) == codes.PermissionDenied {
@@ -178,5 +183,5 @@ func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	h.renderPage(w, r, "dashboard.html", http.StatusOK, map[string]any{
 		"Nav": "apps", "Degraded": false, "Apps": resp.Applications, "CSRF": sess.CSRF,
-		"Tenants": mine.Memberships, "TenantID": tid})
+		"Tenants": mine.Memberships, "TenantID": tid, "Pager": pagerData(r, resp.Total)})
 }

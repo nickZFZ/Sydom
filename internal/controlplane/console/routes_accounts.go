@@ -44,13 +44,14 @@ func (h *Handler) tenantsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := cp.WithOperator(r.Context(), principal)
-	resp, err := h.srv.ListMyTenants(ctx, &adminv1.ListMyTenantsRequest{})
+	resp, err := h.srv.ListMyTenants(ctx, &adminv1.ListMyTenantsRequest{Page: listPageFromReq(r)})
 	if err != nil {
 		h.renderGRPCError(w, r, "/sydom.admin.v1.AdminService/ListMyTenants", err)
 		return
 	}
 	h.renderPage(w, r, "tenants.html", http.StatusOK, map[string]any{
-		"Nav": "tenants", "Memberships": resp.Memberships, "IsOperatingPlane": resp.IsOperatingPlane})
+		"Nav": "tenants", "Memberships": resp.Memberships, "IsOperatingPlane": resp.IsOperatingPlane,
+		"Pager": pagerData(r, resp.Total)})
 }
 
 // membersList：ListMembers（tenant-target 读，经共用 AuthorizeRule）。
@@ -64,8 +65,12 @@ func (h *Handler) membersList(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/tenants", http.StatusSeeOther)
 		return
 	}
+	tier, err := formInt64(r, "tier")
+	if err != nil {
+		tier = 0
+	}
 	const fm = "/sydom.admin.v1.AdminService/ListMembers"
-	msg := &adminv1.ListMembersRequest{TenantId: tid}
+	msg := &adminv1.ListMembersRequest{TenantId: tid, Page: listPageFromReq(r), Tier: int32(tier)}
 	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, fm, principal, msg)
 	if err != nil {
 		h.renderGRPCError(w, r, fm, err)
@@ -77,7 +82,8 @@ func (h *Handler) membersList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "members.html", http.StatusOK, map[string]any{
-		"Nav": "tenants", "TenantID": tid, "Members": resp.Members, "CSRF": sess.CSRF})
+		"Nav": "tenants", "TenantID": tid, "Members": resp.Members, "CSRF": sess.CSRF,
+		"Pager": pagerData(r, resp.Total)})
 }
 
 // memberInvite：InviteMember（CSRF → 授权 → 直调 → 一次性 secret 当场渲染，不 PRG）。

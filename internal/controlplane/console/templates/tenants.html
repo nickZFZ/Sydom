@@ -2,6 +2,7 @@
 {{define "content"}}
 <h2>我的租户</h2>
 {{if .IsOperatingPlane}}<p class="hint">运营平面（超级管理员）</p>{{end}}
+{{template "searchbox" .Pager}}
 <ul class="tenant-list">
 {{range .Memberships}}
 <li>{{.TenantName}}（tier {{.Tier}}）—
@@ -11,4 +12,5 @@
 <li>暂无租户，<a href="/register">注册一个</a></li>
 {{end}}
 </ul>
+{{template "pager" .Pager}}
 {{end}}

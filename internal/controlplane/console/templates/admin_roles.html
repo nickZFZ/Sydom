@@ -5,7 +5,11 @@
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="code" placeholder="code" required><input name="name" placeholder="名称">
 <button>+ 新建管理角色</button></form>
-<table><thead><tr><th>ID</th><th>Code</th><th>名称</th><th>授权</th></tr></thead><tbody>
+{{template "searchbox" .Pager}}
+<table><thead><tr>
+<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
+<th><a href="?sort=code&order=asc">Code ↑</a> <a href="?sort=code&order=desc">↓</a></th>
+<th>名称</th><th>授权</th></tr></thead><tbody>
 {{range .Roles}}<tr><td>{{.RoleId}}</td><td>{{.Code}}</td><td>{{.Name}}</td>
 <td>
 <form method="post" action="/admin-roles/{{.RoleId}}/grants" class="inline-form">
@@ -22,4 +26,5 @@
 <button>撤销授权</button></form>
 </td></tr>{{end}}
 </tbody></table>
+{{template "pager" .Pager}}
 {{end}}

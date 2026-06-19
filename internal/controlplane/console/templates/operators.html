@@ -2,7 +2,12 @@
 {{define "content"}}
 <h2>操作员</h2>
 <p><a class="btn-primary" href="/operators/new">+ 新建操作员</a></p>
-<table><thead><tr><th>ID</th><th>Principal</th><th>状态</th><th>操作</th></tr></thead><tbody>
+{{template "searchbox" .Pager}}
+<table><thead><tr>
+<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
+<th><a href="?sort=principal&order=asc">Principal ↑</a> <a href="?sort=principal&order=desc">↓</a></th>
+<th><a href="?sort=status&order=asc">状态 ↑</a> <a href="?sort=status&order=desc">↓</a></th>
+<th>操作</th></tr></thead><tbody>
 {{range .Operators}}<tr><td>{{.OperatorId}}</td><td>{{.Principal}}</td>
 <td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td>
 <td>
@@ -25,4 +30,5 @@
 <button>重置密钥</button></form>
 </td></tr>{{end}}
 </tbody></table>
+{{template "pager" .Pager}}
 {{end}}

@@ -8,7 +8,13 @@
 {{else}}
 <p class="hint"><a href="/tenants">我的租户</a>{{if .TenantID}} · 当前租户 {{.TenantID}}{{end}}</p>
 <a class="btn-primary" href="/apps/new?tenant_id={{.TenantID}}">+ 新建应用</a>
-<table><thead><tr><th>ID</th><th>名称</th><th>Domain</th><th>状态</th><th>操作</th></tr></thead>
+{{template "searchbox" .Pager}}
+<table><thead><tr>
+<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
+<th><a href="?sort=name&order=asc">名称 ↑</a> <a href="?sort=name&order=desc">↓</a></th>
+<th><a href="?sort=domain&order=asc">Domain ↑</a> <a href="?sort=domain&order=desc">↓</a></th>
+<th><a href="?sort=status&order=asc">状态 ↑</a> <a href="?sort=status&order=desc">↓</a></th>
+<th>操作</th></tr></thead>
 <tbody>{{range .Apps}}<tr><td><a href="/apps/{{.AppId}}/roles">{{.AppId}}</a></td>
 <td>{{.Name}}</td><td>{{.Domain}}</td><td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td>
 <td><form method="post" action="/apps/{{.AppId}}/status" class="inline-form">
@@ -18,5 +24,6 @@
 <form method="post" action="/apps/{{.AppId}}/rotate-secret" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <button>轮换密钥</button></form></td></tr>{{end}}</tbody></table>
+{{template "pager" .Pager}}
 {{end}}
 {{end}}
