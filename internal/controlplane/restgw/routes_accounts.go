@@ -25,8 +25,12 @@ func accountRoutes() []route {
 				return s.RegisterTenant(ctx, m.(*adminv1.RegisterTenantRequest))
 			}},
 		{"GET", "/v1/me/tenants", pfx + "ListMyTenants",
-			func(_ *http.Request, _ []byte) (proto.Message, error) {
-				return &adminv1.ListMyTenantsRequest{}, nil
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListMyTenantsRequest{Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListMyTenants(ctx, m.(*adminv1.ListMyTenantsRequest))
@@ -53,7 +57,15 @@ func accountRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListMembersRequest{TenantId: id}, nil
+				tierV, err := queryInt64(r, "tier")
+				if err != nil {
+					return nil, err
+				}
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListMembersRequest{TenantId: id, Tier: int32(tierV), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListMembers(ctx, m.(*adminv1.ListMembersRequest))

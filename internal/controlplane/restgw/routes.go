@@ -86,6 +86,23 @@ func queryUint32(r *http.Request, key string) (uint32, error) {
 	return uint32(v), nil
 }
 
+// parseListPage 从 query 解析 ListPage（缺省零值）。
+func parseListPage(r *http.Request) (*adminv1.ListPage, error) {
+	limit, err := queryUint32(r, "limit")
+	if err != nil {
+		return nil, err
+	}
+	offset, err := queryUint32(r, "offset")
+	if err != nil {
+		return nil, err
+	}
+	q := r.URL.Query()
+	return &adminv1.ListPage{
+		Limit: limit, Offset: offset,
+		Sort: q.Get("sort"), Order: q.Get("order"), Q: q.Get("q"),
+	}, nil
+}
+
 // appRoutes 是 app 域 22 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
@@ -96,7 +113,11 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListRolesRequest{AppId: id}, nil
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListRolesRequest{AppId: id, Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListRoles(ctx, m.(*adminv1.ListRolesRequest))
@@ -154,7 +175,11 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListPermissionsRequest{AppId: id}, nil
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListPermissionsRequest{AppId: id, Source: r.URL.Query().Get("source"), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListPermissions(ctx, m.(*adminv1.ListPermissionsRequest))
@@ -186,7 +211,11 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListGrantsRequest{AppId: id, RoleId: roleID}, nil
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListGrantsRequest{AppId: id, RoleId: roleID, Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListGrants(ctx, m.(*adminv1.ListGrantsRequest))
@@ -236,7 +265,11 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListRoleInheritancesRequest{AppId: id}, nil
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListRoleInheritancesRequest{AppId: id, Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListRoleInheritances(ctx, m.(*adminv1.ListRoleInheritancesRequest))
@@ -286,7 +319,11 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListUserBindingsRequest{AppId: id, UserId: r.URL.Query().Get("user_id")}, nil
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListUserBindingsRequest{AppId: id, UserId: r.URL.Query().Get("user_id"), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListUserBindings(ctx, m.(*adminv1.ListUserBindingsRequest))
@@ -364,7 +401,12 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListDataPoliciesRequest{AppId: id, Resource: r.URL.Query().Get("resource")}, nil
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				q := r.URL.Query()
+				return &adminv1.ListDataPoliciesRequest{AppId: id, Resource: q.Get("resource"), Effect: q.Get("effect"), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListDataPolicies(ctx, m.(*adminv1.ListDataPoliciesRequest))
@@ -449,7 +491,15 @@ func applicationRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListApplicationsRequest{TenantId: uint64(tid)}, nil
+				statusV, err := queryInt64(r, "status")
+				if err != nil {
+					return nil, err
+				}
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListApplicationsRequest{TenantId: uint64(tid), Status: int32(statusV), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListApplications(ctx, m.(*adminv1.ListApplicationsRequest))
@@ -500,8 +550,16 @@ func systemRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
 		{"GET", "/v1/operators", pfx + "ListOperators",
-			func(_ *http.Request, _ []byte) (proto.Message, error) {
-				return &adminv1.ListOperatorsRequest{}, nil
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				statusV, err := queryInt64(r, "status")
+				if err != nil {
+					return nil, err
+				}
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListOperatorsRequest{Status: int32(statusV), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListOperators(ctx, m.(*adminv1.ListOperatorsRequest))
@@ -550,8 +608,12 @@ func systemRoutes() []route {
 				return s.BindOperatorRole(ctx, m.(*adminv1.BindOperatorRoleRequest))
 			}},
 		{"GET", "/v1/admin-roles", pfx + "ListAdminRoles",
-			func(_ *http.Request, _ []byte) (proto.Message, error) {
-				return &adminv1.ListAdminRolesRequest{}, nil
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				page, err := parseListPage(r)
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListAdminRolesRequest{Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListAdminRoles(ctx, m.(*adminv1.ListAdminRolesRequest))
