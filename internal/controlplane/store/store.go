@@ -66,12 +66,13 @@ func BumpAppVersion(ctx context.Context, ex cp.DBTX, appID, vNew int64) error {
 	return err
 }
 
-// InsertAudit 写一条审计记录。
-func InsertAudit(ctx context.Context, ex cp.DBTX, appID int64, operator, action, entityType, entityID string, version int64) error {
+// InsertAudit 写一条审计记录。diff 为变更内容 JSON（可为 nil → 落 NULL）。
+func InsertAudit(ctx context.Context, ex cp.DBTX, appID int64,
+	operator, action, entityType, entityID string, diff []byte, version int64) error {
 	_, err := ex.ExecContext(ctx, `
-		INSERT INTO policy_audit_log (app_id, operator, action, entity_type, entity_id, version)
-		VALUES ($1,$2,$3,$4,$5,$6)`,
-		appID, operator, action, entityType, entityID, version)
+		INSERT INTO policy_audit_log (app_id, operator, action, entity_type, entity_id, diff, version)
+		VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+		appID, operator, action, entityType, entityID, diff, version)
 	return err
 }
 

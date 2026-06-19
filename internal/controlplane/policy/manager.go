@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
@@ -38,6 +39,25 @@ type writeOp struct {
 	mutate func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error)
 	// preCheck 在加锁后、mutate 前执行（如环检测）；可为 nil。
 	preCheck func(ctx context.Context, tx *sql.Tx) error
+}
+
+// auditDiff 把一次写的策略变更序列化为审计 diff JSON（绝不含 secret——casbin 规则/数据策略本无凭据）。
+func auditDiff(adds, removes []cp.Rule, changes []cp.DataPolicyChange) []byte {
+	payload := map[string]any{}
+	if len(adds) > 0 {
+		payload["adds"] = adds
+	}
+	if len(removes) > 0 {
+		payload["removes"] = removes
+	}
+	if len(changes) > 0 {
+		payload["data_changes"] = changes
+	}
+	if len(payload) == 0 {
+		return nil
+	}
+	b, _ := json.Marshal(payload)
+	return b
 }
 
 // runVersionedWrite 是 spec §6 统一写事务模板。
@@ -92,7 +112,8 @@ func (m *PolicyManager) runVersionedWrite(ctx context.Context, appID int64, op w
 		return nil, fmt.Errorf("policy: bump app %d to v%d: %w", appID, vNew, err)
 	}
 	if err := store.InsertAudit(ctx, tx, appID,
-		cp.OperatorFromContext(ctx), op.action, op.entityType, op.entityID, vNew); err != nil {
+		cp.OperatorFromContext(ctx), op.action, op.entityType, op.entityID,
+		auditDiff(adds, removes, dataChanges), vNew); err != nil {
 		return nil, fmt.Errorf("policy: audit %s v%d: %w", op.action, vNew, err)
 	}
 	delta := &cp.Delta{
@@ -345,7 +366,8 @@ func (m *PolicyManager) runVersionedWriteData(ctx context.Context, appID int64, 
 		return nil, fmt.Errorf("policy: bump app %d to v%d: %w", appID, vNew, err)
 	}
 	if err := store.InsertAudit(ctx, tx, appID,
-		cp.OperatorFromContext(ctx), op.action, op.entityType, op.entityID, vNew); err != nil {
+		cp.OperatorFromContext(ctx), op.action, op.entityType, op.entityID,
+		auditDiff(nil, nil, changes), vNew); err != nil {
 		return nil, fmt.Errorf("policy: audit %s v%d: %w", op.action, vNew, err)
 	}
 	delta := &cp.Delta{AppID: appID, Version: vNew, DataChanges: changes}

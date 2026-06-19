@@ -12,6 +12,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRunVersionedWrite_PopulatesDiff(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	roleID, permID := seedRoleAndPerm(t, db, appID)
+	m := policy.NewPolicyManager(db, nil)
+	ctx := cp.WithOperator(context.Background(), "alice")
+
+	// GrantPermission 会产生 casbin adds（投影 p 行），触发 bump + audit diff 写入
+	_, err := m.GrantPermission(ctx, appID, roleID, permID, "allow")
+	require.NoError(t, err)
+
+	var diff sql.NullString
+	require.NoError(t, db.QueryRow(
+		`SELECT diff FROM policy_audit_log WHERE app_id=$1 ORDER BY id DESC LIMIT 1`, appID).Scan(&diff))
+	require.True(t, diff.Valid, "diff 应非 NULL")
+	require.Contains(t, diff.String, "adds")
+}
+
 func TestReportPermissions_CatalogOnly_NoBump(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
