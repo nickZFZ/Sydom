@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/lib/pq"
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
@@ -116,32 +118,55 @@ func (s *AdminServer) SetApplicationStatus(ctx context.Context, r *adminv1.SetAp
 }
 
 func (s *AdminServer) ListApplications(ctx context.Context, r *adminv1.ListApplicationsRequest) (*adminv1.ListApplicationsResponse, error) {
-	var rows *sql.Rows
-	var err error
-	if r.TenantId == 0 { // 运营平面：列全量（授权已确保仅超管可达 tenant_id=0）
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, domain, name, app_key, status, current_version FROM application ORDER BY id`)
-	} else {
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, domain, name, app_key, status, current_version FROM application WHERE tenant_id=$1 ORDER BY id`, int64(r.TenantId))
+	conds := []string{}
+	args := []any{}
+	add := func(cond string, val any) {
+		args = append(args, val)
+		conds = append(conds, cond+" $"+strconv.Itoa(len(args)))
 	}
+	// 租户 scope：tenant_id=0 为超管全量，非0限定本租户
+	if r.TenantId != 0 {
+		add("tenant_id =", int64(r.TenantId))
+	}
+	if r.Status != 0 {
+		add("status =", int16(r.Status))
+	}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"name", "domain", "app_key"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	whereSQL := ""
+	if len(conds) > 0 {
+		whereSQL = " WHERE " + strings.Join(conds, " AND ")
+	}
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM application`+whereSQL, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count applications: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "name": "name", "domain": "domain", "status": "status"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, domain, name, app_key, status, current_version FROM application` + whereSQL +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "list: %v", err)
+		return nil, status.Errorf(codes.Internal, "list applications: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListApplicationsResponse{}
+	out := &adminv1.ListApplicationsResponse{Total: total}
 	for rows.Next() {
 		var a adminv1.ApplicationSummary
 		var id, ver int64
 		var st int16
 		if err := rows.Scan(&id, &a.Domain, &a.Name, &a.AppKey, &st, &ver); err != nil {
-			return nil, status.Errorf(codes.Internal, "scan: %v", err)
+			return nil, status.Errorf(codes.Internal, "scan application: %v", err)
 		}
 		a.AppId, a.Status, a.CurrentVersion = uint64(id), uint32(st), uint64(ver)
 		out.Applications = append(out.Applications, &a)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, status.Errorf(codes.Internal, "rows: %v", err)
+		return nil, status.Errorf(codes.Internal, "rows applications: %v", err)
 	}
 	return out, nil
 }

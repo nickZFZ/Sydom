@@ -257,14 +257,41 @@ func (s *AdminServer) ListDataPolicies(ctx context.Context, r *adminv1.ListDataP
 	return out, nil
 }
 
-func (s *AdminServer) ListOperators(ctx context.Context, _ *adminv1.ListOperatorsRequest) (*adminv1.ListOperatorsResponse, error) {
+func (s *AdminServer) ListOperators(ctx context.Context, r *adminv1.ListOperatorsRequest) (*adminv1.ListOperatorsResponse, error) {
 	// 只 SELECT id/principal/status —— secret_enc 绝不出查询，物理保证不泄露。
-	rows, err := s.db.QueryContext(ctx, `SELECT id, principal, status FROM admin_operator ORDER BY id`)
+	conds := []string{}
+	args := []any{}
+	add := func(cond string, val any) {
+		args = append(args, val)
+		conds = append(conds, cond+" $"+strconv.Itoa(len(args)))
+	}
+	if r.Status != 0 {
+		add("status =", int16(r.Status))
+	}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"principal"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	whereSQL := ""
+	if len(conds) > 0 {
+		whereSQL = " WHERE " + strings.Join(conds, " AND ")
+	}
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM admin_operator`+whereSQL, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count operators: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "principal": "principal", "status": "status"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, principal, status FROM admin_operator` + whereSQL +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list operators: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListOperatorsResponse{}
+	out := &adminv1.ListOperatorsResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.OperatorSummary
 		var st int16
@@ -280,13 +307,33 @@ func (s *AdminServer) ListOperators(ctx context.Context, _ *adminv1.ListOperator
 	return out, nil
 }
 
-func (s *AdminServer) ListAdminRoles(ctx context.Context, _ *adminv1.ListAdminRolesRequest) (*adminv1.ListAdminRolesResponse, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, code, name FROM admin_role ORDER BY id`)
+func (s *AdminServer) ListAdminRoles(ctx context.Context, r *adminv1.ListAdminRolesRequest) (*adminv1.ListAdminRolesResponse, error) {
+	conds := []string{}
+	args := []any{}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"code", "name"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	whereSQL := ""
+	if len(conds) > 0 {
+		whereSQL = " WHERE " + strings.Join(conds, " AND ")
+	}
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM admin_role`+whereSQL, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count admin roles: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "code": "code"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, code, name FROM admin_role` + whereSQL +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list admin roles: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListAdminRolesResponse{}
+	out := &adminv1.ListAdminRolesResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.AdminRoleSummary
 		if err := rows.Scan(&x.RoleId, &x.Code, &x.Name); err != nil {

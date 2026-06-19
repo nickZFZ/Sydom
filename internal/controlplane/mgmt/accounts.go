@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
@@ -78,7 +81,8 @@ func (s *AdminServer) RegisterTenant(ctx context.Context, r *adminv1.RegisterTen
 }
 
 // ListMyTenants（self）：返回 ctx principal 的租户归属 + 运营平面标志。
-func (s *AdminServer) ListMyTenants(ctx context.Context, _ *adminv1.ListMyTenantsRequest) (*adminv1.ListMyTenantsResponse, error) {
+// 纯内存分页（全量从 DB 取后过滤/排序/切片），避免把 q/sort 注入 adminauthz.TenantsOfOperator。
+func (s *AdminServer) ListMyTenants(ctx context.Context, r *adminv1.ListMyTenantsRequest) (*adminv1.ListMyTenantsResponse, error) {
 	principal := cp.OperatorFromContext(ctx)
 	ms, err := adminauthz.TenantsOfOperator(ctx, s.db, principal)
 	if err != nil {
@@ -88,7 +92,55 @@ func (s *AdminServer) ListMyTenants(ctx context.Context, _ *adminv1.ListMyTenant
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "operating plane: %v", err)
 	}
-	out := &adminv1.ListMyTenantsResponse{IsOperatingPlane: op}
+
+	// 1. q 子串过滤（不区分大小写）
+	if q := r.Page.GetQ(); q != "" {
+		lq := strings.ToLower(q)
+		filtered := ms[:0]
+		for _, m := range ms {
+			if strings.Contains(strings.ToLower(m.TenantName), lq) {
+				filtered = append(filtered, m)
+			}
+		}
+		ms = filtered
+	}
+
+	// 2. total = 过滤后总数（分页前）
+	total := uint32(len(ms))
+
+	// 3. 排序：白名单 {tenant_id, tenant_name}，默认 tenant_id asc
+	sortCol := r.Page.GetSort()
+	sortDir := strings.ToLower(r.Page.GetOrder())
+	desc := sortDir == "desc"
+	switch sortCol {
+	case "tenant_name":
+		sort.Slice(ms, func(i, j int) bool {
+			if desc {
+				return ms[i].TenantName > ms[j].TenantName
+			}
+			return ms[i].TenantName < ms[j].TenantName
+		})
+	default: // "tenant_id" 或非白名单 → 默认 tenant_id
+		sort.Slice(ms, func(i, j int) bool {
+			if desc {
+				return ms[i].TenantID > ms[j].TenantID
+			}
+			return ms[i].TenantID < ms[j].TenantID
+		})
+	}
+
+	// 4. 内存分页
+	limit, offset := pageOf(r.Page)
+	if offset > len(ms) {
+		offset = len(ms)
+	}
+	end := offset + limit
+	if end > len(ms) {
+		end = len(ms)
+	}
+	ms = ms[offset:end]
+
+	out := &adminv1.ListMyTenantsResponse{IsOperatingPlane: op, Total: total}
 	for _, m := range ms {
 		out.Memberships = append(out.Memberships, &adminv1.TenantMembershipSummary{
 			TenantId: uint64(m.TenantID), TenantName: m.TenantName, Tier: uint32(m.Tier)})
@@ -157,15 +209,40 @@ func (s *AdminServer) InviteMember(ctx context.Context, r *adminv1.InviteMemberR
 
 // ListMembers（tenant-target 读）：列 tenant_id 的成员；secret_enc 绝不出查询。
 func (s *AdminServer) ListMembers(ctx context.Context, r *adminv1.ListMembersRequest) (*adminv1.ListMembersResponse, error) {
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT o.id, o.principal, m.tier, o.status
-		 FROM tenant_membership m JOIN admin_operator o ON o.id = m.operator_id
-		 WHERE m.tenant_id = $1 ORDER BY o.id`, int64(r.TenantId))
+	// base cond：m.tenant_id 始终限定租户（保留 tenant scope）
+	conds := []string{"m.tenant_id = $1"}
+	args := []any{int64(r.TenantId)}
+	add := func(cond string, val any) {
+		args = append(args, val)
+		conds = append(conds, cond+" $"+strconv.Itoa(len(args)))
+	}
+	if r.Tier != 0 {
+		add("m.tier =", int16(r.Tier))
+	}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"o.principal"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	where := strings.Join(conds, " AND ")
+	var total uint32
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT count(*) FROM tenant_membership m JOIN admin_operator o ON o.id = m.operator_id WHERE `+where,
+		args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count members: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"operator_id": "o.id", "principal": "o.principal", "tier": "m.tier"}, "o.id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT o.id, o.principal, m.tier, o.status
+		 FROM tenant_membership m JOIN admin_operator o ON o.id = m.operator_id WHERE ` + where +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list members: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListMembersResponse{}
+	out := &adminv1.ListMembersResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.MemberSummary
 		var tier, st int16
