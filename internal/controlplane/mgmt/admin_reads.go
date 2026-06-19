@@ -2,7 +2,8 @@ package mgmt
 
 import (
 	"context"
-	"database/sql"
+	"strconv"
+	"strings"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"google.golang.org/grpc/codes"
@@ -10,13 +11,29 @@ import (
 )
 
 func (s *AdminServer) ListRoles(ctx context.Context, r *adminv1.ListRolesRequest) (*adminv1.ListRolesResponse, error) {
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, code, name, COALESCE(description,'') FROM role WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
+	conds := []string{"app_id = $1"}
+	args := []any{int64(r.AppId)}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"code", "name"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	where := strings.Join(conds, " AND ")
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM role WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count roles: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "code": "code", "name": "name"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, code, name, COALESCE(description,'') FROM role WHERE ` + where +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list roles: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListRolesResponse{}
+	out := &adminv1.ListRolesResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.RoleSummary
 		if err := rows.Scan(&x.RoleId, &x.Code, &x.Name, &x.Description); err != nil {
@@ -31,13 +48,36 @@ func (s *AdminServer) ListRoles(ctx context.Context, r *adminv1.ListRolesRequest
 }
 
 func (s *AdminServer) ListPermissions(ctx context.Context, r *adminv1.ListPermissionsRequest) (*adminv1.ListPermissionsResponse, error) {
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, code, resource, action, type, name, source FROM permission WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
+	conds := []string{"app_id = $1"}
+	args := []any{int64(r.AppId)}
+	add := func(cond string, val any) {
+		args = append(args, val)
+		conds = append(conds, cond+" $"+strconv.Itoa(len(args)))
+	}
+	if r.Source != "" {
+		add("source =", r.Source)
+	}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"code", "name", "resource", "action"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	where := strings.Join(conds, " AND ")
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM permission WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count permissions: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "code": "code", "resource": "resource", "action": "action", "source": "source"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, code, resource, action, type, name, source FROM permission WHERE ` + where +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list permissions: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListPermissionsResponse{}
+	out := &adminv1.ListPermissionsResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.PermissionSummary
 		if err := rows.Scan(&x.PermissionId, &x.Code, &x.Resource, &x.Action, &x.Ptype, &x.Name, &x.Source); err != nil {
@@ -52,20 +92,32 @@ func (s *AdminServer) ListPermissions(ctx context.Context, r *adminv1.ListPermis
 }
 
 func (s *AdminServer) ListGrants(ctx context.Context, r *adminv1.ListGrantsRequest) (*adminv1.ListGrantsResponse, error) {
-	var rows *sql.Rows
-	var err error
-	if r.RoleId == 0 {
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, role_id, permission_id, eft FROM role_permission WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
-	} else {
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, role_id, permission_id, eft FROM role_permission WHERE app_id=$1 AND role_id=$2 ORDER BY id`, int64(r.AppId), r.RoleId)
+	conds := []string{"app_id = $1"}
+	args := []any{int64(r.AppId)}
+	add := func(cond string, val any) {
+		args = append(args, val)
+		conds = append(conds, cond+" $"+strconv.Itoa(len(args)))
 	}
+	if r.RoleId != 0 {
+		add("role_id =", r.RoleId)
+	}
+	where := strings.Join(conds, " AND ")
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM role_permission WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count grants: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "role_id": "role_id"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, role_id, permission_id, eft FROM role_permission WHERE ` + where +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list grants: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListGrantsResponse{}
+	out := &adminv1.ListGrantsResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.GrantSummary
 		if err := rows.Scan(&x.GrantId, &x.RoleId, &x.PermissionId, &x.Eft); err != nil {
@@ -80,13 +132,25 @@ func (s *AdminServer) ListGrants(ctx context.Context, r *adminv1.ListGrantsReque
 }
 
 func (s *AdminServer) ListRoleInheritances(ctx context.Context, r *adminv1.ListRoleInheritancesRequest) (*adminv1.ListRoleInheritancesResponse, error) {
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, parent_role_id, child_role_id FROM role_inheritance WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
+	conds := []string{"app_id = $1"}
+	args := []any{int64(r.AppId)}
+	where := strings.Join(conds, " AND ")
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM role_inheritance WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count inheritances: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, parent_role_id, child_role_id FROM role_inheritance WHERE ` + where +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list inheritances: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListRoleInheritancesResponse{}
+	out := &adminv1.ListRoleInheritancesResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.RoleInheritanceSummary
 		if err := rows.Scan(&x.InheritanceId, &x.ParentRoleId, &x.ChildRoleId); err != nil {
@@ -101,20 +165,36 @@ func (s *AdminServer) ListRoleInheritances(ctx context.Context, r *adminv1.ListR
 }
 
 func (s *AdminServer) ListUserBindings(ctx context.Context, r *adminv1.ListUserBindingsRequest) (*adminv1.ListUserBindingsResponse, error) {
-	var rows *sql.Rows
-	var err error
-	if r.UserId == "" {
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, user_id, role_id FROM user_role_binding WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
-	} else {
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, user_id, role_id FROM user_role_binding WHERE app_id=$1 AND user_id=$2 ORDER BY id`, int64(r.AppId), r.UserId)
+	conds := []string{"app_id = $1"}
+	args := []any{int64(r.AppId)}
+	add := func(cond string, val any) {
+		args = append(args, val)
+		conds = append(conds, cond+" $"+strconv.Itoa(len(args)))
 	}
+	if r.UserId != "" {
+		add("user_id =", r.UserId)
+	}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"user_id"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	where := strings.Join(conds, " AND ")
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM user_role_binding WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count user bindings: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "user_id": "user_id"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, user_id, role_id FROM user_role_binding WHERE ` + where +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list user bindings: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListUserBindingsResponse{}
+	out := &adminv1.ListUserBindingsResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.UserBindingSummary
 		if err := rows.Scan(&x.BindingId, &x.UserId, &x.RoleId); err != nil {
@@ -129,20 +209,39 @@ func (s *AdminServer) ListUserBindings(ctx context.Context, r *adminv1.ListUserB
 }
 
 func (s *AdminServer) ListDataPolicies(ctx context.Context, r *adminv1.ListDataPoliciesRequest) (*adminv1.ListDataPoliciesResponse, error) {
-	var rows *sql.Rows
-	var err error
-	if r.Resource == "" {
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, subject_type, subject_id, resource, condition::text, effect, COALESCE(description,''), version FROM data_policy WHERE app_id=$1 ORDER BY id`, int64(r.AppId))
-	} else {
-		rows, err = s.db.QueryContext(ctx,
-			`SELECT id, subject_type, subject_id, resource, condition::text, effect, COALESCE(description,''), version FROM data_policy WHERE app_id=$1 AND resource=$2 ORDER BY id`, int64(r.AppId), r.Resource)
+	conds := []string{"app_id = $1"}
+	args := []any{int64(r.AppId)}
+	add := func(cond string, val any) {
+		args = append(args, val)
+		conds = append(conds, cond+" $"+strconv.Itoa(len(args)))
 	}
+	if r.Resource != "" {
+		add("resource =", r.Resource)
+	}
+	if r.Effect != "" {
+		add("effect =", r.Effect)
+	}
+	if sc, arg := searchClause(r.Page.GetQ(), []string{"resource", "subject_id", "description"}, len(args)+1); sc != "" {
+		args = append(args, arg)
+		conds = append(conds, sc)
+	}
+	where := strings.Join(conds, " AND ")
+	var total uint32
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM data_policy WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, status.Errorf(codes.Internal, "count data policies: %v", err)
+	}
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "resource": "resource", "effect": "effect"}, "id")
+	limit, offset := pageOf(r.Page)
+	args = append(args, limit, offset)
+	q := `SELECT id, subject_type, subject_id, resource, condition::text, effect, COALESCE(description,''), version FROM data_policy WHERE ` + where +
+		` ORDER BY ` + order + ` LIMIT $` + strconv.Itoa(len(args)-1) + ` OFFSET $` + strconv.Itoa(len(args))
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list data policies: %v", err)
 	}
 	defer rows.Close()
-	out := &adminv1.ListDataPoliciesResponse{}
+	out := &adminv1.ListDataPoliciesResponse{Total: total}
 	for rows.Next() {
 		var x adminv1.DataPolicySummary
 		var ver int64
