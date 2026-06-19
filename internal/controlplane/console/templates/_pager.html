@@ -1,8 +1,8 @@
 {{define "pager"}}
 <div class="pager">
   <span class="count">显示 {{.From}}-{{.To}} / 共 {{.Total}}</span>
-  {{if .HasPrev}}<a href="?page={{.PrevPage}}&{{.Query}}">← 上一页</a>{{end}}
-  {{if .HasNext}}<a href="?page={{.NextPage}}&{{.Query}}">下一页 →</a>{{end}}
+  {{if .HasPrev}}<a href="?page={{.PrevPage}}{{if .Query}}&{{.Query}}{{end}}">← 上一页</a>{{end}}
+  {{if .HasNext}}<a href="?page={{.NextPage}}{{if .Query}}&{{.Query}}{{end}}">下一页 →</a>{{end}}
 </div>{{end}}
 {{define "searchbox"}}
 <form method="get" class="searchbox"><input name="q" value="{{.Q}}" placeholder="搜索">
