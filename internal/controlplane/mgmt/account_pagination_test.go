@@ -331,7 +331,7 @@ func TestListMyTenants_InMemoryPageQSort(t *testing.T) {
 
 	// 也建一个 multi@sydom 不是成员的租户（另一个 owner）
 	_, err = s.RegisterTenant(ctx, &adminv1.RegisterTenantRequest{
-		TenantName:     "other", OwnerPrincipal: "other@sydom"})
+		TenantName: "other", OwnerPrincipal: "other@sydom"})
 	require.NoError(t, err)
 
 	myCtx := cp.WithOperator(ctx, principal)
