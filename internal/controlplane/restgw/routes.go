@@ -179,7 +179,8 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListPermissionsRequest{AppId: id, Source: r.URL.Query().Get("source"), Page: page}, nil
+				q := r.URL.Query()
+				return &adminv1.ListPermissionsRequest{AppId: id, Source: q.Get("source"), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListPermissions(ctx, m.(*adminv1.ListPermissionsRequest))
@@ -323,7 +324,8 @@ func appRoutes() []route {
 				if err != nil {
 					return nil, err
 				}
-				return &adminv1.ListUserBindingsRequest{AppId: id, UserId: r.URL.Query().Get("user_id"), Page: page}, nil
+				q := r.URL.Query()
+				return &adminv1.ListUserBindingsRequest{AppId: id, UserId: q.Get("user_id"), Page: page}, nil
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListUserBindings(ctx, m.(*adminv1.ListUserBindingsRequest))

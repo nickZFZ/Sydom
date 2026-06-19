@@ -56,7 +56,7 @@ func TestREST_ListPermissions_Paginated(t *testing.T) {
 	require.NoError(t, json.Unmarshal(body2, &m2))
 	var total2 int64
 	require.NoError(t, json.Unmarshal(m2["total"], &total2))
-	require.LessOrEqual(t, total2, int64(2), "q=find_me 应仅匹配 2 条，total=%d body=%s", total2, string(body2))
+	require.Equal(t, int64(2), total2, "q=find_me 应恰好匹配 2 条，total=%d body=%s", total2, string(body2))
 }
 
 // TestREST_ListPermissions_NoAuth 验证路由受 HMAC 保护：无凭据 → 401。
