@@ -31,8 +31,8 @@ func TestConsole_Permissions_Paginated(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	body := readBody(t, resp)
-	require.Contains(t, body, "共")  // pager 模板含"共 N"
-	require.Contains(t, body, "搜索") // searchbox 模板含"搜索"按钮
+	require.Contains(t, body, "显示 1-3 / 共 3") // pager 渲染完整区间 + total（seed 3 条，SeedApp 不预置权限）
+	require.Contains(t, body, "搜索")           // searchbox 模板含"搜索"按钮
 }
 
 // TestConsole_Permissions_NoSession 验证无会话时重定向到登录页。
