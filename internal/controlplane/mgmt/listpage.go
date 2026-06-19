@@ -26,8 +26,8 @@ func pageOf(p *adminv1.ListPage) (int, int) {
 	if p == nil {
 		return clampLimit(0), 0
 	}
-	off := int(p.Offset)
-	if off < 0 {
+	off := int(p.Offset) // Offset 为 uint32，int(...) 恒非负
+	if off < 0 {         // 防御性下限保护（当前类型下不会触发）
 		off = 0
 	}
 	return clampLimit(p.Limit), off
