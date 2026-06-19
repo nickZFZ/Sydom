@@ -159,7 +159,7 @@ message SetApplicationStatusRequest {
   uint64 app_id = 1;
   uint32 status = 2; // 1=active, 2=disabled
 }
-message ListApplicationsRequest { uint64 tenant_id = 1; }
+message ListApplicationsRequest { uint64 tenant_id = 1; ListPage page = 2; int32 status = 3; }   // status 过滤
 message ApplicationSummary {
   uint64 app_id = 1;
   string domain = 2;
@@ -170,6 +170,7 @@ message ApplicationSummary {
 }
 message ListApplicationsResponse {
   repeated ApplicationSummary applications = 1;
+  uint32 total = 2;
 }
 
 message CreateOperatorRequest {
@@ -226,8 +227,8 @@ message RoleSummary {
   string name = 3;
   string description = 4;
 }
-message ListRolesRequest { uint64 app_id = 1; }
-message ListRolesResponse { repeated RoleSummary roles = 1; }
+message ListRolesRequest { uint64 app_id = 1; ListPage page = 2; }
+message ListRolesResponse { repeated RoleSummary roles = 1; uint32 total = 2; }
 
 message PermissionSummary {
   int64 permission_id = 1;
@@ -238,8 +239,8 @@ message PermissionSummary {
   string name = 6;
   string source = 7; // manual|auto（SDK D 语义）
 }
-message ListPermissionsRequest { uint64 app_id = 1; }
-message ListPermissionsResponse { repeated PermissionSummary permissions = 1; }
+message ListPermissionsRequest { uint64 app_id = 1; ListPage page = 2; string source = 3; }      // source 过滤 manual|auto
+message ListPermissionsResponse { repeated PermissionSummary permissions = 1; uint32 total = 2; }
 
 message GrantSummary {
   int64 grant_id = 1;
@@ -250,16 +251,17 @@ message GrantSummary {
 message ListGrantsRequest {
   uint64 app_id = 1;
   int64 role_id = 2; // 0 = 全部
+  ListPage page = 3;
 }
-message ListGrantsResponse { repeated GrantSummary grants = 1; }
+message ListGrantsResponse { repeated GrantSummary grants = 1; uint32 total = 2; }
 
 message RoleInheritanceSummary {
   int64 inheritance_id = 1;
   int64 parent_role_id = 2;
   int64 child_role_id = 3;
 }
-message ListRoleInheritancesRequest { uint64 app_id = 1; }
-message ListRoleInheritancesResponse { repeated RoleInheritanceSummary inheritances = 1; }
+message ListRoleInheritancesRequest { uint64 app_id = 1; ListPage page = 2; }
+message ListRoleInheritancesResponse { repeated RoleInheritanceSummary inheritances = 1; uint32 total = 2; }
 
 message UserBindingSummary {
   int64 binding_id = 1;
@@ -269,8 +271,9 @@ message UserBindingSummary {
 message ListUserBindingsRequest {
   uint64 app_id = 1;
   string user_id = 2; // "" = 全部
+  ListPage page = 3;
 }
-message ListUserBindingsResponse { repeated UserBindingSummary bindings = 1; }
+message ListUserBindingsResponse { repeated UserBindingSummary bindings = 1; uint32 total = 2; }
 
 message DataPolicySummary {
   int64 data_policy_id = 1;
@@ -285,8 +288,10 @@ message DataPolicySummary {
 message ListDataPoliciesRequest {
   uint64 app_id = 1;
   string resource = 2; // "" = 全部
+  ListPage page = 3;
+  string effect = 4; // effect 过滤 allow|deny
 }
-message ListDataPoliciesResponse { repeated DataPolicySummary data_policies = 1; }
+message ListDataPoliciesResponse { repeated DataPolicySummary data_policies = 1; uint32 total = 2; }
 
 // —— SP1 读面消息（system-域 2 个）——
 message OperatorSummary { // 永不含 secret
@@ -294,31 +299,31 @@ message OperatorSummary { // 永不含 secret
   string principal = 2;
   uint32 status = 3;
 }
-message ListOperatorsRequest {}
-message ListOperatorsResponse { repeated OperatorSummary operators = 1; }
+message ListOperatorsRequest { ListPage page = 1; int32 status = 2; }                            // status 过滤；0=不过滤(状态用 1/2，0 表缺省)
+message ListOperatorsResponse { repeated OperatorSummary operators = 1; uint32 total = 2; }
 
 message AdminRoleSummary {
   int64 role_id = 1;
   string code = 2;
   string name = 3;
 }
-message ListAdminRolesRequest {}
-message ListAdminRolesResponse { repeated AdminRoleSummary roles = 1; }
+message ListAdminRolesRequest { ListPage page = 1; }
+message ListAdminRolesResponse { repeated AdminRoleSummary roles = 1; uint32 total = 2; }
 
 // —— M1.2 账户层消息 ——
 message RegisterTenantRequest  { string tenant_name = 1; string owner_principal = 2; }
 message RegisterTenantResponse { uint64 tenant_id = 1; string owner_principal = 2; string owner_secret = 3; }
 
-message ListMyTenantsRequest    {}
+message ListMyTenantsRequest    { ListPage page = 1; }
 message TenantMembershipSummary { uint64 tenant_id = 1; string tenant_name = 2; uint32 tier = 3; }
-message ListMyTenantsResponse   { repeated TenantMembershipSummary memberships = 1; bool is_operating_plane = 2; }
+message ListMyTenantsResponse   { repeated TenantMembershipSummary memberships = 1; bool is_operating_plane = 2; uint32 total = 3; }
 
 message InviteMemberRequest  { uint64 tenant_id = 1; string principal = 2; }
 message InviteMemberResponse { uint64 operator_id = 1; string principal = 2; string secret = 3; }
 
-message ListMembersRequest  { uint64 tenant_id = 1; }
+message ListMembersRequest  { uint64 tenant_id = 1; ListPage page = 2; int32 tier = 3; }          // tier 过滤
 message MemberSummary       { uint64 operator_id = 1; string principal = 2; uint32 tier = 3; uint32 status = 4; }
-message ListMembersResponse { repeated MemberSummary members = 1; }
+message ListMembersResponse { repeated MemberSummary members = 1; uint32 total = 2; }
 
 // GetEffectivePermissions：反查「某 user 在某 app 能做什么」。app 域 / tenant-scoped 只读。
 message GetEffectivePermissionsRequest {
@@ -430,4 +435,13 @@ message AdminAuditEntry {
 message QueryAdminAuditLogResponse {
   repeated AdminAuditEntry entries = 1;
   uint64 next_cursor               = 2;
+}
+
+// —— List 分页信封（M2.4，11 个 List 请求共用）——
+message ListPage {
+  uint32 limit  = 1;  // 0→默认 50，上限 200（clampLimit）
+  uint32 offset = 2;
+  string sort   = 3;  // 列名，服务端白名单校验；空/非法→默认列
+  string order  = 4;  // "asc"|"desc"；空/非法→默认
+  string q      = 5;  // 子串搜索，服务端白名单字段 ILIKE
 }
