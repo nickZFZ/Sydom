@@ -18,7 +18,7 @@
 ## 文件结构
 
 **创建：**
-- `db/migrations/000013_admin_audit_log.up.sql` / `.down.sql` — 新表 `admin_audit_log` + 2 索引。
+- `db/migrations/000017_admin_audit_log.up.sql` / `.down.sql` — 新表 `admin_audit_log` + 2 索引。
 - `internal/controlplane/store/audit.go` — app 域审计 keyset 查询（`QueryAppAudit` + 过滤/条目类型）。
 - `internal/controlplane/adminauthz/audit.go` — `InsertAdminAudit` 写助手 + `QueryAdminAudit` keyset 查询 + 类型。
 - `internal/controlplane/mgmt/audit.go` — `QueryAuditLog` / `QueryAdminAuditLog` handler + system 域 diff 构造助手。
@@ -82,16 +82,16 @@ func QueryAdminAudit(ctx context.Context, q cp.DBTX, f AdminAuditFilter) (entrie
 
 ---
 
-## 任务 1：migration `000013` admin_audit_log + 表 round-trip
+## 任务 1：migration `000017` admin_audit_log + 表 round-trip
 
 **文件：**
-- 创建：`db/migrations/000013_admin_audit_log.up.sql`
-- 创建：`db/migrations/000013_admin_audit_log.down.sql`
+- 创建：`db/migrations/000017_admin_audit_log.up.sql`
+- 创建：`db/migrations/000017_admin_audit_log.down.sql`
 - 修改：`internal/db/schema_test.go:37`（round-trip 表清单）
 
 - [ ] **步骤 1：写迁移 up**
 
-`db/migrations/000013_admin_audit_log.up.sql`：
+`db/migrations/000017_admin_audit_log.up.sql`：
 ```sql
 CREATE TABLE admin_audit_log (
     id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -110,7 +110,7 @@ CREATE INDEX idx_admin_audit_tenant_entity  ON admin_audit_log (tenant_id, entit
 
 - [ ] **步骤 2：写迁移 down**
 
-`db/migrations/000013_admin_audit_log.down.sql`：
+`db/migrations/000017_admin_audit_log.down.sql`：
 ```sql
 DROP TABLE admin_audit_log;
 ```
@@ -127,8 +127,8 @@ DROP TABLE admin_audit_log;
 - [ ] **步骤 5：Commit**
 
 ```bash
-git add db/migrations/000013_admin_audit_log.up.sql db/migrations/000013_admin_audit_log.down.sql internal/db/schema_test.go
-git commit -m "feat(db): M2.3 admin_audit_log 表(migration 000013, system 域审计)"
+git add db/migrations/000017_admin_audit_log.up.sql db/migrations/000017_admin_audit_log.down.sql internal/db/schema_test.go
+git commit -m "feat(db): M2.3 admin_audit_log 表(migration 000017, system 域审计)"
 ```
 
 ---
