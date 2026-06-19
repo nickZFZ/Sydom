@@ -8,6 +8,7 @@ import (
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
+	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/dbtest"
 	"github.com/stretchr/testify/require"
 )
@@ -132,4 +133,39 @@ func TestGrantAdminRole_TenantDomainAudit(t *testing.T) {
 		`SELECT tenant_id FROM admin_audit_log ORDER BY id DESC LIMIT 1`).Scan(&tid))
 	require.True(t, tid.Valid)
 	require.Equal(t, tenantID, tid.Int64)
+}
+
+// QueryAuditLog 返回 app 审计、不 bump 版本（AUD-5）。
+func TestQueryAuditLog_ReadsAndNoBump(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	require.NoError(t, store.InsertAudit(context.Background(), db, appID,
+		"alice", "create", "role", "1", []byte(`{"adds":[]}`), 1))
+	var v0 int64
+	require.NoError(t, db.QueryRow(`SELECT current_version FROM application WHERE id=$1`, appID).Scan(&v0))
+	s := accountsSrv(db)
+	ctx := cp.WithOperator(context.Background(), "alice")
+	resp, err := s.QueryAuditLog(ctx, &adminv1.QueryAuditLogRequest{AppId: uint64(appID), Limit: 50})
+	require.NoError(t, err)
+	require.Len(t, resp.Entries, 1)
+	require.Equal(t, "role", resp.Entries[0].EntityType)
+	var v1 int64
+	require.NoError(t, db.QueryRow(`SELECT current_version FROM application WHERE id=$1`, appID).Scan(&v1))
+	require.Equal(t, v0, v1)
+}
+
+// QueryAdminAuditLog：超管 tenant_id=0 看全部；指定 tenant_id 仅该租户。
+func TestQueryAdminAuditLog_TenantScope(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	require.NoError(t, adminauthz.InsertAdminAudit(ctx, db, sql.NullInt64{Int64: 1, Valid: true}, "root", "create", "application", "1", nil, sql.NullInt64{}))
+	require.NoError(t, adminauthz.InsertAdminAudit(ctx, db, sql.NullInt64{}, "root", "reset", "operator", "9", nil, sql.NullInt64{}))
+	s := accountsSrv(db)
+	sctx := cp.WithOperator(ctx, "root@sydom")
+	all, err := s.QueryAdminAuditLog(sctx, &adminv1.QueryAdminAuditLogRequest{TenantId: 0, Limit: 50})
+	require.NoError(t, err)
+	require.Len(t, all.Entries, 2)
+	one, err := s.QueryAdminAuditLog(sctx, &adminv1.QueryAdminAuditLogRequest{TenantId: 1, Limit: 50})
+	require.NoError(t, err)
+	require.Len(t, one.Entries, 1)
 }
