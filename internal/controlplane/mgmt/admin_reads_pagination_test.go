@@ -32,6 +32,14 @@ func TestListPermissions_PageSearchSortTotal(t *testing.T) {
 	require.Equal(t, uint32(5), resp.Total)
 	require.Equal(t, "p0", resp.Permissions[0].Code)
 
+	// offset=2 正确跳过前两行 → 第一条是 p2（验证 OFFSET 占位与 pageOf 偏移）
+	resp, err = s.ListPermissions(ctx, &adminv1.ListPermissionsRequest{
+		AppId: uint64(appID), Page: &adminv1.ListPage{Limit: 2, Offset: 2, Sort: "code", Order: "asc"}})
+	require.NoError(t, err)
+	require.Len(t, resp.Permissions, 2)
+	require.Equal(t, uint32(5), resp.Total)
+	require.Equal(t, "p2", resp.Permissions[0].Code)
+
 	// 搜索 q=p1 → 1 行
 	resp, err = s.ListPermissions(ctx, &adminv1.ListPermissionsRequest{
 		AppId: uint64(appID), Page: &adminv1.ListPage{Q: "p1"}})
