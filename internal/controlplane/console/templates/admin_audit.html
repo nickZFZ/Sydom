@@ -1,0 +1,17 @@
+{{define "title"}}管理审计{{end}}
+{{define "content"}}
+<h2>管理审计</h2>
+<form method="get" action="/admin/audit" class="inline-form">
+<input name="tenant_id" placeholder="租户 id（0=全部）" value="{{if .TenantID}}{{.TenantID}}{{end}}">
+<button>过滤</button></form>
+<table><thead><tr><th>时间</th><th>租户</th><th>操作者</th><th>动作</th><th>实体</th><th>变更</th></tr></thead>
+<tbody>
+{{range .Entries}}<tr><td>{{.CreatedAt}}</td>
+<td>{{if .TenantId}}t:{{.TenantId}}{{else}}系统{{end}}</td>
+<td>{{.Operator}}</td><td>{{.Action}}</td>
+<td>{{.EntityType}}{{if .EntityId}} #{{.EntityId}}{{end}}</td>
+<td><pre class="diff">{{.Diff}}</pre></td></tr>
+{{else}}<tr><td colspan="6">无审计记录</td></tr>{{end}}
+</tbody></table>
+{{if .NextCursor}}<a class="pager" href="/admin/audit?tenant_id={{.TenantID}}&cursor={{.NextCursor}}">下一页 →</a>{{end}}
+{{end}}

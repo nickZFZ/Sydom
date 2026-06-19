@@ -38,3 +38,16 @@ func formInt64(r *http.Request, key string) (int64, error) {
 	}
 	return v, nil
 }
+
+// formUint64 从表单/query 字段解析 uint64；空值返回 0（可选字段）。非空且无效 → InvalidArgument。
+func formUint64(r *http.Request, key string) (uint64, error) {
+	s := r.FormValue(key)
+	if s == "" {
+		return 0, nil
+	}
+	v, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, status.Errorf(codes.InvalidArgument, "无效的 %s", key)
+	}
+	return v, nil
+}

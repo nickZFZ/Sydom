@@ -1,0 +1,17 @@
+{{define "title"}}审计 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">{{template "appnav" .}}
+<section><h2>审计 · App #{{.AppID}}</h2>
+<form method="get" action="/apps/{{.AppID}}/audit" class="inline-form">
+<input name="entity_type" placeholder="实体类型" value="{{.EntityType}}">
+<input name="entity_id" placeholder="实体 id（变更历史）" value="{{.EntityID}}">
+<input name="action" placeholder="动作" value="{{.Action}}">
+<button>过滤</button></form>
+<table><thead><tr><th>时间</th><th>操作者</th><th>动作</th><th>实体</th><th>版本</th><th>变更</th></tr></thead>
+<tbody>
+{{range .Entries}}<tr><td>{{.CreatedAt}}</td><td>{{.Operator}}</td><td>{{.Action}}</td>
+<td>{{.EntityType}}{{if .EntityId}} #{{.EntityId}}{{end}}</td><td>v{{.Version}}</td>
+<td><pre class="diff">{{.Diff}}</pre></td></tr>
+{{else}}<tr><td colspan="6">无审计记录</td></tr>{{end}}
+</tbody></table>
+{{if .NextCursor}}<a class="pager" href="/apps/{{.AppID}}/audit?entity_type={{.EntityType}}&entity_id={{.EntityID}}&action={{.Action}}&cursor={{.NextCursor}}">下一页 →</a>{{end}}
+</section></div>{{end}}
