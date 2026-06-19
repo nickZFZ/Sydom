@@ -63,6 +63,10 @@ service AdminService {
   rpc ListMyTenants(ListMyTenantsRequest)   returns (ListMyTenantsResponse);  // self
   rpc InviteMember(InviteMemberRequest)     returns (InviteMemberResponse);   // tenant-target
   rpc ListMembers(ListMembersRequest)       returns (ListMembersResponse);    // tenant-target 读
+
+  // —— 审计查询 + 变更历史（M2.3）——
+  rpc QueryAuditLog(QueryAuditLogRequest) returns (QueryAuditLogResponse);            // app 域，scopeApp
+  rpc QueryAdminAuditLog(QueryAdminAuditLogRequest) returns (QueryAdminAuditLogResponse); // admin 域，scopeTenant
 }
 
 // WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
@@ -372,4 +376,58 @@ message CreateBusinessRoleResponse {
   int64 role_id = 1;
   uint64 version = 2;
   bool changed = 3;
+}
+
+// —— 审计查询（M2.3）——
+// 标量 NULL 约定：tenant_id=0 表示纯系统级(NULL)；version/admin_version=0 表示无版本/缺省。
+message QueryAuditLogRequest {
+  uint64 app_id      = 1; // path 权威
+  string entity_type = 2;
+  string entity_id   = 3; // per-entity 变更历史
+  string action      = 4;
+  string operator    = 5;
+  string since       = 6; // RFC3339，可选
+  string until       = 7;
+  uint64 cursor      = 8; // keyset：上页最后 id；0=首页
+  uint32 limit       = 9;
+}
+message AuditEntry {
+  uint64 id          = 1;
+  string operator    = 2;
+  string action      = 3;
+  string entity_type = 4;
+  string entity_id   = 5;
+  string diff        = 6; // JSON 文本(原样)
+  uint64 version     = 7;
+  string created_at  = 8; // RFC3339
+}
+message QueryAuditLogResponse {
+  repeated AuditEntry entries = 1;
+  uint64 next_cursor          = 2;
+}
+message QueryAdminAuditLogRequest {
+  uint64 tenant_id   = 1; // 权威：0→超管全量；非 0→该租户
+  string entity_type = 2;
+  string entity_id   = 3;
+  string action      = 4;
+  string operator    = 5;
+  string since       = 6;
+  string until       = 7;
+  uint64 cursor      = 8;
+  uint32 limit       = 9;
+}
+message AdminAuditEntry {
+  uint64 id            = 1;
+  uint64 tenant_id     = 2; // 0=纯系统级
+  string operator      = 3;
+  string action        = 4;
+  string entity_type   = 5;
+  string entity_id     = 6;
+  string diff          = 7;
+  uint64 admin_version = 8;
+  string created_at    = 9;
+}
+message QueryAdminAuditLogResponse {
+  repeated AdminAuditEntry entries = 1;
+  uint64 next_cursor               = 2;
 }

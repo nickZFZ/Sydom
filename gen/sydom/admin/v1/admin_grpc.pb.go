@@ -57,6 +57,8 @@ const (
 	AdminService_ListMyTenants_FullMethodName           = "/sydom.admin.v1.AdminService/ListMyTenants"
 	AdminService_InviteMember_FullMethodName            = "/sydom.admin.v1.AdminService/InviteMember"
 	AdminService_ListMembers_FullMethodName             = "/sydom.admin.v1.AdminService/ListMembers"
+	AdminService_QueryAuditLog_FullMethodName           = "/sydom.admin.v1.AdminService/QueryAuditLog"
+	AdminService_QueryAdminAuditLog_FullMethodName      = "/sydom.admin.v1.AdminService/QueryAdminAuditLog"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -110,6 +112,9 @@ type AdminServiceClient interface {
 	ListMyTenants(ctx context.Context, in *ListMyTenantsRequest, opts ...grpc.CallOption) (*ListMyTenantsResponse, error)
 	InviteMember(ctx context.Context, in *InviteMemberRequest, opts ...grpc.CallOption) (*InviteMemberResponse, error)
 	ListMembers(ctx context.Context, in *ListMembersRequest, opts ...grpc.CallOption) (*ListMembersResponse, error)
+	// —— 审计查询 + 变更历史（M2.3）——
+	QueryAuditLog(ctx context.Context, in *QueryAuditLogRequest, opts ...grpc.CallOption) (*QueryAuditLogResponse, error)
+	QueryAdminAuditLog(ctx context.Context, in *QueryAdminAuditLogRequest, opts ...grpc.CallOption) (*QueryAdminAuditLogResponse, error)
 }
 
 type adminServiceClient struct {
@@ -462,6 +467,24 @@ func (c *adminServiceClient) ListMembers(ctx context.Context, in *ListMembersReq
 	return out, nil
 }
 
+func (c *adminServiceClient) QueryAuditLog(ctx context.Context, in *QueryAuditLogRequest, opts ...grpc.CallOption) (*QueryAuditLogResponse, error) {
+	out := new(QueryAuditLogResponse)
+	err := c.cc.Invoke(ctx, AdminService_QueryAuditLog_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) QueryAdminAuditLog(ctx context.Context, in *QueryAdminAuditLogRequest, opts ...grpc.CallOption) (*QueryAdminAuditLogResponse, error) {
+	out := new(QueryAdminAuditLogResponse)
+	err := c.cc.Invoke(ctx, AdminService_QueryAdminAuditLog_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility
@@ -513,6 +536,9 @@ type AdminServiceServer interface {
 	ListMyTenants(context.Context, *ListMyTenantsRequest) (*ListMyTenantsResponse, error)
 	InviteMember(context.Context, *InviteMemberRequest) (*InviteMemberResponse, error)
 	ListMembers(context.Context, *ListMembersRequest) (*ListMembersResponse, error)
+	// —— 审计查询 + 变更历史（M2.3）——
+	QueryAuditLog(context.Context, *QueryAuditLogRequest) (*QueryAuditLogResponse, error)
+	QueryAdminAuditLog(context.Context, *QueryAdminAuditLogRequest) (*QueryAdminAuditLogResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -633,6 +659,12 @@ func (UnimplementedAdminServiceServer) InviteMember(context.Context, *InviteMemb
 }
 func (UnimplementedAdminServiceServer) ListMembers(context.Context, *ListMembersRequest) (*ListMembersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMembers not implemented")
+}
+func (UnimplementedAdminServiceServer) QueryAuditLog(context.Context, *QueryAuditLogRequest) (*QueryAuditLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryAuditLog not implemented")
+}
+func (UnimplementedAdminServiceServer) QueryAdminAuditLog(context.Context, *QueryAdminAuditLogRequest) (*QueryAdminAuditLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryAdminAuditLog not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 
@@ -1331,6 +1363,42 @@ func _AdminService_ListMembers_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_QueryAuditLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAuditLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).QueryAuditLog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_QueryAuditLog_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).QueryAuditLog(ctx, req.(*QueryAuditLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_QueryAdminAuditLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAdminAuditLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).QueryAdminAuditLog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_QueryAdminAuditLog_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).QueryAdminAuditLog(ctx, req.(*QueryAdminAuditLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1489,6 +1557,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMembers",
 			Handler:    _AdminService_ListMembers_Handler,
+		},
+		{
+			MethodName: "QueryAuditLog",
+			Handler:    _AdminService_QueryAuditLog_Handler,
+		},
+		{
+			MethodName: "QueryAdminAuditLog",
+			Handler:    _AdminService_QueryAdminAuditLog_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
