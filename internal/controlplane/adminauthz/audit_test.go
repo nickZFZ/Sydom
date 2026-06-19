@@ -10,6 +10,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestQueryAdminAudit_TenantScopeAndAll(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	mk := func(tid sql.NullInt64, et string) {
+		require.NoError(t, adminauthz.InsertAdminAudit(ctx, db, tid, "root", "x", et, "1", nil, sql.NullInt64{}))
+	}
+	mk(sql.NullInt64{Int64: 1, Valid: true}, "application")
+	mk(sql.NullInt64{Int64: 2, Valid: true}, "application")
+	mk(sql.NullInt64{}, "operator") // 纯系统级
+	// 租户 1 过滤 → 仅 tenant_id=1
+	e1, _, err := adminauthz.QueryAdminAudit(ctx, db,
+		adminauthz.AdminAuditFilter{TenantID: sql.NullInt64{Int64: 1, Valid: true}, Limit: 50})
+	require.NoError(t, err)
+	require.Len(t, e1, 1)
+	require.Equal(t, int64(1), e1[0].TenantID.Int64)
+	// 超管全量（TenantID 不 Valid）→ 全部 3 条
+	eAll, _, err := adminauthz.QueryAdminAudit(ctx, db, adminauthz.AdminAuditFilter{Limit: 50})
+	require.NoError(t, err)
+	require.Len(t, eAll, 3)
+}
+
 func TestInsertAdminAudit_RoundTrip(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	ctx := context.Background()
