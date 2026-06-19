@@ -64,7 +64,29 @@ func queryInt64(r *http.Request, key string) (int64, error) {
 	return v, nil
 }
 
-// appRoutes 是 app 域 21 路由（授权域=path app_id；path 值权威覆写 body）。
+// queryUint64 取可选 uint64 query（缺=0）。
+func queryUint64(r *http.Request, key string) (uint64, error) {
+	s := r.URL.Query().Get(key)
+	if s == "" {
+		return 0, nil
+	}
+	v, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, status.Errorf(codes.InvalidArgument, "invalid query %s", key)
+	}
+	return v, nil
+}
+
+// queryUint32 取可选 uint32 query（缺=0）。
+func queryUint32(r *http.Request, key string) (uint32, error) {
+	v, err := queryUint64(r, key)
+	if err != nil {
+		return 0, err
+	}
+	return uint32(v), nil
+}
+
+// appRoutes 是 app 域 22 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -280,6 +302,30 @@ func appRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.GetEffectivePermissions(ctx, m.(*adminv1.GetEffectivePermissionsRequest))
 			}},
+		{"GET", "/v1/apps/{app_id}/audit", pfx + "QueryAuditLog",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				cursor, err := queryUint64(r, "cursor")
+				if err != nil {
+					return nil, err
+				}
+				limit, err := queryUint32(r, "limit")
+				if err != nil {
+					return nil, err
+				}
+				q := r.URL.Query()
+				return &adminv1.QueryAuditLogRequest{
+					AppId: id, EntityType: q.Get("entity_type"), EntityId: q.Get("entity_id"),
+					Action: q.Get("action"), Operator: q.Get("operator"),
+					Since: q.Get("since"), Until: q.Get("until"), Cursor: cursor, Limit: limit,
+				}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.QueryAuditLog(ctx, m.(*adminv1.QueryAuditLogRequest))
+			}},
 		{"POST", "/v1/apps/{app_id}/users/{user_id}/roles", pfx + "BindUserRole",
 			func(r *http.Request, body []byte) (proto.Message, error) {
 				m := &adminv1.UserRoleRequest{}
@@ -449,7 +495,7 @@ func applicationRoutes() []route {
 	}
 }
 
-// systemRoutes 是 §3.3 管理员/admin-role 域 10 路由（授权域 "*"）。
+// systemRoutes 是 §3.3 管理员/admin-role 域 11 路由（授权域 "*"）。
 func systemRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -581,10 +627,34 @@ func systemRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ResetOperatorSecret(ctx, m.(*adminv1.ResetOperatorSecretRequest))
 			}},
+		{"GET", "/v1/admin/audit", pfx + "QueryAdminAuditLog",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				tenant, err := queryUint64(r, "tenant_id")
+				if err != nil {
+					return nil, err
+				}
+				cursor, err := queryUint64(r, "cursor")
+				if err != nil {
+					return nil, err
+				}
+				limit, err := queryUint32(r, "limit")
+				if err != nil {
+					return nil, err
+				}
+				q := r.URL.Query()
+				return &adminv1.QueryAdminAuditLogRequest{
+					TenantId: tenant, EntityType: q.Get("entity_type"), EntityId: q.Get("entity_id"),
+					Action: q.Get("action"), Operator: q.Get("operator"),
+					Since: q.Get("since"), Until: q.Get("until"), Cursor: cursor, Limit: limit,
+				}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.QueryAdminAuditLog(ctx, m.(*adminv1.QueryAdminAuditLogRequest))
+			}},
 	}
 }
 
-// allRoutes 汇总全部 39 路由（app 域 21 + 应用管理 4 + system 域 10 + 账户层 4）。
+// allRoutes 汇总全部 41 路由（app 域 22 + 应用管理 4 + system 域 11 + 账户层 4）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
