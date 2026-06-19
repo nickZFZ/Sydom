@@ -5298,11 +5298,11 @@ type ListPage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Limit  uint32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"` // 0→默认 50，上限 200（clampLimit）
-	Offset uint32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	Sort   string `protobuf:"bytes,3,opt,name=sort,proto3" json:"sort,omitempty"`   // 列名，服务端白名单校验；空/非法→默认列
-	Order  string `protobuf:"bytes,4,opt,name=order,proto3" json:"order,omitempty"` // "asc"|"desc"；空/非法→默认
-	Q      string `protobuf:"bytes,5,opt,name=q,proto3" json:"q,omitempty"`         // 子串搜索，服务端白名单字段 ILIKE
+	Limit  uint32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`   // 0→默认 50，上限 200（clampLimit）
+	Offset uint32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"` // 跳过条数；与 limit 配合分页
+	Sort   string `protobuf:"bytes,3,opt,name=sort,proto3" json:"sort,omitempty"`      // 列名，服务端白名单校验；空/非法→默认列
+	Order  string `protobuf:"bytes,4,opt,name=order,proto3" json:"order,omitempty"`    // "asc"|"desc"；空/非法→默认
+	Q      string `protobuf:"bytes,5,opt,name=q,proto3" json:"q,omitempty"`            // 子串搜索，服务端白名单字段 ILIKE
 }
 
 func (x *ListPage) Reset() {

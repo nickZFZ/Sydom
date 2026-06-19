@@ -440,7 +440,7 @@ message QueryAdminAuditLogResponse {
 // —— List 分页信封（M2.4，11 个 List 请求共用）——
 message ListPage {
   uint32 limit  = 1;  // 0→默认 50，上限 200（clampLimit）
-  uint32 offset = 2;
+  uint32 offset = 2;  // 跳过条数；与 limit 配合分页
   string sort   = 3;  // 列名，服务端白名单校验；空/非法→默认列
   string order  = 4;  // "asc"|"desc"；空/非法→默认
   string q      = 5;  // 子串搜索，服务端白名单字段 ILIKE
