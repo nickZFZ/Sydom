@@ -1,6 +1,7 @@
 package console
 
 import (
+	"html/template"
 	"net/http"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
@@ -44,7 +45,7 @@ func pagerData(r *http.Request, total uint32) map[string]any {
 		"Page": page, "Total": total, "From": from, "To": to,
 		"HasPrev": page > 1, "HasNext": uint32(page*consolePageSize) < total,
 		"PrevPage": page - 1, "NextPage": page + 1,
-		"Query": q.Encode(), // 保留 sort/order/q/过滤
+		"Query": template.URL(q.Encode()), // 保留 sort/order/q/过滤；template.URL 避免 html/template 对 =& 二次转义
 		"Sort":  q.Get("sort"), "Order": q.Get("order"), "Q": q.Get("q"),
 	}
 }
