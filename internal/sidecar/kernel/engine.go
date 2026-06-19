@@ -65,8 +65,9 @@ func (e *Engine) Enforce(sub, dom, obj, act string) (bool, error) {
 // EnforceEx 判定 (sub,dom,obj,act) 并返回判定规则（explain，[]string=[sub,dom,obj,act,eft]；
 // 默认拒绝时为空）。未就绪/越域/出错一律 fail-close。
 //
-// 仅供 effperm 瞬态（每请求新建、非共享）引擎调用：EnforceEx 落 casbin 基类、不走
-// SyncedCachedEnforcer 的锁与决策缓存；production 共享 Sidecar 引擎不调用本方法。
+// 仅供 effperm 瞬态（每请求新建、非共享）引擎调用：SyncedCachedEnforcer 未覆写 EnforceEx，
+// 调用经 SyncedEnforcer.EnforceEx 持读锁(RLock)后落基类 Enforcer.EnforceEx——即绕过决策缓存
+// （缓存只覆写 Enforce），但仍持锁、做真实求值；production 共享 Sidecar 引擎不调用本方法。
 func (e *Engine) EnforceEx(sub, dom, obj, act string) (bool, []string, error) {
 	if !e.ready.Load() {
 		return false, nil, ErrNotReady
