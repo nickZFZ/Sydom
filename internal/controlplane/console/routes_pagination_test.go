@@ -56,7 +56,7 @@ func TestConsole_Operators_Paginated(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	body := readBody(t, resp)
-	require.Contains(t, body, "共 ")           // pager 的 "共 N" 文案
+	require.Contains(t, body, "显示 1-4 / 共 4") // root@sydom(EnsureRootOperator) + 3 seed = 4，不足一页
 	require.Contains(t, body, "搜索")           // searchbox 含"搜索"按钮
 	require.Contains(t, body, "op-pg-0@test") // seed operator 出现在列表
 }
