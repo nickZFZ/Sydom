@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/nickZFZ/Sydom/internal/dbtest"
@@ -58,6 +59,37 @@ func TestConsole_Operators_Paginated(t *testing.T) {
 	require.Contains(t, body, "共 ")           // pager 的 "共 N" 文案
 	require.Contains(t, body, "搜索")           // searchbox 含"搜索"按钮
 	require.Contains(t, body, "op-pg-0@test") // seed operator 出现在列表
+}
+
+// TestConsole_Permissions_PagerLinkNotDoubleEncoded 锁定 pagerData 的 template.URL 修复：
+// 翻页链接保留的 query（sort/order）必须是原始 "sort=code"，不能被 html/template 在 URL
+// context 二次 percent-encode 成 "sort%3Dcode"（那会破坏链接参数）。需 >50 行触发"下一页"。
+func TestConsole_Permissions_PagerLinkNotDoubleEncoded(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+
+	// seed 51 个权限点（> consolePageSize=50），第 1 页才会出现"下一页"链接。
+	for i := 0; i < 51; i++ {
+		code := fmt.Sprintf("perm-de-%02d", i)
+		_, err := db.Exec(
+			`INSERT INTO permission(app_id, code, resource, action, type, name, source)
+			 VALUES($1, $2, 'order', 'read', 'act', $2, 'manual')`,
+			appID, code,
+		)
+		require.NoError(t, err)
+	}
+
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	resp, err := c.Get(ts.URL + "/apps/" + strconv.FormatInt(appID, 10) + "/permissions?sort=code&order=asc")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body := readBody(t, resp)
+	require.Contains(t, body, "page=2", "应渲染下一页链接（total 51 > 50）")
+	// 回归守卫：双重编码 bug 会让翻页链接含 sort%3dcode（html/template URL escaper 输出小写 %xx，
+	// 已实测确认）；template.URL 修复后应为原始 sort=code。小写化 body 以兼容大小写差异。
+	lower := strings.ToLower(body)
+	require.NotContains(t, lower, "sort%3dcode", "翻页链接的 query 不得被二次 percent-encode")
+	require.Contains(t, body, "sort=code", "翻页链接应保留原始 sort=code 参数")
 }
 
 // TestConsole_Permissions_NoSession 验证无会话时重定向到登录页。
