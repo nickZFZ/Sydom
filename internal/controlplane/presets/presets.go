@@ -14,6 +14,15 @@ import (
 //go:embed *.json
 var files embed.FS
 
+// maxRoleCodeLen 是 role.code 列宽（VARCHAR(64)，见 db/migrations/000003_role.up.sql）。
+// 模板应用时 policy 层用确定性 code `tpl:<templateID>:<key>`（见 policy.ApplyTemplate）；
+// loader 在启动期校验该 code 不超列宽，把「超长 code 致 apply 期 DB 插入失败」左移到启动/测试期
+// （fail-close 优先于运行期才暴露）。
+const maxRoleCodeLen = 64
+
+// templateRoleCode 复刻 policy.ApplyTemplate 形成的确定性角色 code，仅供 loader 长度校验。
+func templateRoleCode(templateID, key string) string { return "tpl:" + templateID + ":" + key }
+
 // Permission 是预设包中的一条权限点。
 type Permission struct {
 	Code        string `json:"code"`
@@ -60,7 +69,8 @@ func init() {
 
 // load 读取并校验 fsys 根目录下的全部 *.json 预设包（取 fs.FS 参数以便用 fstest.MapFS
 // 注入损坏内容测试 fail-close 错误路径）。校验：id 非空且唯一、permission.code 非空且
-// 唯一、role.key 非空且唯一、role.permission_codes 引用存在于本包。任一违例返回 error。
+// 唯一、role.key 非空且唯一、role 确定性 code 不超列宽、role.permission_codes 引用存在于
+// 本包。任一违例返回 error。
 func load(fsys fs.FS) ([]Template, error) {
 	entries, err := fs.ReadDir(fsys, ".")
 	if err != nil {
@@ -103,6 +113,9 @@ func load(fsys fs.FS) ([]Template, error) {
 				return nil, fmt.Errorf("%s: duplicate role key %q", t.ID, r.Key)
 			}
 			seenKey[r.Key] = true
+			if c := templateRoleCode(t.ID, r.Key); len(c) > maxRoleCodeLen {
+				return nil, fmt.Errorf("%s role %q: deterministic code %q exceeds %d chars", t.ID, r.Key, c, maxRoleCodeLen)
+			}
 			for _, pc := range r.PermissionCodes {
 				if !codes[pc] {
 					return nil, fmt.Errorf("%s role %q: unknown permission code %q", t.ID, r.Key, pc)

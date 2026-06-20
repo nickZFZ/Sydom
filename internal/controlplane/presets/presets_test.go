@@ -1,6 +1,7 @@
 package presets
 
 import (
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -43,6 +44,9 @@ func TestLoad_RejectsCorrupt(t *testing.T) {
 		"dup role key":    `{"id":"a","permissions":[{"code":"x.read"}],"roles":[{"key":"r"},{"key":"r"}]}`,
 		"unknown perm ref": `{"id":"a","permissions":[{"code":"x.read"}],` +
 			`"roles":[{"key":"r","permission_codes":["nope"]}]}`,
+		// 确定性 code "tpl:a:" + 60×x = 66 字符 > VARCHAR(64)：启动期拒绝（左移失败）。
+		"role code too long": `{"id":"a","permissions":[],` +
+			`"roles":[{"key":"` + strings.Repeat("x", 60) + `"}]}`,
 	}
 	for name, body := range cases {
 		t.Run(name, func(t *testing.T) {
