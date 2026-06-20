@@ -57,7 +57,7 @@ func (m capName) label(resource, action string) string {
 	if n, ok := m[[2]string{resource, action}]; ok {
 		return n
 	}
-	return resource + ":" + action
+	return capabilityName("", resource, action) // 缺名→「resource · 动词」，不裸 resource:action
 }
 
 // roleNameMap 调 ListRoles 返回 code→name 映射（显示业务角色名）+ 原始角色列表
@@ -80,14 +80,6 @@ func (h *Handler) roleNameMap(ctx context.Context, principal string, appID uint6
 		}
 	}
 	return m, resp.Roles, nil
-}
-
-// roleName 从 map 取显示名，缺省返回 code 自身（不回退到技术 id）。
-func roleName(m map[string]string, code string) string {
-	if n, ok := m[code]; ok {
-		return n
-	}
-	return code
 }
 
 // ---- 人员列表页 ----
