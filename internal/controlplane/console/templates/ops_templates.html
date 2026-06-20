@@ -1,0 +1,33 @@
+{{define "title"}}模板库 · 运营台 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+<a href="/ops/apps/{{.AppID}}/templates" {{if eq .OpsNav "templates"}}class="active"{{end}}>模板库</a>
+</aside>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">运营台 · 模板库</nav>
+<h1>模板库</h1>
+{{if .Templates}}
+{{range .Templates}}
+<div class="card" style="margin-bottom:var(--space-4)">
+<div class="card-header">{{.Name}} <span class="badge badge-muted">{{.PermCount}} 权限点 · {{.RoleCount}} 角色</span></div>
+<p class="hint">{{.Description}}</p>
+<details>
+<summary>预览</summary>
+<h2>能力</h2>
+<ul class="list-plain">{{range .Caps}}<li>{{.Name}}</li>{{end}}</ul>
+<h2>角色</h2>
+<ul class="list-plain">{{range .Roles}}<li>{{.Name}}：{{range $i, $c := .Caps}}{{if $i}}、{{end}}{{$c}}{{end}}</li>{{end}}</ul>
+</details>
+<form method="post" action="/ops/apps/{{$.AppID}}/templates/apply" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<input type="hidden" name="template_id" value="{{.ID}}">
+<button class="btn btn-primary">应用到本应用</button>
+</form>
+</div>
+{{end}}
+{{else}}
+<div class="empty-state">暂无可用模板。</div>
+{{end}}
+</section></div>{{end}}
