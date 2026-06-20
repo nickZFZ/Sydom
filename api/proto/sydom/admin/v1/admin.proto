@@ -67,6 +67,10 @@ service AdminService {
   // —— 审计查询 + 变更历史（M2.3）——
   rpc QueryAuditLog(QueryAuditLogRequest) returns (QueryAuditLogResponse);            // app 域，scopeApp
   rpc QueryAdminAuditLog(QueryAdminAuditLogRequest) returns (QueryAdminAuditLogResponse); // admin 域，scopeTenant
+
+  // —— 业务语言预设模板（M3.2）——
+  rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  rpc ApplyTemplate(ApplyTemplateRequest) returns (ApplyTemplateResponse);
 }
 
 // WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
@@ -444,4 +448,44 @@ message ListPage {
   string sort   = 3;  // 列名，服务端白名单校验；空/非法→默认列
   string order  = 4;  // "asc"|"desc"；空/非法→默认
   string q      = 5;  // 子串搜索，服务端白名单字段 ILIKE
+}
+
+// —— 业务语言预设模板（M3.2）——
+message TemplatePermission {
+  string code = 1;
+  string resource = 2;
+  string action = 3;
+  string type = 4;
+  string name = 5;
+  string description = 6;
+}
+
+message TemplateRole {
+  string key = 1;
+  string name = 2;
+  string description = 3;
+  repeated string permission_codes = 4;
+}
+
+message Template {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  uint32 version = 4;
+  repeated TemplatePermission permissions = 5;
+  repeated TemplateRole roles = 6;
+}
+
+message ListTemplatesRequest { uint64 app_id = 1; }
+message ListTemplatesResponse { repeated Template templates = 1; }
+
+message ApplyTemplateRequest {
+  uint64 app_id = 1;
+  string template_id = 2;
+}
+message ApplyTemplateResponse {
+  uint32 permissions_upserted = 1;
+  uint32 permissions_skipped = 2;
+  uint32 roles_created = 3;
+  uint32 roles_skipped = 4;
 }

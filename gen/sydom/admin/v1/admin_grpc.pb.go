@@ -59,6 +59,8 @@ const (
 	AdminService_ListMembers_FullMethodName             = "/sydom.admin.v1.AdminService/ListMembers"
 	AdminService_QueryAuditLog_FullMethodName           = "/sydom.admin.v1.AdminService/QueryAuditLog"
 	AdminService_QueryAdminAuditLog_FullMethodName      = "/sydom.admin.v1.AdminService/QueryAdminAuditLog"
+	AdminService_ListTemplates_FullMethodName           = "/sydom.admin.v1.AdminService/ListTemplates"
+	AdminService_ApplyTemplate_FullMethodName           = "/sydom.admin.v1.AdminService/ApplyTemplate"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -115,6 +117,9 @@ type AdminServiceClient interface {
 	// —— 审计查询 + 变更历史（M2.3）——
 	QueryAuditLog(ctx context.Context, in *QueryAuditLogRequest, opts ...grpc.CallOption) (*QueryAuditLogResponse, error)
 	QueryAdminAuditLog(ctx context.Context, in *QueryAdminAuditLogRequest, opts ...grpc.CallOption) (*QueryAdminAuditLogResponse, error)
+	// —— 业务语言预设模板（M3.2）——
+	ListTemplates(ctx context.Context, in *ListTemplatesRequest, opts ...grpc.CallOption) (*ListTemplatesResponse, error)
+	ApplyTemplate(ctx context.Context, in *ApplyTemplateRequest, opts ...grpc.CallOption) (*ApplyTemplateResponse, error)
 }
 
 type adminServiceClient struct {
@@ -485,6 +490,24 @@ func (c *adminServiceClient) QueryAdminAuditLog(ctx context.Context, in *QueryAd
 	return out, nil
 }
 
+func (c *adminServiceClient) ListTemplates(ctx context.Context, in *ListTemplatesRequest, opts ...grpc.CallOption) (*ListTemplatesResponse, error) {
+	out := new(ListTemplatesResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListTemplates_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ApplyTemplate(ctx context.Context, in *ApplyTemplateRequest, opts ...grpc.CallOption) (*ApplyTemplateResponse, error) {
+	out := new(ApplyTemplateResponse)
+	err := c.cc.Invoke(ctx, AdminService_ApplyTemplate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility
@@ -539,6 +562,9 @@ type AdminServiceServer interface {
 	// —— 审计查询 + 变更历史（M2.3）——
 	QueryAuditLog(context.Context, *QueryAuditLogRequest) (*QueryAuditLogResponse, error)
 	QueryAdminAuditLog(context.Context, *QueryAdminAuditLogRequest) (*QueryAdminAuditLogResponse, error)
+	// —— 业务语言预设模板（M3.2）——
+	ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error)
+	ApplyTemplate(context.Context, *ApplyTemplateRequest) (*ApplyTemplateResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -665,6 +691,12 @@ func (UnimplementedAdminServiceServer) QueryAuditLog(context.Context, *QueryAudi
 }
 func (UnimplementedAdminServiceServer) QueryAdminAuditLog(context.Context, *QueryAdminAuditLogRequest) (*QueryAdminAuditLogResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryAdminAuditLog not implemented")
+}
+func (UnimplementedAdminServiceServer) ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTemplates not implemented")
+}
+func (UnimplementedAdminServiceServer) ApplyTemplate(context.Context, *ApplyTemplateRequest) (*ApplyTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ApplyTemplate not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 
@@ -1399,6 +1431,42 @@ func _AdminService_QueryAdminAuditLog_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ListTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListTemplates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListTemplates(ctx, req.(*ListTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ApplyTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApplyTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ApplyTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ApplyTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ApplyTemplate(ctx, req.(*ApplyTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1565,6 +1633,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryAdminAuditLog",
 			Handler:    _AdminService_QueryAdminAuditLog_Handler,
+		},
+		{
+			MethodName: "ListTemplates",
+			Handler:    _AdminService_ListTemplates_Handler,
+		},
+		{
+			MethodName: "ApplyTemplate",
+			Handler:    _AdminService_ApplyTemplate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
