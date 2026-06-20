@@ -5,7 +5,7 @@
   --c-gray-400:#9aa3b2; --c-gray-500:#6b7280; --c-gray-600:#4b5563; --c-gray-700:#374151;
   --c-gray-800:#262c39; --c-gray-900:#1a1a2e;
   --c-blue-500:#3b6ef0; --c-blue-600:#2f5ad9; --c-blue-700:#2547b0;
-  --c-red-600:#d23b3b; --c-green-600:#1f9d57; --c-amber-500:#d99317;
+  --c-red-600:#c8332f; --c-green-600:#15803d; --c-amber-500:#d99317;
 
   /* 语义层 semantic（组件唯一引用层；深色仅重定义这层） */
   --color-bg:var(--c-gray-50);
