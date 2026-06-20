@@ -8,7 +8,7 @@
 <nav class="breadcrumb" aria-label="面包屑">运营台 · 人员能力</nav>
 <h1>查询人员能力</h1>
 <form method="get" action="/ops/apps/{{.AppID}}/people/view" class="inline-form">
-<input name="user_id" placeholder="用户 ID" value="{{.UserID}}">
+<input name="user_id" placeholder="用户 ID" value="{{.UserID}}" aria-label="用户 ID">
 <button class="btn btn-primary">查询</button>
 </form>
 
@@ -22,7 +22,7 @@
 <form method="post" action="/ops/apps/{{.AppID}}/people/assign" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input type="hidden" name="user_id" value="{{.UserID}}">
-<select name="role_id" class="select">{{range .AssignableRoles}}<option value="{{.RoleId}}">{{.Name}}</option>{{end}}</select>
+<select name="role_id" class="select" aria-label="选择角色">{{range .AssignableRoles}}<option value="{{.RoleId}}">{{.Name}}</option>{{end}}</select>
 <button class="btn btn-primary">分配该角色</button>
 </form>
 {{if .CurrentRoles}}
@@ -42,7 +42,7 @@
 
 {{if .DataNotes}}
 <h2>数据范围</h2>
-<table class="table"><thead><tr><th>资源</th><th>范围说明</th></tr></thead><tbody>
+<table class="table"><thead><tr><th scope="col">资源</th><th scope="col">范围说明</th></tr></thead><tbody>
 {{range .DataNotes}}<tr><td>{{.Resource}}</td><td>{{.Note}}</td></tr>{{end}}
 </tbody></table>
 {{end}}

@@ -5,7 +5,7 @@
   {{if .HasNext}}<a href="?page={{.NextPage}}{{if .Query}}&{{.Query}}{{end}}">下一页 →</a>{{end}}
 </div>{{end}}
 {{define "searchbox"}}
-<form method="get" class="searchbox"><input name="q" value="{{.Q}}" placeholder="搜索">
+<form method="get" class="searchbox"><input name="q" value="{{.Q}}" placeholder="搜索" aria-label="搜索">
 {{if .Sort}}<input type="hidden" name="sort" value="{{.Sort}}">{{end}}
 {{if .Order}}<input type="hidden" name="order" value="{{.Order}}">{{end}}
 <button>搜索</button></form>{{end}}
