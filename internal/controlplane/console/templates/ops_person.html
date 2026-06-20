@@ -1,46 +1,48 @@
 {{define "title"}}人员能力 · 运营台 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">
-<aside class="appnav"><div class="appname">运营台 · App #{{.AppID}}</div>
-<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
-<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}aria-current="page"{{end}}>人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}aria-current="page"{{end}}>业务角色</a>
 </aside>
-<section><h2>查询人员能力</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">运营台 · 人员能力</nav>
+<h1>查询人员能力</h1>
 <form method="get" action="/ops/apps/{{.AppID}}/people/view" class="inline-form">
 <input name="user_id" placeholder="用户 ID" value="{{.UserID}}">
-<button>查询</button>
+<button class="btn btn-primary">查询</button>
 </form>
 
 {{if .Queried}}
-<h3>{{.UserID}} 的业务角色</h3>
+<h2>{{.UserID}} 的业务角色</h2>
 {{if .RoleNames}}
-<ul>{{range .RoleNames}}<li>{{.}}</li>{{end}}</ul>
-{{else}}<p>暂无角色绑定。</p>{{end}}
+<ul class="list-plain">{{range .RoleNames}}<li>{{.}}</li>{{end}}</ul>
+{{else}}<p class="empty-state">暂无角色绑定。</p>{{end}}
 
-<h3>调整角色</h3>
+<h2>调整角色</h2>
 <form method="post" action="/ops/apps/{{.AppID}}/people/assign" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input type="hidden" name="user_id" value="{{.UserID}}">
-<select name="role_id">{{range .AssignableRoles}}<option value="{{.RoleId}}">{{.Name}}</option>{{end}}</select>
-<button>分配该角色</button>
+<select name="role_id" class="select">{{range .AssignableRoles}}<option value="{{.RoleId}}">{{.Name}}</option>{{end}}</select>
+<button class="btn btn-primary">分配该角色</button>
 </form>
 {{if .CurrentRoles}}
 <p>当前直接分配（可移除）：</p>
-<ul>{{range .CurrentRoles}}<li>{{.Name}}
+<ul class="list-plain">{{range .CurrentRoles}}<li>{{.Name}}
 <form method="post" action="/ops/apps/{{$.AppID}}/people/unassign" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="user_id" value="{{$.UserID}}">
 <input type="hidden" name="role_id" value="{{.RoleID}}">
-<button>移除</button></form></li>{{end}}</ul>
+<button class="btn btn-sm btn-danger">移除</button></form></li>{{end}}</ul>
 {{end}}
 
-<h3>{{.UserID}} 的能力</h3>
+<h2>{{.UserID}} 的能力</h2>
 {{if .Capabilities}}
-<ul>{{range .Capabilities}}<li>{{.Capability}}</li>{{end}}</ul>
-{{else}}<p>暂无可用能力。</p>{{end}}
+<ul class="list-plain">{{range .Capabilities}}<li>{{.Capability}}</li>{{end}}</ul>
+{{else}}<p class="empty-state">暂无可用能力。</p>{{end}}
 
 {{if .DataNotes}}
-<h3>数据范围</h3>
-<table><thead><tr><th>资源</th><th>范围说明</th></tr></thead><tbody>
+<h2>数据范围</h2>
+<table class="table"><thead><tr><th>资源</th><th>范围说明</th></tr></thead><tbody>
 {{range .DataNotes}}<tr><td>{{.Resource}}</td><td>{{.Note}}</td></tr>{{end}}
 </tbody></table>
 {{end}}

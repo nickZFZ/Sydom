@@ -1,13 +1,13 @@
 {{define "title"}}权限点 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">{{template "appnav" .}}
-<section><h2>权限点</h2>
+<section><h1>权限点</h1>
 <form method="post" action="/apps/{{.AppID}}/permissions" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="code" placeholder="code" required><input name="resource" placeholder="resource">
 <input name="action" placeholder="action"><input name="ptype" placeholder="ptype">
-<input name="name" placeholder="名称"><button>+ 新增权限点</button></form>
+<input name="name" placeholder="名称"><button class="btn btn-primary">+ 新增权限点</button></form>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "code" "asc"}}">Code ↑</a> <a href="?{{sortHref $.Pager.SortQuery "code" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "resource" "asc"}}">Resource ↑</a> <a href="?{{sortHref $.Pager.SortQuery "resource" "desc"}}">↓</a></th>
@@ -17,6 +17,6 @@
 <th><a href="?{{sortHref $.Pager.SortQuery "source" "asc"}}">来源 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "source" "desc"}}">↓</a></th>
 </tr></thead><tbody>
 {{range .Permissions}}<tr><td>{{.PermissionId}}</td><td>{{.Code}}</td><td>{{.Resource}}</td>
-<td>{{.Action}}</td><td>{{.Ptype}}</td><td>{{.Name}}</td><td>{{.Source}}</td></tr>{{end}}
+<td>{{.Action}}</td><td>{{.Ptype}}</td><td>{{.Name}}</td><td><span class="badge badge-muted">{{.Source}}</span></td></tr>{{end}}
 </tbody></table>
 {{template "pager" .Pager}}</section></div>{{end}}
