@@ -1,0 +1,18 @@
+{
+  "id": "ecommerce-ops",
+  "name": "电商运营",
+  "description": "电商后台常用：订单/商品/退款，配运营常见角色",
+  "version": 1,
+  "permissions": [
+    {"code": "order.read", "resource": "order", "action": "read", "type": "act", "name": "查看订单", "description": ""},
+    {"code": "order.export", "resource": "order", "action": "export", "type": "act", "name": "导出订单", "description": ""},
+    {"code": "product.read", "resource": "product", "action": "read", "type": "act", "name": "查看商品", "description": ""},
+    {"code": "product.write", "resource": "product", "action": "write", "type": "act", "name": "编辑商品", "description": ""},
+    {"code": "refund.approve", "resource": "refund", "action": "approve", "type": "act", "name": "审批退款", "description": ""}
+  ],
+  "roles": [
+    {"key": "ops-manager", "name": "运营经理", "description": "订单商品退款全管", "permission_codes": ["order.read", "order.export", "product.read", "product.write", "refund.approve"]},
+    {"key": "customer-service", "name": "客服", "description": "看订单、审退款", "permission_codes": ["order.read", "refund.approve"]},
+    {"key": "merchandiser", "name": "商品运营", "description": "管商品", "permission_codes": ["product.read", "product.write"]}
+  ]
+}

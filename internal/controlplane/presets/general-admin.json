@@ -1,0 +1,18 @@
+{
+  "id": "general-admin",
+  "name": "通用后台管理",
+  "description": "适合大多数后台系统：内容的查看/编辑/删除，配三个常用角色",
+  "version": 1,
+  "permissions": [
+    {"code": "content.read", "resource": "content", "action": "read", "type": "act", "name": "查看内容", "description": ""},
+    {"code": "content.write", "resource": "content", "action": "write", "type": "act", "name": "编辑内容", "description": ""},
+    {"code": "content.delete", "resource": "content", "action": "delete", "type": "act", "name": "删除内容", "description": ""},
+    {"code": "user.read", "resource": "user", "action": "read", "type": "act", "name": "查看用户", "description": ""},
+    {"code": "user.write", "resource": "user", "action": "write", "type": "act", "name": "编辑用户", "description": ""}
+  ],
+  "roles": [
+    {"key": "admin", "name": "管理员", "description": "全部能力", "permission_codes": ["content.read", "content.write", "content.delete", "user.read", "user.write"]},
+    {"key": "editor", "name": "编辑", "description": "查看与编辑内容", "permission_codes": ["content.read", "content.write"]},
+    {"key": "viewer", "name": "只读", "description": "仅查看", "permission_codes": ["content.read", "user.read"]}
+  ]
+}
