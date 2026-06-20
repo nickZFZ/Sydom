@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/auth"
@@ -117,13 +118,14 @@ func (s *AdminServer) DeleteDataPolicy(ctx context.Context, r *adminv1.DeleteDat
 	return writeResp(s.mgr.DeleteDataPolicy(ctx, int64(r.AppId), r.DataPolicyId))
 }
 
-// NewGRPCServer 装配认证→鉴权→status 三拦截器（按序）并注册 AdminService。
-// opts 供调用方注入额外 ServerOption（如 grpc.Creds 启用 TLS）。
-func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB, opts ...grpc.ServerOption) *grpc.Server {
+// NewGRPCServer 装配脱敏→认证→鉴权→status 四拦截器（按序）并注册 AdminService。
+// opts 供调用方注入额外 ServerOption（如 grpc.Creds 启用 TLS）。logger 供错误脱敏边界记录原始细节。
+func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB, logger *slog.Logger, opts ...grpc.ServerOption) *grpc.Server {
 	chain := grpc.ChainUnaryInterceptor(
+		SanitizeErrorUnaryInterceptor(logger),                               // 0. 最外层：Internal/Unknown 错误脱敏边界（细节仅日志）
 		auth.UnaryServerInterceptorExempt(resolver, UnauthenticatedMethods), // 1. HMAC 认证（RegisterTenant 免鉴权）→ 注入 principal
-		AuthzUnaryInterceptor(enf),      // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
-		StatusWriteUnaryInterceptor(db), // 3. status 写拦截
+		AuthzUnaryInterceptor(enf),                                          // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
+		StatusWriteUnaryInterceptor(db),                                     // 3. status 写拦截
 	)
 	base := []grpc.ServerOption{grpc.MaxRecvMsgSize(maxMsgSize), grpc.MaxSendMsgSize(maxMsgSize), chain}
 	g := grpc.NewServer(append(base, opts...)...)

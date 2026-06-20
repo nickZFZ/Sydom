@@ -80,7 +80,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 
 	mgr := policy.NewPolicyManager(db, outbox.NewSink())
 	adminSrv := mgmt.NewAdminServer(db, mgr, cfg.MasterKey)
-	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db, grpcOpts...)
+	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db, logger, grpcOpts...)
 	syncCore := policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval}, mgr)
 	syncSrv := policysync.NewGRPCServer(syncCore, appResolver, grpcOpts...)
 	pub := broadcast.NewRedisPublisher(rdb)
