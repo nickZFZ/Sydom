@@ -1,29 +1,31 @@
 {{define "title"}}应用 · 司域 Console{{end}}
 {{define "content"}}
-<h2>应用</h2>
+<section>
+<h1>应用</h1>
 {{if .Degraded}}
-<p class="hint">你没有列出全部应用的权限。直接输入要管理的 App ID：</p>
-<form method="get" action="/apps/redirect"><input name="app_id" placeholder="App ID">
-<button>前往</button></form>
+<div class="alert alert-info">你没有列出全部应用的权限。直接输入要管理的 App ID：</div>
+<form method="get" action="/apps/redirect" class="inline-form"><input name="app_id" placeholder="App ID">
+<button class="btn btn-primary">前往</button></form>
 {{else}}
 <p class="hint"><a href="/tenants">我的租户</a>{{if .TenantID}} · 当前租户 {{.TenantID}}{{end}}</p>
-<a class="btn-primary" href="/apps/new?tenant_id={{.TenantID}}">+ 新建应用</a>
+<a class="btn btn-primary" href="/apps/new?tenant_id={{.TenantID}}">+ 新建应用</a>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "name" "asc"}}">名称 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "name" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "domain" "asc"}}">Domain ↑</a> <a href="?{{sortHref $.Pager.SortQuery "domain" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "status" "asc"}}">状态 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "status" "desc"}}">↓</a></th>
 <th>操作</th></tr></thead>
 <tbody>{{range .Apps}}<tr><td><a href="/apps/{{.AppId}}/roles">{{.AppId}}</a></td>
-<td>{{.Name}}</td><td>{{.Domain}}</td><td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td>
+<td>{{.Name}}</td><td>{{.Domain}}</td><td><span class="badge {{if eq .Status 1}}badge-success{{end}}">{{if eq .Status 1}}启用{{else}}停用{{end}}</span></td>
 <td><form method="post" action="/apps/{{.AppId}}/status" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="status" value="{{if eq .Status 1}}2{{else}}1{{end}}">
-<button class="btn-primary">切换状态</button></form>
+<button class="btn btn-sm">切换状态</button></form>
 <form method="post" action="/apps/{{.AppId}}/rotate-secret" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-<button>轮换密钥</button></form></td></tr>{{end}}</tbody></table>
+<button class="btn btn-sm btn-ghost">轮换密钥</button></form></td></tr>{{else}}<tr><td colspan="5"><div class="empty-state">暂无应用，点击「+ 新建应用」开始。</div></td></tr>{{end}}</tbody></table>
 {{template "pager" .Pager}}
 {{end}}
+</section>
 {{end}}

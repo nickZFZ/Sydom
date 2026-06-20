@@ -1,12 +1,16 @@
 {{define "title"}}登录 · 司域 Console{{end}}
 {{define "content"}}
-<div class="login-card">
-  <h1>司域 Console</h1>
-  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
-  <form method="post" action="/login">
-    <label>Principal<input name="principal" autofocus></label>
-    <label>Secret<input name="secret" type="password"></label>
-    <button type="submit">登录</button>
-  </form>
+<div class="login-wrap">
+  <div class="card login-card">
+    <h1>司域 Console</h1>
+    {{if .Error}}<div class="alert alert-error" role="alert">{{.Error}}</div>{{end}}
+    <form method="post" action="/login" class="stacked-form">
+      <div class="form-field"><label for="principal">Principal</label>
+        <input id="principal" name="principal" autofocus></div>
+      <div class="form-field"><label for="secret">Secret</label>
+        <input id="secret" name="secret" type="password"></div>
+      <button type="submit" class="btn btn-primary">登录</button>
+    </form>
+  </div>
 </div>
 {{end}}
