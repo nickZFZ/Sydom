@@ -16,7 +16,7 @@
 .input,.select,input[type=text],input[type=password],input:not([type]),select,textarea {
   font:inherit; padding:var(--space-2) var(--space-3); border:1px solid var(--color-border);
   border-radius:var(--radius-sm); background:var(--color-surface); color:var(--color-text); }
-.input:focus,select:focus,input:focus { border-color:var(--color-primary); }
+.input:focus,select:focus,input:focus,textarea:focus { border-color:var(--color-primary); }
 .is-invalid { border-color:var(--color-danger); }
 .field-error { color:var(--color-danger); font-size:var(--text-sm); }
 /* 内联表单（保留既有 .inline-form 语义，重着色） */
@@ -31,6 +31,7 @@
 .table td,table td { padding:var(--space-2) var(--space-3); border-bottom:1px solid var(--color-border); }
 .table tbody tr:last-child td { border-bottom:none; }
 .table tbody tr:hover { background:var(--color-bg); }
+/* 注：裸 <table> 仅获基础布局；行级修饰（hover/最后行去边）需加 .table class（未迁页降级设计） */
 
 /* 卡片 */
 .card { background:var(--color-surface); border:1px solid var(--color-border);
