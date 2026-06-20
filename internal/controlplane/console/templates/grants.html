@@ -7,8 +7,8 @@
 <input name="eft" placeholder="allow/deny，留空=allow"><button>+ 新增授权</button></form>
 {{template "searchbox" .Pager}}
 <table><thead><tr>
-<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
-<th><a href="?sort=role_id&order=asc">RoleId ↑</a> <a href="?sort=role_id&order=desc">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "role_id" "asc"}}">RoleId ↑</a> <a href="?{{sortHref $.Pager.SortQuery "role_id" "desc"}}">↓</a></th>
 <th>PermissionId</th><th>Eft</th><th></th></tr></thead><tbody>
 {{range .Grants}}<tr><td>{{.GrantId}}</td><td>{{.RoleId}}</td><td>{{.PermissionId}}</td><td>{{.Eft}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/grants/revoke" onsubmit="return confirm('撤销？')">

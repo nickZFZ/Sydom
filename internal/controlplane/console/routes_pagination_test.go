@@ -92,6 +92,30 @@ func TestConsole_Permissions_PagerLinkNotDoubleEncoded(t *testing.T) {
 	require.Contains(t, body, "sort=code", "翻页链接应保留原始 sort=code 参数")
 }
 
+// TestConsole_SortLink_PreservesQuery 验证表头排序链接保留当前 q（搜索）与过滤（source），
+// 修复"点排序丢失搜索/过滤"的 UX 债。破坏前排序链接是裸 ?sort=X&order=Y，body 不含 "q=...".
+func TestConsole_SortLink_PreservesQuery(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	for i := 0; i < 3; i++ {
+		_, err := db.Exec(
+			`INSERT INTO permission(app_id, code, resource, action, type, name, source)
+			 VALUES($1, $2, 'order', 'read', 'act', $2, 'manual')`,
+			appID, fmt.Sprintf("perm-sl-%d", i))
+		require.NoError(t, err)
+	}
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	resp, err := c.Get(ts.URL + "/apps/" + strconv.FormatInt(appID, 10) + "/permissions?q=perm-sl&source=manual")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body := readBody(t, resp)
+	// 排序链接保留搜索词 + 过滤（裸链接 bug 下 body 不含 "q="；searchbox 用 value= 不会贡献 "q="）。
+	require.Contains(t, body, "q=perm-sl", "排序链接须保留当前搜索 q")
+	require.Contains(t, body, "source=manual", "排序链接须保留当前过滤 source")
+	// template.URL 不二次编码（无 sort%3d）；点排序重置到第 1 页（不带 page=）。
+	require.NotContains(t, strings.ToLower(body), "sort%3d", "排序链接 query 不得二次 percent-encode")
+}
+
 // TestConsole_Permissions_NoSession 验证无会话时重定向到登录页。
 func TestConsole_Permissions_NoSession(t *testing.T) {
 	ts, _, _ := newConsole(t)

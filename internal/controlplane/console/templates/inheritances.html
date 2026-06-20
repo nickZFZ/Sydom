@@ -7,7 +7,7 @@
 <button>+ 新增继承</button></form>
 {{template "searchbox" .Pager}}
 <table><thead><tr>
-<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th>ChildRoleId</th><th>ParentRoleId</th><th></th></tr></thead><tbody>
 {{range .Inheritances}}<tr><td>{{.InheritanceId}}</td><td>{{.ChildRoleId}}</td><td>{{.ParentRoleId}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/inheritances/remove" onsubmit="return confirm('移除？')">

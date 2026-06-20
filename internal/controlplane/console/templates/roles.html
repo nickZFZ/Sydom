@@ -7,9 +7,9 @@
 <button>+ 新建角色</button></form>
 {{template "searchbox" .Pager}}
 <table><thead><tr>
-<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
-<th><a href="?sort=code&order=asc">Code ↑</a> <a href="?sort=code&order=desc">↓</a></th>
-<th><a href="?sort=name&order=asc">名称 ↑</a> <a href="?sort=name&order=desc">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "code" "asc"}}">Code ↑</a> <a href="?{{sortHref $.Pager.SortQuery "code" "desc"}}">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "name" "asc"}}">名称 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "name" "desc"}}">↓</a></th>
 <th></th></tr></thead><tbody>
 {{range .Roles}}<tr><td>{{.RoleId}}</td><td>{{.Code}}</td><td>{{.Name}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/roles/{{.RoleId}}/delete" onsubmit="return confirm('删除？')">

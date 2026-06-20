@@ -39,11 +39,12 @@ func mustTemplates() pageSet {
 			pages = append(pages, name)
 		}
 	}
+	funcs := template.FuncMap{"sortHref": sortHref}
 	set := pageSet{}
 	for _, p := range pages {
 		files := append([]string{"templates/layout.html"}, partials...)
 		files = append(files, "templates/"+p)
-		set[p] = template.Must(template.ParseFS(templatesFS, files...))
+		set[p] = template.Must(template.New("layout.html").Funcs(funcs).ParseFS(templatesFS, files...))
 	}
 	return set
 }

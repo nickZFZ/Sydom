@@ -4,9 +4,9 @@
 <p><a class="btn-primary" href="/operators/new">+ 新建操作员</a></p>
 {{template "searchbox" .Pager}}
 <table><thead><tr>
-<th><a href="?sort=id&order=asc">ID ↑</a> <a href="?sort=id&order=desc">↓</a></th>
-<th><a href="?sort=principal&order=asc">Principal ↑</a> <a href="?sort=principal&order=desc">↓</a></th>
-<th><a href="?sort=status&order=asc">状态 ↑</a> <a href="?sort=status&order=desc">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "principal" "asc"}}">Principal ↑</a> <a href="?{{sortHref $.Pager.SortQuery "principal" "desc"}}">↓</a></th>
+<th><a href="?{{sortHref $.Pager.SortQuery "status" "asc"}}">状态 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "status" "desc"}}">↓</a></th>
 <th>操作</th></tr></thead><tbody>
 {{range .Operators}}<tr><td>{{.OperatorId}}</td><td>{{.Principal}}</td>
 <td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td>
