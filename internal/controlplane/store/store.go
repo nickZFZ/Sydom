@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lib/pq"
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 )
 
@@ -227,6 +228,53 @@ func DeleteDataPolicy(ctx context.Context, ex cp.DBTX, appID, id int64) error {
 		return fmt.Errorf("data_policy id=%d not found for app %d", id, appID)
 	}
 	return nil
+}
+
+// PermissionIDsByCode 解析本 app 一组 code → permission_id（用于模板应用按 code 授权）。
+// 不存在的 code 不入 map（调用方自行处理缺失，loader 已保证包内引用一致）。
+func PermissionIDsByCode(ctx context.Context, ex cp.DBTX, appID int64, codes []string) (map[string]int64, error) {
+	out := map[string]int64{}
+	if len(codes) == 0 {
+		return out, nil
+	}
+	rows, err := ex.QueryContext(ctx,
+		`SELECT code, id FROM permission WHERE app_id=$1 AND code = ANY($2)`,
+		appID, pq.Array(codes))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var code string
+		var id int64
+		if err := rows.Scan(&code, &id); err != nil {
+			return nil, err
+		}
+		out[code] = id
+	}
+	return out, rows.Err()
+}
+
+// UpsertTemplateRole 幂等建模板角色：不存在→建（created=true）；已存在（同 app_id,code）→
+// 跳过返回现有 id（created=false），绝不覆盖 name（不改人工后续编辑，TP-3）。
+func UpsertTemplateRole(ctx context.Context, ex cp.DBTX, appID int64, code, name string) (id int64, created bool, err error) {
+	err = ex.QueryRowContext(ctx,
+		`INSERT INTO role (app_id, code, name) VALUES ($1,$2,$3)
+		 ON CONFLICT (app_id, code) DO NOTHING RETURNING id`,
+		appID, code, name).Scan(&id)
+	if err == nil {
+		return id, true, nil // 新建
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return 0, false, err
+	}
+	// 冲突（已存在）→ 取现有 id，不改 name。
+	err = ex.QueryRowContext(ctx,
+		`SELECT id FROM role WHERE app_id=$1 AND code=$2`, appID, code).Scan(&id)
+	if err != nil {
+		return 0, false, err
+	}
+	return id, false, nil
 }
 
 // UpsertAutoPermission 上报式幂等写权限点：新增标 source='auto'；冲突时仅当现有行

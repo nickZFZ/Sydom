@@ -104,3 +104,38 @@ func TestUpsertAutoPermission_NeverClobbersManual(t *testing.T) {
 	require.Equal(t, "order", resource)
 	require.Equal(t, "人工写订单", name)
 }
+
+func TestPermissionIDsByCode(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	ctx := context.Background()
+	id1, err := store.UpsertPermission(ctx, db, appID, "a.read", "a", "read", "act", "查看A")
+	require.NoError(t, err)
+	_, err = store.UpsertPermission(ctx, db, appID, "b.read", "b", "read", "act", "查看B")
+	require.NoError(t, err)
+
+	m, err := store.PermissionIDsByCode(ctx, db, appID, []string{"a.read", "b.read", "missing"})
+	require.NoError(t, err)
+	require.Equal(t, id1, m["a.read"])
+	require.Contains(t, m, "b.read")
+	require.NotContains(t, m, "missing") // 不存在的 code 不入 map
+}
+
+func TestUpsertTemplateRole_Idempotent(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	ctx := context.Background()
+
+	id1, created1, err := store.UpsertTemplateRole(ctx, db, appID, "tpl:x:admin", "管理员")
+	require.NoError(t, err)
+	require.True(t, created1)
+
+	id2, created2, err := store.UpsertTemplateRole(ctx, db, appID, "tpl:x:admin", "改了的名") // re-apply
+	require.NoError(t, err)
+	require.False(t, created2) // 已存在 → 跳过
+	require.Equal(t, id1, id2) // 同一行
+	// 名称不被覆盖（不改人工后续编辑）。
+	var name string
+	require.NoError(t, db.QueryRow(`SELECT name FROM role WHERE id=$1`, id1).Scan(&name))
+	require.Equal(t, "管理员", name)
+}
