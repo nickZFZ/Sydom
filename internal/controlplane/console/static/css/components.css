@@ -1,0 +1,71 @@
+/* 按钮 */
+.btn { display:inline-flex; align-items:center; gap:var(--space-2);
+  font:inherit; font-weight:var(--weight-medium); cursor:pointer;
+  padding:var(--space-2) var(--space-4); border-radius:var(--radius-sm);
+  border:1px solid var(--color-border); background:var(--color-surface); color:var(--color-text); }
+.btn:hover { border-color:var(--color-primary); }
+.btn-primary { background:var(--color-primary); border-color:var(--color-primary); color:var(--color-on-primary); }
+.btn-primary:hover { background:var(--color-primary-hover); border-color:var(--color-primary-hover); }
+.btn-ghost { background:transparent; border-color:transparent; color:var(--color-primary); }
+.btn-danger { background:var(--color-danger); border-color:var(--color-danger); color:var(--color-on-primary); }
+.btn-sm { padding:var(--space-1) var(--space-3); font-size:var(--text-sm); }
+
+/* 表单 */
+.form-field { display:flex; flex-direction:column; gap:var(--space-1); margin-bottom:var(--space-4); }
+.form-field > label { font-size:var(--text-sm); font-weight:var(--weight-medium); color:var(--color-text-muted); }
+.input,.select,input[type=text],input[type=password],input:not([type]),select,textarea {
+  font:inherit; padding:var(--space-2) var(--space-3); border:1px solid var(--color-border);
+  border-radius:var(--radius-sm); background:var(--color-surface); color:var(--color-text); }
+.input:focus,select:focus,input:focus { border-color:var(--color-primary); }
+.is-invalid { border-color:var(--color-danger); }
+.field-error { color:var(--color-danger); font-size:var(--text-sm); }
+/* 内联表单（保留既有 .inline-form 语义，重着色） */
+.inline-form { display:inline-flex; gap:var(--space-2); align-items:center; flex-wrap:wrap; }
+.stacked-form { display:flex; flex-direction:column; gap:var(--space-3); max-width:420px; }
+
+/* 表格 */
+.table,table { border-collapse:collapse; width:100%; background:var(--color-surface);
+  border:1px solid var(--color-border); border-radius:var(--radius-md); overflow:hidden; }
+.table th,table th { text-align:left; font-size:var(--text-sm); color:var(--color-text-muted);
+  background:var(--color-bg); padding:var(--space-2) var(--space-3); border-bottom:1px solid var(--color-border); }
+.table td,table td { padding:var(--space-2) var(--space-3); border-bottom:1px solid var(--color-border); }
+.table tbody tr:last-child td { border-bottom:none; }
+.table tbody tr:hover { background:var(--color-bg); }
+
+/* 卡片 */
+.card { background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm); padding:var(--space-5); }
+.card-header { font-weight:var(--weight-bold); margin-bottom:var(--space-3); }
+
+/* 徽章 */
+.badge { display:inline-block; font-size:var(--text-xs); padding:2px var(--space-2);
+  border-radius:999px; background:var(--color-bg); color:var(--color-text-muted); border:1px solid var(--color-border); }
+.badge-success { color:var(--color-success); border-color:var(--color-success); }
+.badge-muted { color:var(--color-text-muted); }
+
+/* 内联反馈 alert（JS-free） */
+.alert { padding:var(--space-3) var(--space-4); border-radius:var(--radius-sm);
+  border:1px solid var(--color-border); background:var(--color-surface); margin-bottom:var(--space-4); }
+.alert-error { border-color:var(--color-danger); color:var(--color-danger); }
+.alert-info { border-color:var(--color-primary); color:var(--color-primary); }
+
+/* 对话框壳（仅视觉；交互留 M3.4） */
+.dialog { background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:var(--radius-lg); box-shadow:var(--shadow-md); padding:var(--space-5); max-width:480px; }
+
+/* toast 壳（JS-free 静态 flash；瞬时/自动消失留 M3.4） */
+.toast { display:inline-block; padding:var(--space-2) var(--space-4); border-radius:var(--radius-sm);
+  background:var(--color-text); color:var(--color-on-primary); box-shadow:var(--shadow-md); }
+
+/* 空状态 */
+.empty-state { text-align:center; color:var(--color-text-muted); padding:var(--space-7) var(--space-4); }
+
+/* 既有纳入：searchbox / pager（M2.4），重着色 */
+.searchbox { display:inline-flex; gap:var(--space-2); margin-bottom:var(--space-4); }
+.pager { display:flex; gap:var(--space-3); align-items:center; margin-top:var(--space-4);
+  color:var(--color-text-muted); font-size:var(--text-sm); }
+.pager .count { margin-right:auto; }
+
+/* 一次性 secret 展示（保留既有 .secret class——routes_secret_revoke_test 断言它存在） */
+.secret { font-family:var(--font-mono); background:var(--color-bg); color:var(--color-danger);
+  padding:var(--space-2) var(--space-3); border-radius:var(--radius-sm); border:1px solid var(--color-border); word-break:break-all; }
