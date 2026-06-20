@@ -45,6 +45,8 @@ var UnauthenticatedMethods = map[string]bool{
 var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/CreateRole":              {"role", "create", true, scopeApp},
 	"/sydom.admin.v1.AdminService/CreateBusinessRole":      {"role", "create", true, scopeApp},
+	"/sydom.admin.v1.AdminService/ListTemplates":           {"template", "read", false, scopeApp},
+	"/sydom.admin.v1.AdminService/ApplyTemplate":           {"template", "apply", true, scopeApp},
 	"/sydom.admin.v1.AdminService/DeleteRole":              {"role", "delete", true, scopeApp},
 	"/sydom.admin.v1.AdminService/UpsertPermission":        {"permission", "update", true, scopeApp},
 	"/sydom.admin.v1.AdminService/GrantPermission":         {"grant", "create", true, scopeApp},
