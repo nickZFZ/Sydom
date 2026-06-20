@@ -32,3 +32,7 @@ main > section { padding:var(--space-5); max-width:1100px; }
 /* 登录页（无 topbar/workspace）居中 */
 .login-wrap { min-height:100vh; display:grid; place-items:center; padding:var(--space-5); }
 .login-card { width:100%; max-width:360px; margin:0; }
+/* 错误页（未迁 error.html）居中 */
+.error-page { max-width:480px; margin:var(--space-8) auto 0; text-align:center; padding:var(--space-5); }
+.error-page h2 { font-size:var(--text-2xl); color:var(--color-text-muted); }
+.error-page p { color:var(--color-text-muted); margin-bottom:var(--space-5); }
