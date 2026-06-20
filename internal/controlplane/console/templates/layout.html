@@ -1,17 +1,19 @@
 {{define "layout.html"}}<!DOCTYPE html>
 <html lang="zh">
 <head><meta charset="utf-8"><title>{{block "title" .}}司域 Console{{end}}</title>
-<link rel="stylesheet" href="/static/app.css">
 <link rel="stylesheet" href="/static/css/tokens.css">
 <link rel="stylesheet" href="/static/css/base.css">
-<link rel="stylesheet" href="/static/css/components.css"></head>
+<link rel="stylesheet" href="/static/css/layout.css">
+<link rel="stylesheet" href="/static/css/components.css">
+<link rel="stylesheet" href="/static/app.css"></head>
 <body>
+<a class="skip-link" href="#main">跳到主内容</a>
 {{if .Nav}}
 <header class="topbar"><span class="brand">司域 Sydom</span>
-  <nav><a href="/" {{if eq .Nav "apps"}}class="active"{{end}}>应用</a>
-  <a href="/tenants" {{if eq .Nav "tenants"}}class="active"{{end}}>租户</a>
-  <a href="/operators" {{if eq .Nav "system"}}class="active"{{end}}>系统</a></nav>
+  <nav aria-label="主导航"><a href="/" {{if eq .Nav "apps"}}aria-current="page"{{end}}>应用</a>
+  <a href="/tenants" {{if eq .Nav "tenants"}}aria-current="page"{{end}}>租户</a>
+  <a href="/operators" {{if eq .Nav "system"}}aria-current="page"{{end}}>系统</a></nav>
   <form method="post" action="/logout" class="logout"><button>登出</button></form>
 </header>{{end}}
-<main>{{block "content" .}}{{end}}</main>
+<main id="main">{{block "content" .}}{{end}}</main>
 </body></html>{{end}}

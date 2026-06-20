@@ -1,12 +1,12 @@
 {{define "appnav"}}
-<aside class="appnav"><div class="appname">App #{{.AppID}}</div>
-<a href="/apps/{{.AppID}}/roles" {{if eq .Tab "roles"}}class="active"{{end}}>角色</a>
-<a href="/apps/{{.AppID}}/permissions" {{if eq .Tab "permissions"}}class="active"{{end}}>权限点</a>
-<a href="/apps/{{.AppID}}/grants" {{if eq .Tab "grants"}}class="active"{{end}}>授权</a>
-<a href="/apps/{{.AppID}}/inheritances" {{if eq .Tab "inheritances"}}class="active"{{end}}>继承</a>
-<a href="/apps/{{.AppID}}/bindings" {{if eq .Tab "bindings"}}class="active"{{end}}>用户</a>
-<a href="/apps/{{.AppID}}/data-policies" {{if eq .Tab "datapolicies"}}class="active"{{end}}>数据策略</a>
-<a href="/apps/{{.AppID}}/effective" {{if eq .Tab "effective"}}class="active"{{end}}>有效权限</a>
-<a href="/apps/{{.AppID}}/decision" {{if eq .Tab "decision"}}class="active"{{end}}>决策解释</a>
-<a href="/apps/{{.AppID}}/audit" {{if eq .Tab "audit"}}class="active"{{end}}>审计</a>
+<aside class="appnav" aria-label="应用导航"><div class="appname">App #{{.AppID}}</div>
+<a href="/apps/{{.AppID}}/roles" {{if eq .Tab "roles"}}aria-current="page"{{end}}>角色</a>
+<a href="/apps/{{.AppID}}/permissions" {{if eq .Tab "permissions"}}aria-current="page"{{end}}>权限点</a>
+<a href="/apps/{{.AppID}}/grants" {{if eq .Tab "grants"}}aria-current="page"{{end}}>授权</a>
+<a href="/apps/{{.AppID}}/inheritances" {{if eq .Tab "inheritances"}}aria-current="page"{{end}}>继承</a>
+<a href="/apps/{{.AppID}}/bindings" {{if eq .Tab "bindings"}}aria-current="page"{{end}}>用户</a>
+<a href="/apps/{{.AppID}}/data-policies" {{if eq .Tab "datapolicies"}}aria-current="page"{{end}}>数据策略</a>
+<a href="/apps/{{.AppID}}/effective" {{if eq .Tab "effective"}}aria-current="page"{{end}}>有效权限</a>
+<a href="/apps/{{.AppID}}/decision" {{if eq .Tab "decision"}}aria-current="page"{{end}}>决策解释</a>
+<a href="/apps/{{.AppID}}/audit" {{if eq .Tab "audit"}}aria-current="page"{{end}}>审计</a>
 </aside>{{end}}
