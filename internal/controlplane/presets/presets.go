@@ -7,6 +7,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"sort"
 )
 
@@ -46,7 +47,7 @@ var loaded []Template
 var byID map[string]Template
 
 func init() {
-	ts, err := load()
+	ts, err := load(files)
 	if err != nil {
 		panic("presets: " + err.Error()) // fail-close：损坏内容拒绝启动
 	}
@@ -57,15 +58,18 @@ func init() {
 	}
 }
 
-func load() ([]Template, error) {
-	entries, err := files.ReadDir(".")
+// load 读取并校验 fsys 根目录下的全部 *.json 预设包（取 fs.FS 参数以便用 fstest.MapFS
+// 注入损坏内容测试 fail-close 错误路径）。校验：id 非空且唯一、permission.code 非空且
+// 唯一、role.key 非空且唯一、role.permission_codes 引用存在于本包。任一违例返回 error。
+func load(fsys fs.FS) ([]Template, error) {
+	entries, err := fs.ReadDir(fsys, ".")
 	if err != nil {
 		return nil, err
 	}
 	var out []Template
 	seenID := map[string]bool{}
 	for _, e := range entries {
-		b, err := files.ReadFile(e.Name())
+		b, err := fs.ReadFile(fsys, e.Name())
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +94,15 @@ func load() ([]Template, error) {
 			}
 			codes[p.Code] = true
 		}
+		seenKey := map[string]bool{}
 		for _, r := range t.Roles {
+			if r.Key == "" {
+				return nil, fmt.Errorf("%s: empty role key", t.ID)
+			}
+			if seenKey[r.Key] {
+				return nil, fmt.Errorf("%s: duplicate role key %q", t.ID, r.Key)
+			}
+			seenKey[r.Key] = true
 			for _, pc := range r.PermissionCodes {
 				if !codes[pc] {
 					return nil, fmt.Errorf("%s role %q: unknown permission code %q", t.ID, r.Key, pc)
@@ -99,7 +111,7 @@ func load() ([]Template, error) {
 		}
 		out = append(out, t)
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	sort.SliceStable(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out, nil
 }
 

@@ -1,6 +1,9 @@
 package presets
 
-import "testing"
+import (
+	"testing"
+	"testing/fstest"
+)
 
 func TestLoad_ValidatesAndExposes(t *testing.T) {
 	all := All()
@@ -25,6 +28,38 @@ func TestLoad_ValidatesAndExposes(t *testing.T) {
 func TestGet_Unknown(t *testing.T) {
 	if _, ok := Get("nope"); ok {
 		t.Error("Get(nope) should be false")
+	}
+}
+
+// TestLoad_RejectsCorrupt 直接对损坏内容跑 load(fs.FS)，验证 fail-close 错误路径
+// （每条约束都真实拦截，而非依赖内置内容恰好合法）。
+func TestLoad_RejectsCorrupt(t *testing.T) {
+	cases := map[string]string{
+		"bad json":        `{`,
+		"empty id":        `{"id":"","permissions":[]}`,
+		"empty perm code": `{"id":"a","permissions":[{"code":""}]}`,
+		"dup perm code":   `{"id":"a","permissions":[{"code":"x.read"},{"code":"x.read"}]}`,
+		"empty role key":  `{"id":"a","permissions":[{"code":"x.read"}],"roles":[{"key":""}]}`,
+		"dup role key":    `{"id":"a","permissions":[{"code":"x.read"}],"roles":[{"key":"r"},{"key":"r"}]}`,
+		"unknown perm ref": `{"id":"a","permissions":[{"code":"x.read"}],` +
+			`"roles":[{"key":"r","permission_codes":["nope"]}]}`,
+	}
+	for name, body := range cases {
+		t.Run(name, func(t *testing.T) {
+			fsys := fstest.MapFS{"pack.json": {Data: []byte(body)}}
+			if _, err := load(fsys); err == nil {
+				t.Errorf("load(%q) should fail-close with error, got nil", name)
+			}
+		})
+	}
+
+	// 重复 template id 跨两个文件也必须拦截。
+	fsys := fstest.MapFS{
+		"a.json": {Data: []byte(`{"id":"dup","permissions":[]}`)},
+		"b.json": {Data: []byte(`{"id":"dup","permissions":[]}`)},
+	}
+	if _, err := load(fsys); err == nil {
+		t.Error("duplicate template id should fail-close, got nil")
 	}
 }
 
