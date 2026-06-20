@@ -32,6 +32,10 @@ func TestCapabilityName(t *testing.T) {
 	if got == "order:read" {
 		t.Errorf("must not fall back to raw resource:action")
 	}
+	// 未知 action → actionLabel 透传，合成时不臆造动词（组合路径边界）。
+	if got := capabilityName("", "order", "frobnicate"); got != "order · frobnicate" {
+		t.Errorf("unknown action: got %q want %q", got, "order · frobnicate")
+	}
 }
 
 func TestRoleName(t *testing.T) {

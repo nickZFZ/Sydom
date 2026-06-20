@@ -29,7 +29,7 @@ func (h *Handler) registerOps(mux *http.ServeMux) {
 // ---- 业务语言映射辅助 ----
 
 // capName 是 (resource, action) → 业务名称 映射。
-// 缺 name 时，label() 回退 resource:action（设计内最深回退，不泄露其他技术原语）。
+// 缺 name 时，label() 委托 capabilityName 合成「resource · 动词」，绝不裸 resource:action（TP-8）。
 type capName map[[2]string]string
 
 // permNameMap 调 ListPermissions 建 (resource,action)→name 映射。
