@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/projection"
@@ -259,6 +260,16 @@ type ApplyTemplateResult struct {
 func (m *PolicyManager) ApplyTemplate(ctx context.Context, appID int64, templateID string,
 	perms []cp.PermissionPoint, roles []TemplateRole) (ApplyTemplateResult, *cp.Delta, error) {
 	var res ApplyTemplateResult
+	// 确定性角色 code 以 ':' 分隔（tpl:<templateID>:<key>）；templateID 或 key 含 ':' 会破坏
+	// 该不变量并可能与另一组合冲突命中同一 uq_role_app_code 行——fail-close 直接拒绝。
+	if strings.ContainsRune(templateID, ':') {
+		return ApplyTemplateResult{}, nil, fmt.Errorf("policy: apply_template: template id %q must not contain ':'", templateID)
+	}
+	for _, r := range roles {
+		if strings.ContainsRune(r.Key, ':') {
+			return ApplyTemplateResult{}, nil, fmt.Errorf("policy: apply_template: role key %q must not contain ':'", r.Key)
+		}
+	}
 	d, err := m.runVersionedWrite(ctx, appID, writeOp{
 		action: "apply_template", entityType: "template", entityID: templateID,
 		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
@@ -297,7 +308,9 @@ func (m *PolicyManager) ApplyTemplate(ctx context.Context, appID int64, template
 				for _, pc := range r.PermissionCodes {
 					pid, ok := idByCode[pc]
 					if !ok {
-						continue // 理论不达（loader 已校验引用），防御性跳过
+						// fail-close：role 引用了本模板 perms 未声明的 code（loader 应已拦截）。
+						// 真走到这里说明输入不一致，整笔回滚而非静默少授（一致性优先）。
+						return nil, fmt.Errorf("policy: apply_template %s: role %q references undeclared permission code %q", templateID, r.Key, pc)
 					}
 					if e := store.InsertRolePermission(ctx, tx, appID, roleID, pid, cp.EffectAllow); e != nil {
 						return nil, e
