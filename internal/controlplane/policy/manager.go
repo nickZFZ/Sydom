@@ -235,6 +235,84 @@ func (m *PolicyManager) CreateBusinessRole(ctx context.Context, appID int64, nam
 	return roleID, d, err
 }
 
+// TemplateRole 是 ApplyTemplate 的角色输入（与 presets 解耦，由 mgmt 转换填入）。
+type TemplateRole struct {
+	Key             string
+	Name            string
+	PermissionCodes []string
+}
+
+// ApplyTemplateResult 是一次模板应用的写入统计。
+type ApplyTemplateResult struct {
+	PermsUpserted int // 权限点新增/刷新（source=auto）
+	PermsSkipped  int // 权限点命中 manual 被保留
+	RolesCreated  int // 角色新建
+	RolesSkipped  int // 角色已存在被跳过（确定性 code）
+}
+
+// ApplyTemplate 原子幂等应用一个模板到 app（单 runVersionedWrite）：
+//  1. 逐 permission 复用 UpsertAutoPermission（auto 不覆盖 manual，TP-3）；
+//  2. 解析 code→id；
+//  3. 逐 role 用确定性 code `tpl:<templateID>:<key>` upsert，仅新建时按 permission_codes 授权。
+//
+// 任一步失败整事务回滚（TP-5）。投影变化照常 bump+广播。
+func (m *PolicyManager) ApplyTemplate(ctx context.Context, appID int64, templateID string,
+	perms []cp.PermissionPoint, roles []TemplateRole) (ApplyTemplateResult, *cp.Delta, error) {
+	var res ApplyTemplateResult
+	d, err := m.runVersionedWrite(ctx, appID, writeOp{
+		action: "apply_template", entityType: "template", entityID: templateID,
+		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			// 1. 权限点。
+			var codes []string
+			for _, p := range perms {
+				applied, e := store.UpsertAutoPermission(ctx, tx, appID,
+					p.Code, p.Resource, p.Action, p.Type, p.Name, p.Description)
+				if e != nil {
+					return nil, e
+				}
+				if applied {
+					res.PermsUpserted++
+				} else {
+					res.PermsSkipped++
+				}
+				codes = append(codes, p.Code)
+			}
+			// 2. code→id（含 manual 命中行，权限点不论 auto/manual 都参与授权）。
+			idByCode, e := store.PermissionIDsByCode(ctx, tx, appID, codes)
+			if e != nil {
+				return nil, e
+			}
+			// 3. 角色（确定性 code 幂等）。
+			for _, r := range roles {
+				code := "tpl:" + templateID + ":" + r.Key
+				roleID, created, e := store.UpsertTemplateRole(ctx, tx, appID, code, r.Name)
+				if e != nil {
+					return nil, e
+				}
+				if !created {
+					res.RolesSkipped++
+					continue // 已存在 → 不改授权（不动人工后续编辑）
+				}
+				res.RolesCreated++
+				for _, pc := range r.PermissionCodes {
+					pid, ok := idByCode[pc]
+					if !ok {
+						continue // 理论不达（loader 已校验引用），防御性跳过
+					}
+					if e := store.InsertRolePermission(ctx, tx, appID, roleID, pid, cp.EffectAllow); e != nil {
+						return nil, e
+					}
+				}
+			}
+			return nil, nil
+		},
+	})
+	if err != nil {
+		return ApplyTemplateResult{}, nil, err
+	}
+	return res, d, nil
+}
+
 // DeleteRole 删角色（级联删其全部引用），重投影会清掉相关 casbin_rule 行。
 func (m *PolicyManager) DeleteRole(ctx context.Context, appID, roleID int64) (*cp.Delta, error) {
 	return m.runVersionedWrite(ctx, appID, writeOp{
