@@ -61,7 +61,11 @@ func (h *Handler) opsTemplates(w http.ResponseWriter, r *http.Request) {
 		for _, role := range t.Roles {
 			rr := roleRow{Name: role.Name}
 			for _, pc := range role.PermissionCodes {
-				rr.Caps = append(rr.Caps, nameByCode[pc])
+				cn := nameByCode[pc]
+				if cn == "" {
+					cn = "（未知能力）" // 防御：role 引用了不在本模板的 code（理论不达，不渲染空行）
+				}
+				rr.Caps = append(rr.Caps, cn)
 			}
 			v.Roles = append(v.Roles, rr)
 		}

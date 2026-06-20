@@ -3,6 +3,7 @@
 <aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
 <a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}aria-current="page"{{end}}>人员</a>
 <a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}aria-current="page"{{end}}>业务角色</a>
+<a href="/ops/apps/{{.AppID}}/templates" {{if eq .OpsNav "templates"}}aria-current="page"{{end}}>模板库</a>
 </aside>
 <section>
 <nav class="breadcrumb" aria-label="面包屑">运营台 · 人员能力</nav>

@@ -11,13 +11,13 @@
 {{if .Templates}}
 {{range .Templates}}
 <div class="card" style="margin-bottom:var(--space-4)">
-<div class="card-header">{{.Name}} <span class="badge badge-muted">{{.PermCount}} 权限点 · {{.RoleCount}} 角色</span></div>
+<h2 class="card-header">{{.Name}} <span class="badge badge-muted">{{.PermCount}} 权限点 · {{.RoleCount}} 角色</span></h2>
 <p class="hint">{{.Description}}</p>
 <details>
 <summary>预览</summary>
-<h2>能力</h2>
+<h3>能力</h3>
 <ul class="list-plain">{{range .Caps}}<li>{{.Name}}</li>{{end}}</ul>
-<h2>角色</h2>
+<h3>角色</h3>
 <ul class="list-plain">{{range .Roles}}<li>{{.Name}}：{{range $i, $c := .Caps}}{{if $i}}、{{end}}{{$c}}{{end}}</li>{{end}}</ul>
 </details>
 <form method="post" action="/ops/apps/{{$.AppID}}/templates/apply" class="inline-form">

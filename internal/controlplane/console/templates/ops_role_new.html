@@ -3,6 +3,7 @@
 <aside class="appnav"><div class="appname">运营台 · App #{{.AppID}}</div>
 <a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
 <a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+<a href="/ops/apps/{{.AppID}}/templates" {{if eq .OpsNav "templates"}}class="active"{{end}}>模板库</a>
 </aside>
 <section><h2>新建业务角色</h2>
 <form method="post" action="/ops/apps/{{.AppID}}/roles">
