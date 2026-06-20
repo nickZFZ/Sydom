@@ -119,6 +119,11 @@ func TestPermissionIDsByCode(t *testing.T) {
 	require.Equal(t, id1, m["a.read"])
 	require.Contains(t, m, "b.read")
 	require.NotContains(t, m, "missing") // 不存在的 code 不入 map
+
+	// 空 codes 短路：返回空 map 无错，不打 DB。
+	empty, err := store.PermissionIDsByCode(ctx, db, appID, nil)
+	require.NoError(t, err)
+	require.Empty(t, empty)
 }
 
 func TestUpsertTemplateRole_Idempotent(t *testing.T) {

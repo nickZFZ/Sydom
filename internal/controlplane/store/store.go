@@ -257,11 +257,14 @@ func PermissionIDsByCode(ctx context.Context, ex cp.DBTX, appID int64, codes []s
 
 // UpsertTemplateRole 幂等建模板角色：不存在→建（created=true）；已存在（同 app_id,code）→
 // 跳过返回现有 id（created=false），绝不覆盖 name（不改人工后续编辑，TP-3）。
+// 两步（INSERT … DO NOTHING RETURNING → 回 SELECT）均在调用方传入的 ex 上执行：事务内调用
+// 天然串行；并发裸调用因 uq_role_app_code 唯一约束序列化 INSERT，fallback SELECT 必命中已提交行，
+// 结果正确——无需外层锁。
 func UpsertTemplateRole(ctx context.Context, ex cp.DBTX, appID int64, code, name string) (id int64, created bool, err error) {
-	err = ex.QueryRowContext(ctx,
-		`INSERT INTO role (app_id, code, name) VALUES ($1,$2,$3)
-		 ON CONFLICT (app_id, code) DO NOTHING RETURNING id`,
-		appID, code, name).Scan(&id)
+	err = ex.QueryRowContext(ctx, `
+		INSERT INTO role (app_id, code, name) VALUES ($1,$2,$3)
+		ON CONFLICT (app_id, code) DO NOTHING
+		RETURNING id`, appID, code, name).Scan(&id)
 	if err == nil {
 		return id, true, nil // 新建
 	}
