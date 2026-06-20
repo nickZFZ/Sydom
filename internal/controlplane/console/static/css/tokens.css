@@ -1,0 +1,41 @@
+/* 设计 token —— 唯一定义色值/尺度处。组件只引语义层 var()。 */
+:root {
+  /* 原语层 primitive（仅语义层引用，组件不直接用） */
+  --c-gray-50:#f7f8fa; --c-gray-100:#eef0f4; --c-gray-200:#e2e6ee; --c-gray-300:#cbd2de;
+  --c-gray-400:#9aa3b2; --c-gray-500:#6b7280; --c-gray-600:#4b5563; --c-gray-700:#374151;
+  --c-gray-800:#262c39; --c-gray-900:#1a1a2e;
+  --c-blue-500:#3b6ef0; --c-blue-600:#2f5ad9; --c-blue-700:#2547b0;
+  --c-red-600:#d23b3b; --c-green-600:#1f9d57; --c-amber-500:#d99317;
+
+  /* 语义层 semantic（组件唯一引用层；深色仅重定义这层） */
+  --color-bg:var(--c-gray-50);
+  --color-surface:#ffffff;
+  --color-text:var(--c-gray-900);
+  --color-text-muted:var(--c-gray-500);
+  --color-border:var(--c-gray-200);
+  --color-primary:var(--c-blue-600);
+  --color-primary-hover:var(--c-blue-700);
+  --color-on-primary:#ffffff;
+  --color-danger:var(--c-red-600);
+  --color-success:var(--c-green-600);
+  --color-warning:var(--c-amber-500);
+  --color-topbar-bg:var(--c-gray-900);
+  --color-topbar-text:var(--c-gray-300);
+  --focus-ring:var(--c-blue-500);
+
+  /* 间距（4px 基） */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:24px; --space-6:32px; --space-7:48px; --space-8:64px;
+  /* 圆角 / 阴影 */
+  --radius-sm:4px; --radius-md:8px; --radius-lg:12px;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.06); --shadow-md:0 4px 12px rgba(16,24,40,.10);
+  /* 排版 */
+  --font-sans:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --text-xs:12px; --text-sm:13px; --text-base:14px; --text-lg:16px; --text-xl:20px; --text-2xl:26px;
+  --leading-tight:1.25; --leading-normal:1.55;
+  --weight-normal:400; --weight-medium:600; --weight-bold:700;
+}
+
+/* 深色就绪占位：将来只在此重定义语义层变量，组件零改动。M3.1 不交付切换控件。 */
+/* [data-theme="dark"] { --color-bg:var(--c-gray-900); --color-surface:var(--c-gray-800); ... } */
