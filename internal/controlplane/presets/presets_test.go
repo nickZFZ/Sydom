@@ -57,6 +57,10 @@ func TestLoad_RejectsCorrupt(t *testing.T) {
 			`"roles":[{"key":"r","data_scopes":[{"resource":"order","condition":not-json}]}]}`,
 		"bad data_scope effect": `{"id":"a","permissions":[],` +
 			`"roles":[{"key":"r","data_scopes":[{"resource":"order","effect":"maybe","condition":{"field":"x","op":"EQ","value":"1"}}]}]}`,
+		// condition:null 是合法 JSON(模板解析通过)，但非真实条件树——由 loader 的显式 guard 拒绝。
+		// 此用例对 loader 校验有齿(区别于裸 not-json 走外层解析失败路径)。
+		"null data_scope condition": `{"id":"a","permissions":[],` +
+			`"roles":[{"key":"r","data_scopes":[{"resource":"order","condition":null}]}]}`,
 	}
 	for name, body := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -78,24 +82,23 @@ func TestLoad_RejectsCorrupt(t *testing.T) {
 }
 
 func TestLoad_ParsesDataScopes(t *testing.T) {
-	tpl, ok := Get("general-admin")
-	if !ok {
-		t.Fatal("general-admin not found")
-	}
-	var found bool
-	for _, r := range tpl.Roles {
-		for _, ds := range r.DataScopes {
-			if ds.Resource == "" {
-				t.Errorf("role %s data_scope missing resource", r.Key)
+	// 正向覆盖两个官方包：general-admin(editor) + ecommerce-ops(customer-service) 各 >=1 示意。
+	var total int
+	for _, tpl := range All() {
+		for _, r := range tpl.Roles {
+			for _, ds := range r.DataScopes {
+				if ds.Resource == "" {
+					t.Errorf("%s role %s data_scope missing resource", tpl.ID, r.Key)
+				}
+				if len(ds.Condition) == 0 {
+					t.Errorf("%s role %s data_scope missing condition", tpl.ID, r.Key)
+				}
+				total++
 			}
-			if len(ds.Condition) == 0 {
-				t.Errorf("role %s data_scope missing condition", r.Key)
-			}
-			found = true
 		}
 	}
-	if !found {
-		t.Error("general-admin should ship >=1 illustrative data_scope")
+	if total < 2 {
+		t.Errorf("两个官方包应各发布 >=1 示意 data_scope，实得 %d", total)
 	}
 }
 

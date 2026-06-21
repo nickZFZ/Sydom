@@ -133,8 +133,10 @@ func load(fsys fs.FS) ([]Template, error) {
 				if ds.Resource == "" {
 					return nil, fmt.Errorf("%s role %q: empty data_scope resource", t.ID, r.Key)
 				}
-				if len(ds.Condition) == 0 || !json.Valid(ds.Condition) {
-					return nil, fmt.Errorf("%s role %q: data_scope condition not valid json", t.ID, r.Key)
+				// condition 必须是一棵真实的条件树：拒绝缺省(nil)、显式 null、以及非法 JSON。
+				// 仅校验合法 JSON，绝不解析条件树语义(DSC-3 透传，语义 fail-close 留 sidecar)。
+				if len(ds.Condition) == 0 || string(ds.Condition) == "null" || !json.Valid(ds.Condition) {
+					return nil, fmt.Errorf("%s role %q: data_scope condition missing or not valid json", t.ID, r.Key)
 				}
 				if ds.Effect != "" && ds.Effect != "allow" && ds.Effect != "deny" {
 					return nil, fmt.Errorf("%s role %q: bad data_scope effect %q", t.ID, r.Key, ds.Effect)
