@@ -115,3 +115,41 @@ func TestApplyTemplate_RejectsColonInIDs(t *testing.T) {
 	_, _, err = m.ApplyTemplate(ctx, appID, "t", nil, roles)
 	require.Error(t, err, "role key 含 ':' 必须拒绝")
 }
+
+func TestApplyTemplate_SeedsDataScopesOnNewRole(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	m := policy.NewPolicyManager(db, nil)
+	ctx := context.Background()
+
+	perms := []cp.PermissionPoint{{Code: "order.read", Resource: "order", Action: "read", Type: "act", Name: "查看订单"}}
+	roles := []policy.TemplateRole{{
+		Key: "cs", Name: "客服", PermissionCodes: []string{"order.read"},
+		DataScopes: []policy.TemplateDataScope{
+			{Resource: "order", Effect: "allow", Condition: `{"field":"department","op":"EQ","value":"$user.department"}`},
+		},
+	}}
+
+	res, d, err := m.ApplyTemplate(ctx, appID, "ecommerce-ops", perms, roles)
+	require.NoError(t, err)
+	require.Equal(t, 1, res.DataScopesCreated)
+	require.NotNil(t, d)             // 数据范围产生 Delta（数据面同步，DSC-6）
+	require.Len(t, d.DataChanges, 1) // 1 条 DataPolicyChange 下发
+
+	// data_policy 落库：subject_type=role、subject_id=确定性 role code、condition 透传。
+	var stype, sid, cond string
+	require.NoError(t, db.QueryRow(
+		`SELECT subject_type, subject_id, condition FROM data_policy WHERE app_id=$1 AND resource='order'`, appID).
+		Scan(&stype, &sid, &cond))
+	require.Equal(t, "role", stype)
+	require.Equal(t, "tpl:ecommerce-ops:cs", sid)
+	require.JSONEq(t, `{"field":"department","op":"EQ","value":"$user.department"}`, cond)
+
+	// re-apply 幂等：角色已存在→跳过，不种数据范围、无重复 data_policy 行（DSC-4）。
+	res2, _, err := m.ApplyTemplate(ctx, appID, "ecommerce-ops", perms, roles)
+	require.NoError(t, err)
+	require.Equal(t, 0, res2.DataScopesCreated)
+	var cnt int
+	require.NoError(t, db.QueryRow(`SELECT count(*) FROM data_policy WHERE app_id=$1`, appID).Scan(&cnt))
+	require.Equal(t, 1, cnt)
+}

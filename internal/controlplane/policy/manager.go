@@ -236,19 +236,28 @@ func (m *PolicyManager) CreateBusinessRole(ctx context.Context, appID int64, nam
 	return roleID, d, err
 }
 
+// TemplateDataScope 是 ApplyTemplate 的数据范围输入（condition 原样透传 JSON 串）。
+type TemplateDataScope struct {
+	Resource  string
+	Effect    string
+	Condition string
+}
+
 // TemplateRole 是 ApplyTemplate 的角色输入（与 presets 解耦，由 mgmt 转换填入）。
 type TemplateRole struct {
 	Key             string
 	Name            string
 	PermissionCodes []string
+	DataScopes      []TemplateDataScope
 }
 
 // ApplyTemplateResult 是一次模板应用的写入统计。
 type ApplyTemplateResult struct {
-	PermsUpserted int // 权限点新增/刷新（source=auto）
-	PermsSkipped  int // 权限点命中 manual 被保留
-	RolesCreated  int // 角色新建
-	RolesSkipped  int // 角色已存在被跳过（确定性 code）
+	PermsUpserted     int // 权限点新增/刷新（source=auto）
+	PermsSkipped      int // 权限点命中 manual 被保留
+	RolesCreated      int // 角色新建
+	RolesSkipped      int // 角色已存在被跳过（确定性 code）
+	DataScopesCreated int // 数据范围新建（仅角色新建时种入）
 }
 
 // ApplyTemplate 原子幂等应用一个模板到 app（单 runVersionedWrite）：
@@ -273,6 +282,8 @@ func (m *PolicyManager) ApplyTemplate(ctx context.Context, appID int64, template
 	d, err := m.runVersionedWrite(ctx, appID, writeOp{
 		action: "apply_template", entityType: "template", entityID: templateID,
 		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
+			var dataChanges []cp.DataPolicyChange
+			var vNew int64 // 懒读：首个 data_scope 时取 tx 锁定版本得 vNew（runVersionedWrite 随后 bump 到同值）
 			// 1. 权限点。
 			var codes []string
 			for _, p := range perms {
@@ -316,8 +327,33 @@ func (m *PolicyManager) ApplyTemplate(ctx context.Context, appID int64, template
 						return nil, e
 					}
 				}
+				// 数据范围预设：仅新建角色种入（幂等，DSC-4），condition 原样透传（DSC-3）。
+				for _, ds := range r.DataScopes {
+					if vNew == 0 {
+						cur, e := store.LockAppVersion(ctx, tx, appID) // 同 tx 已持锁，返回当前版本
+						if e != nil {
+							return nil, e
+						}
+						vNew = cur + 1
+					}
+					eff := ds.Effect
+					if eff == "" {
+						eff = cp.EffectAllow
+					}
+					p := cp.DataPolicy{
+						SubjectType: "role", SubjectID: code, Resource: ds.Resource,
+						Condition: ds.Condition, Effect: eff,
+					}
+					id, _, e := store.UpsertDataPolicy(ctx, tx, appID, p, vNew) // 模板种入恒为新增
+					if e != nil {
+						return nil, e
+					}
+					p.ID = id
+					dataChanges = append(dataChanges, cp.DataPolicyChange{Op: cp.ChangeAdd, Policy: p})
+					res.DataScopesCreated++
+				}
 			}
-			return nil, nil
+			return dataChanges, nil
 		},
 	})
 	if err != nil {
