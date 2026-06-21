@@ -103,7 +103,7 @@ func parseListPage(r *http.Request) (*adminv1.ListPage, error) {
 	}, nil
 }
 
-// appRoutes 是 app 域 22 路由（授权域=path app_id；path 值权威覆写 body）。
+// appRoutes 是 app 域 24 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -480,6 +480,29 @@ func appRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ExplainDecision(ctx, m.(*adminv1.ExplainDecisionRequest))
 			}},
+		{"GET", "/v1/apps/{app_id}/templates", pfx + "ListTemplates",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ListTemplatesRequest{AppId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ListTemplates(ctx, m.(*adminv1.ListTemplatesRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/templates/{template_id}/apply", pfx + "ApplyTemplate",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				// app_id 与 template_id 均取自 path（权威；无 body 字段可伪造）。
+				return &adminv1.ApplyTemplateRequest{AppId: id, TemplateId: r.PathValue("template_id")}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ApplyTemplate(ctx, m.(*adminv1.ApplyTemplateRequest))
+			}},
 	}
 }
 
@@ -718,7 +741,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 41 路由（app 域 22 + 应用管理 4 + system 域 11 + 账户层 4）。
+// allRoutes 汇总全部 43 路由（app 域 24 + 应用管理 4 + system 域 11 + 账户层 4）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
