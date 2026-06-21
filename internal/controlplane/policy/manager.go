@@ -336,6 +336,8 @@ func (m *PolicyManager) ApplyTemplate(ctx context.Context, appID int64, template
 						}
 						vNew = cur + 1
 					}
+					// 空 effect 归一为 allow：DB 侧 UpsertDataPolicy 已归一，此处归一是为
+					// 下方进 Delta→audit→数据面广播的 Policy.Effect 与库内一致（勿删）。
 					eff := ds.Effect
 					if eff == "" {
 						eff = cp.EffectAllow

@@ -153,3 +153,30 @@ func TestApplyTemplate_SeedsDataScopesOnNewRole(t *testing.T) {
 	require.NoError(t, db.QueryRow(`SELECT count(*) FROM data_policy WHERE app_id=$1`, appID).Scan(&cnt))
 	require.Equal(t, 1, cnt)
 }
+
+// 空 effect 必须归一为 allow——且 DB 行与广播的 Delta.Policy.Effect 都为 "allow"（不能只归一库内）。
+func TestApplyTemplate_EmptyEffectNormalizesToAllow(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	m := policy.NewPolicyManager(db, nil)
+	ctx := context.Background()
+
+	perms := []cp.PermissionPoint{{Code: "order.read", Resource: "order", Action: "read", Type: "act", Name: "查看订单"}}
+	roles := []policy.TemplateRole{{
+		Key: "cs", Name: "客服", PermissionCodes: []string{"order.read"},
+		DataScopes: []policy.TemplateDataScope{
+			{Resource: "order", Effect: "", Condition: `{"field":"owner_id","op":"EQ","value":"$user.id"}`},
+		},
+	}}
+
+	res, d, err := m.ApplyTemplate(ctx, appID, "ecommerce-ops", perms, roles)
+	require.NoError(t, err)
+	require.Equal(t, 1, res.DataScopesCreated)
+	require.Len(t, d.DataChanges, 1)
+	require.Equal(t, "allow", d.DataChanges[0].Policy.Effect, "广播 Delta 的 effect 必须归一为 allow")
+
+	var effect string
+	require.NoError(t, db.QueryRow(
+		`SELECT effect FROM data_policy WHERE app_id=$1 AND resource='order'`, appID).Scan(&effect))
+	require.Equal(t, "allow", effect, "库内 effect 必须归一为 allow")
+}
