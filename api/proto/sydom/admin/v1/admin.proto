@@ -71,6 +71,13 @@ service AdminService {
   // —— 业务语言预设模板（M3.2）——
   rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
   rpc ApplyTemplate(ApplyTemplateRequest) returns (ApplyTemplateResponse);
+
+  // —— 租户自有模板（M3.2c-2）——
+  rpc SaveAppAsTemplate(SaveAppAsTemplateRequest) returns (TenantTemplateRef);
+  rpc ListTenantTemplates(ListTenantTemplatesRequest) returns (ListTenantTemplatesResponse);
+  rpc GetTenantTemplate(GetTenantTemplateRequest) returns (TenantTemplate);
+  rpc ApplyTenantTemplate(ApplyTenantTemplateRequest) returns (ApplyTemplateResponse);
+  rpc DeleteTenantTemplate(DeleteTenantTemplateRequest) returns (WriteResponse);
 }
 
 // WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
@@ -496,4 +503,49 @@ message ApplyTemplateResponse {
   uint32 roles_created = 3;
   uint32 roles_skipped = 4;
   uint32 data_scopes_created = 5;
+}
+
+// —— 租户自有模板（M3.2c-2）——
+message SaveAppAsTemplateRequest {
+  uint64 app_id = 1;
+  string name = 2;
+  string description = 3;
+}
+message TenantTemplateRef {
+  uint64 id = 1;
+  string name = 2;
+}
+message ListTenantTemplatesRequest {
+  uint64 tenant_id = 1;
+  ListPage page = 2;
+}
+message TenantTemplateSummary {
+  uint64 id = 1;
+  string name = 2;
+  string description = 3;
+  uint64 source_app_id = 4;
+}
+message ListTenantTemplatesResponse {
+  repeated TenantTemplateSummary templates = 1;
+  uint32 total = 2;
+}
+message GetTenantTemplateRequest {
+  uint64 tenant_id = 1;
+  uint64 template_id = 2;
+}
+message TenantTemplate {
+  uint64 id = 1;
+  string name = 2;
+  string description = 3;
+  uint64 source_app_id = 4;
+  repeated TemplatePermission permissions = 5;
+  repeated TemplateRole roles = 6;
+}
+message ApplyTenantTemplateRequest {
+  uint64 app_id = 1;
+  uint64 template_id = 2;
+}
+message DeleteTenantTemplateRequest {
+  uint64 tenant_id = 1;
+  uint64 template_id = 2;
 }

@@ -61,6 +61,11 @@ const (
 	AdminService_QueryAdminAuditLog_FullMethodName      = "/sydom.admin.v1.AdminService/QueryAdminAuditLog"
 	AdminService_ListTemplates_FullMethodName           = "/sydom.admin.v1.AdminService/ListTemplates"
 	AdminService_ApplyTemplate_FullMethodName           = "/sydom.admin.v1.AdminService/ApplyTemplate"
+	AdminService_SaveAppAsTemplate_FullMethodName       = "/sydom.admin.v1.AdminService/SaveAppAsTemplate"
+	AdminService_ListTenantTemplates_FullMethodName     = "/sydom.admin.v1.AdminService/ListTenantTemplates"
+	AdminService_GetTenantTemplate_FullMethodName       = "/sydom.admin.v1.AdminService/GetTenantTemplate"
+	AdminService_ApplyTenantTemplate_FullMethodName     = "/sydom.admin.v1.AdminService/ApplyTenantTemplate"
+	AdminService_DeleteTenantTemplate_FullMethodName    = "/sydom.admin.v1.AdminService/DeleteTenantTemplate"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -120,6 +125,12 @@ type AdminServiceClient interface {
 	// —— 业务语言预设模板（M3.2）——
 	ListTemplates(ctx context.Context, in *ListTemplatesRequest, opts ...grpc.CallOption) (*ListTemplatesResponse, error)
 	ApplyTemplate(ctx context.Context, in *ApplyTemplateRequest, opts ...grpc.CallOption) (*ApplyTemplateResponse, error)
+	// —— 租户自有模板（M3.2c-2）——
+	SaveAppAsTemplate(ctx context.Context, in *SaveAppAsTemplateRequest, opts ...grpc.CallOption) (*TenantTemplateRef, error)
+	ListTenantTemplates(ctx context.Context, in *ListTenantTemplatesRequest, opts ...grpc.CallOption) (*ListTenantTemplatesResponse, error)
+	GetTenantTemplate(ctx context.Context, in *GetTenantTemplateRequest, opts ...grpc.CallOption) (*TenantTemplate, error)
+	ApplyTenantTemplate(ctx context.Context, in *ApplyTenantTemplateRequest, opts ...grpc.CallOption) (*ApplyTemplateResponse, error)
+	DeleteTenantTemplate(ctx context.Context, in *DeleteTenantTemplateRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 }
 
 type adminServiceClient struct {
@@ -508,6 +519,51 @@ func (c *adminServiceClient) ApplyTemplate(ctx context.Context, in *ApplyTemplat
 	return out, nil
 }
 
+func (c *adminServiceClient) SaveAppAsTemplate(ctx context.Context, in *SaveAppAsTemplateRequest, opts ...grpc.CallOption) (*TenantTemplateRef, error) {
+	out := new(TenantTemplateRef)
+	err := c.cc.Invoke(ctx, AdminService_SaveAppAsTemplate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ListTenantTemplates(ctx context.Context, in *ListTenantTemplatesRequest, opts ...grpc.CallOption) (*ListTenantTemplatesResponse, error) {
+	out := new(ListTenantTemplatesResponse)
+	err := c.cc.Invoke(ctx, AdminService_ListTenantTemplates_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) GetTenantTemplate(ctx context.Context, in *GetTenantTemplateRequest, opts ...grpc.CallOption) (*TenantTemplate, error) {
+	out := new(TenantTemplate)
+	err := c.cc.Invoke(ctx, AdminService_GetTenantTemplate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ApplyTenantTemplate(ctx context.Context, in *ApplyTenantTemplateRequest, opts ...grpc.CallOption) (*ApplyTemplateResponse, error) {
+	out := new(ApplyTemplateResponse)
+	err := c.cc.Invoke(ctx, AdminService_ApplyTenantTemplate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteTenantTemplate(ctx context.Context, in *DeleteTenantTemplateRequest, opts ...grpc.CallOption) (*WriteResponse, error) {
+	out := new(WriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_DeleteTenantTemplate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility
@@ -565,6 +621,12 @@ type AdminServiceServer interface {
 	// —— 业务语言预设模板（M3.2）——
 	ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error)
 	ApplyTemplate(context.Context, *ApplyTemplateRequest) (*ApplyTemplateResponse, error)
+	// —— 租户自有模板（M3.2c-2）——
+	SaveAppAsTemplate(context.Context, *SaveAppAsTemplateRequest) (*TenantTemplateRef, error)
+	ListTenantTemplates(context.Context, *ListTenantTemplatesRequest) (*ListTenantTemplatesResponse, error)
+	GetTenantTemplate(context.Context, *GetTenantTemplateRequest) (*TenantTemplate, error)
+	ApplyTenantTemplate(context.Context, *ApplyTenantTemplateRequest) (*ApplyTemplateResponse, error)
+	DeleteTenantTemplate(context.Context, *DeleteTenantTemplateRequest) (*WriteResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -697,6 +759,21 @@ func (UnimplementedAdminServiceServer) ListTemplates(context.Context, *ListTempl
 }
 func (UnimplementedAdminServiceServer) ApplyTemplate(context.Context, *ApplyTemplateRequest) (*ApplyTemplateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ApplyTemplate not implemented")
+}
+func (UnimplementedAdminServiceServer) SaveAppAsTemplate(context.Context, *SaveAppAsTemplateRequest) (*TenantTemplateRef, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveAppAsTemplate not implemented")
+}
+func (UnimplementedAdminServiceServer) ListTenantTemplates(context.Context, *ListTenantTemplatesRequest) (*ListTenantTemplatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTenantTemplates not implemented")
+}
+func (UnimplementedAdminServiceServer) GetTenantTemplate(context.Context, *GetTenantTemplateRequest) (*TenantTemplate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTenantTemplate not implemented")
+}
+func (UnimplementedAdminServiceServer) ApplyTenantTemplate(context.Context, *ApplyTenantTemplateRequest) (*ApplyTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ApplyTenantTemplate not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteTenantTemplate(context.Context, *DeleteTenantTemplateRequest) (*WriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTenantTemplate not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 
@@ -1467,6 +1544,96 @@ func _AdminService_ApplyTemplate_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_SaveAppAsTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveAppAsTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).SaveAppAsTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_SaveAppAsTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).SaveAppAsTemplate(ctx, req.(*SaveAppAsTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ListTenantTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTenantTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ListTenantTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ListTenantTemplates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ListTenantTemplates(ctx, req.(*ListTenantTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_GetTenantTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTenantTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetTenantTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetTenantTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetTenantTemplate(ctx, req.(*GetTenantTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ApplyTenantTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApplyTenantTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ApplyTenantTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ApplyTenantTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ApplyTenantTemplate(ctx, req.(*ApplyTenantTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteTenantTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTenantTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteTenantTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteTenantTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteTenantTemplate(ctx, req.(*DeleteTenantTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1641,6 +1808,26 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ApplyTemplate",
 			Handler:    _AdminService_ApplyTemplate_Handler,
+		},
+		{
+			MethodName: "SaveAppAsTemplate",
+			Handler:    _AdminService_SaveAppAsTemplate_Handler,
+		},
+		{
+			MethodName: "ListTenantTemplates",
+			Handler:    _AdminService_ListTenantTemplates_Handler,
+		},
+		{
+			MethodName: "GetTenantTemplate",
+			Handler:    _AdminService_GetTenantTemplate_Handler,
+		},
+		{
+			MethodName: "ApplyTenantTemplate",
+			Handler:    _AdminService_ApplyTenantTemplate_Handler,
+		},
+		{
+			MethodName: "DeleteTenantTemplate",
+			Handler:    _AdminService_DeleteTenantTemplate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
