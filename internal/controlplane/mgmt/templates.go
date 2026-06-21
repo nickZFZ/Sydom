@@ -35,7 +35,13 @@ func (s *AdminServer) ApplyTemplate(ctx context.Context, r *adminv1.ApplyTemplat
 	}
 	roles := make([]policy.TemplateRole, 0, len(tpl.Roles))
 	for _, rr := range tpl.Roles {
-		roles = append(roles, policy.TemplateRole{Key: rr.Key, Name: rr.Name, PermissionCodes: rr.PermissionCodes})
+		tr := policy.TemplateRole{Key: rr.Key, Name: rr.Name, PermissionCodes: rr.PermissionCodes}
+		for _, ds := range rr.DataScopes {
+			tr.DataScopes = append(tr.DataScopes, policy.TemplateDataScope{
+				Resource: ds.Resource, Effect: ds.Effect, Condition: string(ds.Condition),
+			})
+		}
+		roles = append(roles, tr)
 	}
 	res, _, err := s.mgr.ApplyTemplate(ctx, int64(r.AppId), tpl.ID, perms, roles)
 	if err != nil {
@@ -46,6 +52,7 @@ func (s *AdminServer) ApplyTemplate(ctx context.Context, r *adminv1.ApplyTemplat
 		PermissionsSkipped:  uint32(res.PermsSkipped),
 		RolesCreated:        uint32(res.RolesCreated),
 		RolesSkipped:        uint32(res.RolesSkipped),
+		DataScopesCreated:   uint32(res.DataScopesCreated),
 	}, nil
 }
 
@@ -57,9 +64,15 @@ func toProtoTemplate(t presets.Template) *adminv1.Template {
 		})
 	}
 	for _, r := range t.Roles {
-		pt.Roles = append(pt.Roles, &adminv1.TemplateRole{
+		tr := &adminv1.TemplateRole{
 			Key: r.Key, Name: r.Name, Description: r.Description, PermissionCodes: r.PermissionCodes,
-		})
+		}
+		for _, ds := range r.DataScopes {
+			tr.DataScopes = append(tr.DataScopes, &adminv1.TemplateDataScope{
+				Resource: ds.Resource, Effect: ds.Effect, Condition: string(ds.Condition),
+			})
+		}
+		pt.Roles = append(pt.Roles, tr)
 	}
 	return pt
 }

@@ -73,6 +73,35 @@ func TestApplyTemplate_UnknownTemplate(t *testing.T) {
 	require.Equal(t, codes.InvalidArgument, status.Code(err))
 }
 
+func TestApplyTemplate_DataScopesCreated(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	srv := accountsSrv(db)
+
+	resp, err := srv.ApplyTemplate(context.Background(),
+		&adminv1.ApplyTemplateRequest{AppId: uint64(appID), TemplateId: "ecommerce-ops"})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, resp.DataScopesCreated, uint32(1)) // ecommerce-ops customer-service 带 1 示意
+}
+
+func TestListTemplates_IncludesDataScopes(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	srv := accountsSrv(db)
+
+	resp, err := srv.ListTemplates(context.Background(), &adminv1.ListTemplatesRequest{AppId: uint64(appID)})
+	require.NoError(t, err)
+	var found bool
+	for _, tpl := range resp.Templates {
+		for _, r := range tpl.Roles {
+			if len(r.DataScopes) > 0 && r.DataScopes[0].Condition != "" {
+				found = true
+			}
+		}
+	}
+	require.True(t, found, "内置包须透出 data_scopes（含 condition）")
+}
+
 func TestApplyTemplate_CrossTenant403(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	ctx := context.Background()
