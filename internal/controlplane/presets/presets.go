@@ -33,13 +33,21 @@ type Permission struct {
 	Description string `json:"description"`
 }
 
+// DataScope 是预设角色的一条符号化数据范围（condition 为既有条件树 JSON，$user.xxx 符号保留，原样透传）。
+type DataScope struct {
+	Resource  string          `json:"resource"`
+	Effect    string          `json:"effect"` // 空串按 allow
+	Condition json.RawMessage `json:"condition"`
+}
+
 // Role 是预设包中的一个业务角色（key 用于确定性 code，permission_codes 引用本包权限点）。
 type Role struct {
-	Key             string   `json:"key"`
-	Name            string   `json:"name"`
-	Description     string   `json:"description"`
-	PermissionCodes []string `json:"permission_codes"`
-	// data_scopes / onboarding 预留：本片不解析（M3.2c/M3.4），未知字段被 json 忽略。
+	Key             string      `json:"key"`
+	Name            string      `json:"name"`
+	Description     string      `json:"description"`
+	PermissionCodes []string    `json:"permission_codes"`
+	DataScopes      []DataScope `json:"data_scopes"`
+	// onboarding 预留：本片不解析（M3.4），未知字段被 json 忽略。
 }
 
 // Template 是一个预设包。
@@ -119,6 +127,17 @@ func load(fsys fs.FS) ([]Template, error) {
 			for _, pc := range r.PermissionCodes {
 				if !codes[pc] {
 					return nil, fmt.Errorf("%s role %q: unknown permission code %q", t.ID, r.Key, pc)
+				}
+			}
+			for _, ds := range r.DataScopes {
+				if ds.Resource == "" {
+					return nil, fmt.Errorf("%s role %q: empty data_scope resource", t.ID, r.Key)
+				}
+				if len(ds.Condition) == 0 || !json.Valid(ds.Condition) {
+					return nil, fmt.Errorf("%s role %q: data_scope condition not valid json", t.ID, r.Key)
+				}
+				if ds.Effect != "" && ds.Effect != "allow" && ds.Effect != "deny" {
+					return nil, fmt.Errorf("%s role %q: bad data_scope effect %q", t.ID, r.Key, ds.Effect)
 				}
 			}
 		}

@@ -47,6 +47,16 @@ func TestLoad_RejectsCorrupt(t *testing.T) {
 		// 确定性 code "tpl:a:" + 60×x = 66 字符 > VARCHAR(64)：启动期拒绝（左移失败）。
 		"role code too long": `{"id":"a","permissions":[],` +
 			`"roles":[{"key":"` + strings.Repeat("x", 60) + `"}]}`,
+		"empty data_scope resource": `{"id":"a","permissions":[],` +
+			`"roles":[{"key":"r","data_scopes":[{"resource":"","condition":{"field":"x","op":"EQ","value":"1"}}]}]}`,
+		// condition 值为裸字符串 not-json（不带引号），JSON 解析时 json.RawMessage 会接收到
+		// 字面量 not-json，json.Valid 返回 false，loader 拒绝。
+		// 注：原计划写 "not-json"（含引号），那是合法 JSON 字符串值，json.Valid=true 不会被拒；
+		// 此处修正为真正非法的 JSON 字节序列（DSC-3：校验合法 JSON，不解析语义）。
+		"invalid data_scope condition json": `{"id":"a","permissions":[],` +
+			`"roles":[{"key":"r","data_scopes":[{"resource":"order","condition":not-json}]}]}`,
+		"bad data_scope effect": `{"id":"a","permissions":[],` +
+			`"roles":[{"key":"r","data_scopes":[{"resource":"order","effect":"maybe","condition":{"field":"x","op":"EQ","value":"1"}}]}]}`,
 	}
 	for name, body := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -64,6 +74,28 @@ func TestLoad_RejectsCorrupt(t *testing.T) {
 	}
 	if _, err := load(fsys); err == nil {
 		t.Error("duplicate template id should fail-close, got nil")
+	}
+}
+
+func TestLoad_ParsesDataScopes(t *testing.T) {
+	tpl, ok := Get("general-admin")
+	if !ok {
+		t.Fatal("general-admin not found")
+	}
+	var found bool
+	for _, r := range tpl.Roles {
+		for _, ds := range r.DataScopes {
+			if ds.Resource == "" {
+				t.Errorf("role %s data_scope missing resource", r.Key)
+			}
+			if len(ds.Condition) == 0 {
+				t.Errorf("role %s data_scope missing condition", r.Key)
+			}
+			found = true
+		}
+	}
+	if !found {
+		t.Error("general-admin should ship >=1 illustrative data_scope")
 	}
 }
 
