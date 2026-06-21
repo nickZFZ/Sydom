@@ -465,6 +465,13 @@ message TemplateRole {
   string name = 2;
   string description = 3;
   repeated string permission_codes = 4;
+  repeated TemplateDataScope data_scopes = 5;
+}
+
+message TemplateDataScope {
+  string resource = 1;
+  string effect = 2;
+  string condition = 3; // 条件树 JSON 串（$user.xxx 符号；原样透传）
 }
 
 message Template {
@@ -488,4 +495,5 @@ message ApplyTemplateResponse {
   uint32 permissions_skipped = 2;
   uint32 roles_created = 3;
   uint32 roles_skipped = 4;
+  uint32 data_scopes_created = 5;
 }
