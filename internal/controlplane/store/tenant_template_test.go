@@ -35,7 +35,7 @@ func TestTenantTemplateCRUD(t *testing.T) {
 	require.ErrorIs(t, err, store.ErrNotFound)
 
 	// List（tenant-scoped）。
-	rows, total, err := store.ListTenantTemplates(ctx, db, tID, 50, 0, "id", "ASC", "")
+	rows, total, err := store.ListTenantTemplates(ctx, db, tID, 50, 0, "id ASC", "")
 	require.NoError(t, err)
 	require.Equal(t, uint32(1), total)
 	require.Len(t, rows, 1)

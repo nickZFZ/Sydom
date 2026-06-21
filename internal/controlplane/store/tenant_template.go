@@ -11,7 +11,6 @@ import (
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 )
 
-// ErrNotFound はレコードが存在しないか、テナント外にある場合に返す哨兵。
 // ErrNotFound 表示记录不存在或跨租户访问——fail-close：不泄露存在性。
 var ErrNotFound = errors.New("store: not found")
 
@@ -64,8 +63,8 @@ func GetTenantTemplate(ctx context.Context, ex cp.DBTX, tenantID, id int64) (Ten
 }
 
 // ListTenantTemplates 列出某租户的模板（分页/搜索/排序），返回行切片与 total。
-// orderCol/orderDir 由调用方经白名单 resolveOrder 产出受控标识符，本函数信任上游已校验。
-func ListTenantTemplates(ctx context.Context, ex cp.DBTX, tenantID int64, limit, offset int, orderCol, orderDir, q string) ([]TenantTemplate, uint32, error) {
+// order 由调用方经 resolveOrder 白名单化后整体传入（如 "id ASC"），本函数信任上游已校验。
+func ListTenantTemplates(ctx context.Context, ex cp.DBTX, tenantID int64, limit, offset int, order, q string) ([]TenantTemplate, uint32, error) {
 	conds := []string{"tenant_id = $1"}
 	args := []any{tenantID}
 	if q != "" {
@@ -80,10 +79,10 @@ func ListTenantTemplates(ctx context.Context, ex cp.DBTX, tenantID int64, limit,
 	}
 
 	args = append(args, limit, offset)
-	// #nosec G201 — orderCol/orderDir 由调用方白名单 resolveOrder 产出，非用户原始输入。
+	// #nosec G201 — order 由调用方 resolveOrder 白名单化后整体传入，非用户原始输入。
 	rows, err := ex.QueryContext(ctx,
 		`SELECT id, tenant_id, name, COALESCE(description,''), source_app_id FROM tenant_template WHERE `+where+
-			` ORDER BY `+orderCol+` `+orderDir+
+			` ORDER BY `+order+
 			` LIMIT $`+strconv.Itoa(len(args)-1)+` OFFSET $`+strconv.Itoa(len(args)),
 		args...)
 	if err != nil {
