@@ -39,8 +39,9 @@ func (h *Handler) opsTemplates(w http.ResponseWriter, r *http.Request) {
 	// 渲染视图：每模板的权限点/角色经 bizterm 渲染业务名（capabilityName 兜底缺名）。
 	type capRow struct{ Name string }
 	type roleRow struct {
-		Name string
-		Caps []string
+		Name   string
+		Caps   []string
+		Scopes []string
 	}
 	type tplView struct {
 		ID, Name, Description string
@@ -66,6 +67,9 @@ func (h *Handler) opsTemplates(w http.ResponseWriter, r *http.Request) {
 					cn = "（未知能力）" // 防御：role 引用了不在本模板的 code（理论不达，不渲染空行）
 				}
 				rr.Caps = append(rr.Caps, cn)
+			}
+			for _, ds := range role.DataScopes {
+				rr.Scopes = append(rr.Scopes, ds.Resource+"：仅 "+conditionPredicate(ds.Condition))
 			}
 			v.Roles = append(v.Roles, rr)
 		}
@@ -108,11 +112,12 @@ func (h *Handler) opsApplyTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderPage(w, r, "ops_template_applied.html", http.StatusOK, map[string]any{
-		"AppID":         appID,
-		"PermsUpserted": resp.PermissionsUpserted,
-		"PermsSkipped":  resp.PermissionsSkipped,
-		"RolesCreated":  resp.RolesCreated,
-		"RolesSkipped":  resp.RolesSkipped,
-		"OpsNav":        "templates",
+		"AppID":             appID,
+		"PermsUpserted":     resp.PermissionsUpserted,
+		"PermsSkipped":      resp.PermissionsSkipped,
+		"RolesCreated":      resp.RolesCreated,
+		"RolesSkipped":      resp.RolesSkipped,
+		"DataScopesCreated": resp.DataScopesCreated,
+		"OpsNav":            "templates",
 	})
 }

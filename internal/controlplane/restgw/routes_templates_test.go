@@ -68,6 +68,20 @@ func TestREST_ApplyTemplate_OK(t *testing.T) {
 	require.EqualValues(t, 0, ar.RolesCreated)
 }
 
+// TestREST_ApplyTemplate_DataScopesCreated 验证 POST apply ecommerce-ops 返回 DataScopesCreated >= 1。
+func TestREST_ApplyTemplate_DataScopesCreated(t *testing.T) {
+	ts, db := newTestGW(t)
+	c := rootClient(t, ts.URL)
+	appID := uint64(dbtest.SeedApp(t, db))
+
+	resp, body := c.do("POST", "/v1/apps/"+u(appID)+"/templates/ecommerce-ops/apply", nil)
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+
+	var ar adminv1.ApplyTemplateResponse
+	require.NoError(t, protoUnmarshal(body, &ar))
+	require.GreaterOrEqual(t, ar.DataScopesCreated, uint32(1))
+}
+
 // TestREST_ApplyTemplate_UnknownTemplate 验证未知 template_id → InvalidArgument → HTTP 400
 // （fail-close 不泄露存在性）。
 func TestREST_ApplyTemplate_UnknownTemplate(t *testing.T) {

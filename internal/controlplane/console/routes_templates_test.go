@@ -61,6 +61,20 @@ func TestConsole_ApplyTemplate_CSRF(t *testing.T) {
 	require.Contains(t, body, "新建")
 }
 
+// TestConsole_Templates_ShowsDataScope 验证模板库预览：body 含符号谓词 $user.（DSC-2），
+// 且不枚举真实行（不含 SQL 字面行 department = '）。
+func TestConsole_Templates_ShowsDataScope(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	page, err := c.Get(ts.URL + fmt.Sprintf("/ops/apps/%d/templates", appID))
+	require.NoError(t, err)
+	body := readBody(t, page)
+	require.Contains(t, body, "$user.")            // 符号保留（DSC-2）
+	require.NotContains(t, body, "department = '") // 不枚举真实行（无 SQL 字面行）
+}
+
 // TestConsole_ApplyTemplate_Idempotent 验证幂等语义：
 // 连续 apply 两次同 template_id；第二次摘要显示角色全部「跳过」（已存在）。
 func TestConsole_ApplyTemplate_Idempotent(t *testing.T) {

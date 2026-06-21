@@ -10,7 +10,8 @@
 <h1>模板已应用</h1>
 <div class="alert alert-info" role="status">
 权限点：新增/刷新 {{.PermsUpserted}}，跳过（已有人工配置）{{.PermsSkipped}}；
-角色：新建 {{.RolesCreated}}，跳过（已存在）{{.RolesSkipped}}。
+角色：新建 {{.RolesCreated}}，跳过（已存在）{{.RolesSkipped}}；
+数据范围：新建 {{.DataScopesCreated}}。
 </div>
 <p><a class="btn btn-primary" href="/ops/apps/{{.AppID}}/people">去人员页分配角色</a>
 <a class="btn" href="/ops/apps/{{.AppID}}/templates">返回模板库</a></p>

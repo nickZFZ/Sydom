@@ -18,7 +18,7 @@
 <h3>能力</h3>
 <ul class="list-plain">{{range .Caps}}<li>{{.Name}}</li>{{end}}</ul>
 <h3>角色</h3>
-<ul class="list-plain">{{range .Roles}}<li>{{.Name}}：{{range $i, $c := .Caps}}{{if $i}}、{{end}}{{$c}}{{end}}</li>{{end}}</ul>
+<ul class="list-plain">{{range .Roles}}<li>{{.Name}}：{{range $i, $c := .Caps}}{{if $i}}、{{end}}{{$c}}{{end}}{{if .Scopes}}<br><span class="hint">数据范围：{{range $i, $s := .Scopes}}{{if $i}}；{{end}}{{$s}}{{end}}</span>{{end}}</li>{{end}}</ul>
 </details>
 <form method="post" action="/ops/apps/{{$.AppID}}/templates/apply" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
