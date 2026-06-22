@@ -1,0 +1,36 @@
+{{define "title"}}模板预览 · 运营台 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+<a href="/ops/apps/{{.AppID}}/templates" {{if eq .OpsNav "templates"}}class="active"{{end}}>模板库</a>
+</aside>
+<section>
+<nav class="breadcrumb" aria-label="面包屑"><a href="/ops/apps/{{.AppID}}/templates">模板库</a> · 我的模板 · 预览</nav>
+<h1>{{.Name}}</h1>
+<p class="hint">{{.Description}}</p>
+
+<div class="card" style="margin-bottom:var(--space-4)">
+<h2 class="card-header">能力 <span class="badge badge-muted">{{len .Caps}} 项</span></h2>
+{{if .Caps}}
+<ul class="list-plain">{{range .Caps}}<li>{{.}}</li>{{end}}</ul>
+{{else}}<p class="hint">（无能力）</p>{{end}}
+</div>
+
+<div class="card" style="margin-bottom:var(--space-4)">
+<h2 class="card-header">角色 <span class="badge badge-muted">{{len .Roles}} 个</span></h2>
+{{if .Roles}}
+<ul class="list-plain">{{range .Roles}}<li>{{.Name}}：{{range $i, $c := .Caps}}{{if $i}}、{{end}}{{$c}}{{end}}{{if .Scopes}}<br><span class="hint">数据范围：{{range $i, $s := .Scopes}}{{if $i}}；{{end}}{{$s}}{{end}}</span>{{end}}</li>{{end}}</ul>
+{{else}}<p class="hint">（无角色）</p>{{end}}
+</div>
+
+<form method="post" action="/ops/apps/{{.AppID}}/tenant-templates/{{.TemplateID}}/apply" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<button class="btn btn-primary">应用到本应用</button>
+</form>
+<form method="post" action="/ops/apps/{{.AppID}}/tenant-templates/{{.TemplateID}}/delete" class="inline-form" style="display:inline">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<button class="btn">删除模板</button>
+</form>
+<p><a href="/ops/apps/{{.AppID}}/templates">返回模板库</a></p>
+</section></div>{{end}}

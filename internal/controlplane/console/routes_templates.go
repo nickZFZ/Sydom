@@ -75,8 +75,30 @@ func (h *Handler) opsTemplates(w http.ResponseWriter, r *http.Request) {
 		}
 		views = append(views, v)
 	}
+
+	// 「我的模板」（租户自有模板）：租户派生自 app（Console 会话不含 tenant_id）。
+	// fail-soft：派生/授权/调用任一出错（含 PermissionDenied）→ MyTemplates=nil，
+	// 不破坏官方预设主区；隐藏即空，不泄露存在性（安全：scopeTenant 跨租户自然为空）。
+	type myTplRow struct {
+		ID          uint64
+		Name        string
+		Description string
+	}
+	var myTemplates []myTplRow
+	if tid, terr := h.tenantOfApp(r.Context(), appID); terr == nil {
+		ltMsg := &adminv1.ListTenantTemplatesRequest{TenantId: tid, Page: listPageFromReq(r)}
+		if lctx, aerr := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListTenantTemplates", principal, ltMsg); aerr == nil {
+			if lresp, lerr := h.srv.ListTenantTemplates(lctx, ltMsg); lerr == nil {
+				for _, t := range lresp.Templates {
+					myTemplates = append(myTemplates, myTplRow{ID: t.Id, Name: t.Name, Description: t.Description})
+				}
+			}
+		}
+	}
+
 	h.renderPage(w, r, "ops_templates.html", http.StatusOK, map[string]any{
-		"AppID": appID, "Templates": views, "CSRF": sess.CSRF, "OpsNav": "templates",
+		"AppID": appID, "Templates": views, "MyTemplates": myTemplates,
+		"CSRF": sess.CSRF, "OpsNav": "templates",
 	})
 }
 

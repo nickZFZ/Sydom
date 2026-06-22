@@ -30,4 +30,33 @@
 {{else}}
 <div class="empty-state">暂无可用模板。</div>
 {{end}}
+
+<h1 style="margin-top:var(--space-6)">我的模板</h1>
+<p class="hint">把本应用当前的权限点与业务角色存为本租户专属模板，便于复用到其他应用。</p>
+{{if .MyTemplates}}
+{{range .MyTemplates}}
+<div class="card" style="margin-bottom:var(--space-4)">
+<h2 class="card-header">{{.Name}}</h2>
+<p class="hint">{{.Description}}</p>
+<a class="btn" href="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}">预览</a>
+<form method="post" action="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}/delete" class="inline-form" style="display:inline">
+<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+<button class="btn">删除</button>
+</form>
+</div>
+{{end}}
+{{else}}
+<div class="empty-state">本租户暂无自有模板。</div>
+{{end}}
+
+<div class="card" style="margin-top:var(--space-4)">
+<h2 class="card-header">存为模板</h2>
+<p class="hint">为当前应用的权限点与业务角色拍一份快照，存为本租户模板。</p>
+<form method="post" action="/ops/apps/{{.AppID}}/template-captures" class="inline-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<label>模板名称 <input type="text" name="name" required></label>
+<label>说明 <input type="text" name="description"></label>
+<button class="btn btn-primary">存为模板</button>
+</form>
+</div>
 </section></div>{{end}}
