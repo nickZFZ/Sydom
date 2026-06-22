@@ -52,3 +52,52 @@ func (s *AdminServer) DeleteTenantTemplate(ctx context.Context, r *adminv1.Delet
 	}
 	return &adminv1.WriteResponse{}, nil
 }
+
+// ListTenantTemplates 列出本租户模板（分页/搜索/排序）。
+func (s *AdminServer) ListTenantTemplates(ctx context.Context, r *adminv1.ListTenantTemplatesRequest) (*adminv1.ListTenantTemplatesResponse, error) {
+	order := resolveOrder(r.Page.GetSort(), r.Page.GetOrder(),
+		map[string]string{"id": "id", "name": "name"}, "id")
+	limit, offset := pageOf(r.Page)
+	rows, total, err := store.ListTenantTemplates(ctx, s.db, int64(r.TenantId), limit, offset, order, r.Page.GetQ())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list templates: %v", err)
+	}
+	out := &adminv1.ListTenantTemplatesResponse{Total: total}
+	for _, t := range rows {
+		out.Templates = append(out.Templates, &adminv1.TenantTemplateSummary{
+			Id: uint64(t.ID), Name: t.Name, Description: t.Description, SourceAppId: uint64(t.SourceAppID),
+		})
+	}
+	return out, nil
+}
+
+// GetTenantTemplate 取模板并把 bundle 渲染为预览（含 data_scopes，符号谓词在表现层渲染）。
+func (s *AdminServer) GetTenantTemplate(ctx context.Context, r *adminv1.GetTenantTemplateRequest) (*adminv1.TenantTemplate, error) {
+	t, err := store.GetTenantTemplate(ctx, s.db, int64(r.TenantId), int64(r.TemplateId))
+	if errors.Is(err, store.ErrNotFound) {
+		return nil, status.Error(codes.NotFound, "template not found")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "get template: %v", err)
+	}
+	var b tenanttemplate.Bundle
+	if err := json.Unmarshal(t.Bundle, &b); err != nil {
+		return nil, status.Error(codes.Internal, "bundle parse") // TT-8 fail-close，不回显原文
+	}
+	out := &adminv1.TenantTemplate{Id: uint64(t.ID), Name: t.Name, Description: t.Description, SourceAppId: uint64(t.SourceAppID)}
+	for _, p := range b.Permissions {
+		out.Permissions = append(out.Permissions, &adminv1.TemplatePermission{
+			Code: p.Code, Resource: p.Resource, Action: p.Action, Type: p.Type, Name: p.Name, Description: p.Description,
+		})
+	}
+	for _, role := range b.Roles {
+		tr := &adminv1.TemplateRole{Key: role.Key, Name: role.Name, Description: role.Description, PermissionCodes: role.PermissionCodes}
+		for _, ds := range role.DataScopes {
+			tr.DataScopes = append(tr.DataScopes, &adminv1.TemplateDataScope{
+				Resource: ds.Resource, Effect: ds.Effect, Condition: string(ds.Condition),
+			})
+		}
+		out.Roles = append(out.Roles, tr)
+	}
+	return out, nil
+}

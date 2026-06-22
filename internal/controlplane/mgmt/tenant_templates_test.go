@@ -3,7 +3,6 @@ package mgmt_test
 import (
 	"context"
 	"database/sql"
-	"strconv"
 	"testing"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
@@ -27,13 +26,39 @@ func seedConfiguredApp(t *testing.T, db *sql.DB, appID int64) {
 	require.NoError(t, err)
 	_, _, err = store.UpsertDataPolicy(ctx, db, appID, cp.DataPolicy{
 		SubjectType: "role",
-		SubjectID:   strconv.FormatInt(roleID, 10),
+		SubjectID:   "viewer", // 角色数据策略 subject_id=role.code（与 casbin g 绑定/dataperm 主体匹配一致，见 policy/manager.go:346、filter.go:99）
 		Resource:    "order",
 		Condition:   `{"field":"tenant_id","op":"eq","value":"$user.tenant_id"}`,
 		Effect:      "allow",
 		Description: "仅限本租户订单",
 	}, 1)
 	require.NoError(t, err)
+}
+
+func TestListAndGetTenantTemplate(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	tID, appID := dbtest.SeedAppInTenant(t, db, "t-a", "dom-a", "AK_a")
+	srv := accountsSrv(db)
+	ctx := context.Background()
+	seedConfiguredApp(t, db, appID)
+	ref, _ := srv.SaveAppAsTemplate(ctx, &adminv1.SaveAppAsTemplateRequest{AppId: uint64(appID), Name: "标准后台"})
+
+	lst, err := srv.ListTenantTemplates(ctx, &adminv1.ListTenantTemplatesRequest{TenantId: uint64(tID)})
+	require.NoError(t, err)
+	require.Equal(t, uint32(1), lst.Total)
+	require.Equal(t, "标准后台", lst.Templates[0].Name)
+
+	got, err := srv.GetTenantTemplate(ctx, &adminv1.GetTenantTemplateRequest{TenantId: uint64(tID), TemplateId: ref.Id})
+	require.NoError(t, err)
+	require.NotEmpty(t, got.Permissions)
+	require.NotEmpty(t, got.Roles)
+	require.NotEmpty(t, got.Roles[0].DataScopes)
+	require.Equal(t, "order", got.Roles[0].DataScopes[0].Resource)
+
+	// 跨租户 Get→NotFound（fail-close，不泄露存在性）。
+	tB, _ := dbtest.SeedAppInTenant(t, db, "t-b", "dom-b", "AK_b")
+	_, err = srv.GetTenantTemplate(ctx, &adminv1.GetTenantTemplateRequest{TenantId: uint64(tB), TemplateId: ref.Id})
+	require.Equal(t, codes.NotFound, status.Code(err))
 }
 
 func TestSaveAppAsTemplate_CapturesAndDelete(t *testing.T) {
