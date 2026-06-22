@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
+	cp "github.com/nickZFZ/Sydom/internal/controlplane"
+	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/controlplane/tenanttemplate"
 	"google.golang.org/grpc/codes"
@@ -100,4 +103,54 @@ func (s *AdminServer) GetTenantTemplate(ctx context.Context, r *adminv1.GetTenan
 		out.Roles = append(out.Roles, tr)
 	}
 	return out, nil
+}
+
+// ApplyTenantTemplate 把本租户模板 apply 到本租户目标 app（复用同一 ApplyTemplate 引擎）。
+func (s *AdminServer) ApplyTenantTemplate(ctx context.Context, r *adminv1.ApplyTenantTemplateRequest) (*adminv1.ApplyTemplateResponse, error) {
+	var tenantID int64
+	if err := s.db.QueryRowContext(ctx, `SELECT tenant_id FROM application WHERE id=$1`, int64(r.AppId)).Scan(&tenantID); err != nil {
+		return nil, status.Errorf(codes.Internal, "resolve tenant: %v", err)
+	}
+	t, err := store.GetTenantTemplate(ctx, s.db, tenantID, int64(r.TemplateId))
+	if errors.Is(err, store.ErrNotFound) {
+		return nil, status.Error(codes.NotFound, "template not found")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "get template: %v", err)
+	}
+	var b tenanttemplate.Bundle
+	if err := json.Unmarshal(t.Bundle, &b); err != nil {
+		return nil, status.Error(codes.Internal, "bundle parse")
+	}
+	perms, roles := bundleToApplyInputs(b)
+	res, _, err := s.mgr.ApplyTemplate(ctx, int64(r.AppId), "tt-"+strconv.FormatInt(t.ID, 10), perms, roles)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "apply tenant template: %v", err)
+	}
+	return &adminv1.ApplyTemplateResponse{
+		PermissionsUpserted: uint32(res.PermsUpserted), PermissionsSkipped: uint32(res.PermsSkipped),
+		RolesCreated: uint32(res.RolesCreated), RolesSkipped: uint32(res.RolesSkipped),
+		DataScopesCreated: uint32(res.DataScopesCreated),
+	}, nil
+}
+
+// bundleToApplyInputs 把捕获 bundle 转为 ApplyTemplate 引擎输入（与 presets 路径解耦）。
+func bundleToApplyInputs(b tenanttemplate.Bundle) ([]cp.PermissionPoint, []policy.TemplateRole) {
+	perms := make([]cp.PermissionPoint, 0, len(b.Permissions))
+	for _, p := range b.Permissions {
+		perms = append(perms, cp.PermissionPoint{
+			Code: p.Code, Resource: p.Resource, Action: p.Action, Type: p.Type, Name: p.Name, Description: p.Description,
+		})
+	}
+	roles := make([]policy.TemplateRole, 0, len(b.Roles))
+	for _, r := range b.Roles {
+		tr := policy.TemplateRole{Key: r.Key, Name: r.Name, PermissionCodes: r.PermissionCodes}
+		for _, ds := range r.DataScopes {
+			tr.DataScopes = append(tr.DataScopes, policy.TemplateDataScope{
+				Resource: ds.Resource, Effect: ds.Effect, Condition: string(ds.Condition),
+			})
+		}
+		roles = append(roles, tr)
+	}
+	return perms, roles
 }

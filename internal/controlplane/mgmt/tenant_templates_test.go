@@ -61,6 +61,46 @@ func TestListAndGetTenantTemplate(t *testing.T) {
 	require.Equal(t, codes.NotFound, status.Code(err))
 }
 
+// seedAppInTenant 在既有 tenantID 下新建第二个 app（dbtest 无同租户多 app 助手）。
+func seedAppInTenant(t *testing.T, db *sql.DB, tenantID int64, domain, appKey string) int64 {
+	t.Helper()
+	var appID int64
+	require.NoError(t, db.QueryRow(
+		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
+		 VALUES ($1, $2, $3, $4, '\xab'::bytea) RETURNING id`,
+		tenantID, domain, "second-app", appKey).Scan(&appID))
+	return appID
+}
+
+func TestApplyTenantTemplate_ReusesEngine(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	tID, srcApp := dbtest.SeedAppInTenant(t, db, "t-a", "dom-a", "AK_a")
+	dstApp := seedAppInTenant(t, db, tID, "dom-a2", "AK_a2") // 同租户第二 app
+	srv := accountsSrv(db)
+	ctx := context.Background()
+	seedConfiguredApp(t, db, srcApp)
+
+	ref, err := srv.SaveAppAsTemplate(ctx, &adminv1.SaveAppAsTemplateRequest{AppId: uint64(srcApp), Name: "标准后台"})
+	require.NoError(t, err)
+
+	// apply 到同租户目标 app：复用引擎，角色+数据范围随模板种入。
+	resp, err := srv.ApplyTenantTemplate(ctx, &adminv1.ApplyTenantTemplateRequest{AppId: uint64(dstApp), TemplateId: ref.Id})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, resp.RolesCreated, uint32(1))
+	require.GreaterOrEqual(t, resp.DataScopesCreated, uint32(1))
+
+	// re-apply 幂等：角色已存在→跳过。
+	resp2, err := srv.ApplyTenantTemplate(ctx, &adminv1.ApplyTenantTemplateRequest{AppId: uint64(dstApp), TemplateId: ref.Id})
+	require.NoError(t, err)
+	require.Equal(t, uint32(0), resp2.RolesCreated)
+	require.Equal(t, uint32(0), resp2.DataScopesCreated)
+
+	// 跨租户 fail-close：模板属 t-a，目标 app 属 t-b → store.GetTenantTemplate 自然 NotFound。
+	_, appB := dbtest.SeedAppInTenant(t, db, "t-b", "dom-b", "AK_b")
+	_, err = srv.ApplyTenantTemplate(ctx, &adminv1.ApplyTenantTemplateRequest{AppId: uint64(appB), TemplateId: ref.Id})
+	require.Equal(t, codes.NotFound, status.Code(err))
+}
+
 func TestSaveAppAsTemplate_CapturesAndDelete(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	tID, appID := dbtest.SeedAppInTenant(t, db, "t-a", "dom-a", "AK_a")
