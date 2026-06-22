@@ -13,7 +13,9 @@ import (
 )
 
 // maxBundleRoleKey 限制 bundle role key 长度，使 apply 期确定性 code `tpl:tt-<id>:<key>` 不超 role.code 列宽(64)。
-const maxBundleRoleKey = 40
+// 预算：len("tpl:")4 + len("tt-")3 + id(BIGINT 至多 19 位) + len(":")1 + key(≤30) = 至多 57 ≤ 64，
+// 对整个 BIGINT 取值域成立（即使超长 INSERT 也会被列宽拒、整事务原子回滚，fail-close）。
+const maxBundleRoleKey = 30
 
 // Bundle 是从一个 app 捕获的完整授权模型，可序列化存入 tenant_template.bundle。
 type Bundle struct {
