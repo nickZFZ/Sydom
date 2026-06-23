@@ -38,29 +38,68 @@ type Result struct {
 	DataViews   []DataView
 }
 
-// buildEngine 在只读 tx 内从 DB 物化策略、建瞬态引擎（Compute/Explain 共用，杜绝两份漂移）。
-// 返回引擎、数据策略表、原始 rules/dps（供 Compute 枚举）、域。
-func buildEngine(ctx context.Context, tx cp.DBTX, appID int64) (*kernel.Engine, *dataperm.Table, []cp.Rule, []cp.DataPolicy, string, error) {
-	var domain string
-	if err := tx.QueryRowContext(ctx,
+// readAppPolicy 在只读 tx 内从 DB 读取 domain、casbin rules 和 data policies。
+// 供 buildEngine 和 Simulate 共用（避免重复 DB 访问代码）。
+func readAppPolicy(ctx context.Context, tx cp.DBTX, appID int64) (domain string, rules []cp.Rule, dps []cp.DataPolicy, err error) {
+	if err = tx.QueryRowContext(ctx,
 		`SELECT domain FROM application WHERE id=$1`, appID).Scan(&domain); err != nil {
-		return nil, nil, nil, nil, "", fmt.Errorf("effperm: read domain: %w", err)
+		return "", nil, nil, fmt.Errorf("effperm: read domain: %w", err)
 	}
-	rules, err := store.ReadAppRules(ctx, tx, appID)
+	rules, err = store.ReadAppRules(ctx, tx, appID)
 	if err != nil {
-		return nil, nil, nil, nil, "", fmt.Errorf("effperm: read rules: %w", err)
+		return "", nil, nil, fmt.Errorf("effperm: read rules: %w", err)
 	}
-	dps, err := store.ReadAppDataPolicies(ctx, tx, appID)
+	dps, err = store.ReadAppDataPolicies(ctx, tx, appID)
 	if err != nil {
-		return nil, nil, nil, nil, "", fmt.Errorf("effperm: read data policies: %w", err)
+		return "", nil, nil, fmt.Errorf("effperm: read data policies: %w", err)
 	}
+	return domain, rules, dps, nil
+}
+
+// buildEngineFrom 从已有 domain/rules/dps 建瞬态引擎（不读 DB）。
+// 供 buildEngine 和 Simulate 的假设引擎路径共用（杜绝两份漂移）。
+func buildEngineFrom(domain string, rules []cp.Rule, dps []cp.DataPolicy) (*kernel.Engine, *dataperm.Table, error) {
 	table := dataperm.NewTable()
 	eng, err := kernel.New(domain, nil, table)
 	if err != nil {
-		return nil, nil, nil, nil, "", fmt.Errorf("effperm: new engine: %w", err)
+		return nil, nil, fmt.Errorf("effperm: new engine: %w", err)
 	}
 	if err := eng.ApplySnapshot(toSnapshot(rules, dps)); err != nil {
-		return nil, nil, nil, nil, "", fmt.Errorf("effperm: apply snapshot: %w", err)
+		return nil, nil, fmt.Errorf("effperm: apply snapshot: %w", err)
+	}
+	return eng, table, nil
+}
+
+// computeResult 对给定引擎+策略数据计算单用户有效权限（角色、功能权限、数据视图）。
+// 供 Compute 和 Simulate 的 base/hypo 路径共用（杜绝两份决策逻辑）。
+func computeResult(eng *kernel.Engine, table *dataperm.Table, rules []cp.Rule, dps []cp.DataPolicy, domain, user string) (Result, error) {
+	roles, err := eng.GetImplicitRolesForUser(user, domain)
+	if err != nil {
+		return Result{}, fmt.Errorf("effperm: implicit roles: %w", err)
+	}
+	sort.Strings(roles)
+	perms, err := computePerms(eng, rules, domain, user)
+	if err != nil {
+		return Result{}, err
+	}
+	views, err := computeViews(eng, table, dps, domain, user)
+	if err != nil {
+		return Result{}, err
+	}
+	return Result{Roles: roles, Permissions: perms, DataViews: views}, nil
+}
+
+// buildEngine 在只读 tx 内从 DB 物化策略、建瞬态引擎（Compute/Explain 共用，杜绝两份漂移）。
+// 返回引擎、数据策略表、原始 rules/dps（供 Compute 枚举）、域。
+// 签名/语义不变，内部改为复用 readAppPolicy + buildEngineFrom。
+func buildEngine(ctx context.Context, tx cp.DBTX, appID int64) (*kernel.Engine, *dataperm.Table, []cp.Rule, []cp.DataPolicy, string, error) {
+	domain, rules, dps, err := readAppPolicy(ctx, tx, appID)
+	if err != nil {
+		return nil, nil, nil, nil, "", err
+	}
+	eng, table, err := buildEngineFrom(domain, rules, dps)
+	if err != nil {
+		return nil, nil, nil, nil, "", err
 	}
 	return eng, table, rules, dps, domain, nil
 }
@@ -76,22 +115,7 @@ func Compute(ctx context.Context, tx cp.DBTX, appID int64, user string) (Result,
 	if err != nil {
 		return Result{}, err
 	}
-
-	roles, err := eng.GetImplicitRolesForUser(user, domain)
-	if err != nil {
-		return Result{}, fmt.Errorf("effperm: implicit roles: %w", err)
-	}
-	sort.Strings(roles)
-
-	perms, err := computePerms(eng, rules, domain, user)
-	if err != nil {
-		return Result{}, err
-	}
-	views, err := computeViews(eng, table, dps, domain, user)
-	if err != nil {
-		return Result{}, err
-	}
-	return Result{Roles: roles, Permissions: perms, DataViews: views}, nil
+	return computeResult(eng, table, rules, dps, domain, user)
 }
 
 // reason 分类（决策可解释性）。
