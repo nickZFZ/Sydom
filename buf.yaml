@@ -13,6 +13,8 @@ lint:
     - RPC_REQUEST_RESPONSE_UNIQUE
     # 共享请求消息（RoleInheritanceRequest/UserRoleRequest）名称不随单个 RPC 名走，契约有意设计
     - RPC_REQUEST_STANDARD_NAME
+    # RoleChangeType 枚举值（BIND_USER/ADD_CAPABILITY）为契约可读性有意保留短名，不加冗长 ROLE_CHANGE_TYPE_ 前缀
+    - ENUM_VALUE_PREFIX
 breaking:
   use:
     - FILE

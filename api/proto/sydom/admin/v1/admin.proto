@@ -58,6 +58,10 @@ service AdminService {
   // —— M2.2 决策可解释性 ——
   rpc ExplainDecision(ExplainDecisionRequest) returns (ExplainDecisionResponse);
 
+  // —— M3.3 角色全景 + 决策模拟器 ——
+  rpc GetRoleGraph(GetRoleGraphRequest) returns (GetRoleGraphResponse);
+  rpc SimulateRoleChange(SimulateRoleChangeRequest) returns (SimulateRoleChangeResponse);
+
   // —— M1.2 账户层 ——
   rpc RegisterTenant(RegisterTenantRequest) returns (RegisterTenantResponse); // 免鉴权
   rpc ListMyTenants(ListMyTenantsRequest)   returns (ListMyTenantsResponse);  // self
@@ -549,3 +553,47 @@ message DeleteTenantTemplateRequest {
   uint64 tenant_id = 1;
   uint64 template_id = 2;
 }
+
+// —— M3.3 角色全景 + 决策模拟器 ——
+message GetRoleGraphRequest { uint64 app_id = 1; int64 role_id = 2; }
+
+message RoleGraphCapability {
+  string resource = 1;
+  string action   = 2;
+  string name     = 3;   // 权限点原始 name（Console 经 bizterm 渲染业务名）
+  string source   = 4;   // "direct" 或贡献该能力的父角色显示名
+}
+message RoleGraphParent { int64 id = 1; string code = 2; string name = 3; }
+message RoleGraphDataScope {
+  string resource  = 1;
+  string effect    = 2;   // allow | deny
+  string condition = 3;   // 原始条件树 JSON（Console 经 conditionPredicate 渲符号谓词）
+}
+message GetRoleGraphResponse {
+  int64  role_id   = 1;
+  string role_code = 2;
+  string role_name = 3;
+  repeated string bound_users               = 4;
+  repeated RoleGraphCapability capabilities = 5;
+  repeated RoleGraphParent parents          = 6;
+  repeated RoleGraphDataScope data_scopes   = 7;
+}
+
+enum RoleChangeType { ROLE_CHANGE_UNSPECIFIED = 0; BIND_USER = 1; ADD_CAPABILITY = 2; }
+
+message SimulateRoleChangeRequest {
+  uint64 app_id  = 1;
+  int64  role_id = 2;
+  RoleChangeType change_type = 3;
+  string user_id  = 4;   // BIND_USER
+  string resource = 5;   // ADD_CAPABILITY
+  string action   = 6;   // ADD_CAPABILITY
+}
+message SubjectDiff {
+  string user_id = 1;
+  repeated EffectivePermission added_permissions   = 2;   // 复用既有 message
+  repeated EffectivePermission removed_permissions = 3;
+  repeated DataPolicyPreview   added_data_previews   = 4; // 复用既有 message（符号 predicate）
+  repeated DataPolicyPreview   removed_data_previews = 5;
+}
+message SimulateRoleChangeResponse { repeated SubjectDiff subjects = 1; }

@@ -53,6 +53,8 @@ const (
 	AdminService_ListAdminRoles_FullMethodName          = "/sydom.admin.v1.AdminService/ListAdminRoles"
 	AdminService_GetEffectivePermissions_FullMethodName = "/sydom.admin.v1.AdminService/GetEffectivePermissions"
 	AdminService_ExplainDecision_FullMethodName         = "/sydom.admin.v1.AdminService/ExplainDecision"
+	AdminService_GetRoleGraph_FullMethodName            = "/sydom.admin.v1.AdminService/GetRoleGraph"
+	AdminService_SimulateRoleChange_FullMethodName      = "/sydom.admin.v1.AdminService/SimulateRoleChange"
 	AdminService_RegisterTenant_FullMethodName          = "/sydom.admin.v1.AdminService/RegisterTenant"
 	AdminService_ListMyTenants_FullMethodName           = "/sydom.admin.v1.AdminService/ListMyTenants"
 	AdminService_InviteMember_FullMethodName            = "/sydom.admin.v1.AdminService/InviteMember"
@@ -114,6 +116,9 @@ type AdminServiceClient interface {
 	GetEffectivePermissions(ctx context.Context, in *GetEffectivePermissionsRequest, opts ...grpc.CallOption) (*GetEffectivePermissionsResponse, error)
 	// —— M2.2 决策可解释性 ——
 	ExplainDecision(ctx context.Context, in *ExplainDecisionRequest, opts ...grpc.CallOption) (*ExplainDecisionResponse, error)
+	// —— M3.3 角色全景 + 决策模拟器 ——
+	GetRoleGraph(ctx context.Context, in *GetRoleGraphRequest, opts ...grpc.CallOption) (*GetRoleGraphResponse, error)
+	SimulateRoleChange(ctx context.Context, in *SimulateRoleChangeRequest, opts ...grpc.CallOption) (*SimulateRoleChangeResponse, error)
 	// —— M1.2 账户层 ——
 	RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error)
 	ListMyTenants(ctx context.Context, in *ListMyTenantsRequest, opts ...grpc.CallOption) (*ListMyTenantsResponse, error)
@@ -447,6 +452,24 @@ func (c *adminServiceClient) ExplainDecision(ctx context.Context, in *ExplainDec
 	return out, nil
 }
 
+func (c *adminServiceClient) GetRoleGraph(ctx context.Context, in *GetRoleGraphRequest, opts ...grpc.CallOption) (*GetRoleGraphResponse, error) {
+	out := new(GetRoleGraphResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetRoleGraph_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) SimulateRoleChange(ctx context.Context, in *SimulateRoleChangeRequest, opts ...grpc.CallOption) (*SimulateRoleChangeResponse, error) {
+	out := new(SimulateRoleChangeResponse)
+	err := c.cc.Invoke(ctx, AdminService_SimulateRoleChange_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) RegisterTenant(ctx context.Context, in *RegisterTenantRequest, opts ...grpc.CallOption) (*RegisterTenantResponse, error) {
 	out := new(RegisterTenantResponse)
 	err := c.cc.Invoke(ctx, AdminService_RegisterTenant_FullMethodName, in, out, opts...)
@@ -610,6 +633,9 @@ type AdminServiceServer interface {
 	GetEffectivePermissions(context.Context, *GetEffectivePermissionsRequest) (*GetEffectivePermissionsResponse, error)
 	// —— M2.2 决策可解释性 ——
 	ExplainDecision(context.Context, *ExplainDecisionRequest) (*ExplainDecisionResponse, error)
+	// —— M3.3 角色全景 + 决策模拟器 ——
+	GetRoleGraph(context.Context, *GetRoleGraphRequest) (*GetRoleGraphResponse, error)
+	SimulateRoleChange(context.Context, *SimulateRoleChangeRequest) (*SimulateRoleChangeResponse, error)
 	// —— M1.2 账户层 ——
 	RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error)
 	ListMyTenants(context.Context, *ListMyTenantsRequest) (*ListMyTenantsResponse, error)
@@ -735,6 +761,12 @@ func (UnimplementedAdminServiceServer) GetEffectivePermissions(context.Context, 
 }
 func (UnimplementedAdminServiceServer) ExplainDecision(context.Context, *ExplainDecisionRequest) (*ExplainDecisionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExplainDecision not implemented")
+}
+func (UnimplementedAdminServiceServer) GetRoleGraph(context.Context, *GetRoleGraphRequest) (*GetRoleGraphResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRoleGraph not implemented")
+}
+func (UnimplementedAdminServiceServer) SimulateRoleChange(context.Context, *SimulateRoleChangeRequest) (*SimulateRoleChangeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SimulateRoleChange not implemented")
 }
 func (UnimplementedAdminServiceServer) RegisterTenant(context.Context, *RegisterTenantRequest) (*RegisterTenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterTenant not implemented")
@@ -1400,6 +1432,42 @@ func _AdminService_ExplainDecision_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_GetRoleGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRoleGraphRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetRoleGraph(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetRoleGraph_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetRoleGraph(ctx, req.(*GetRoleGraphRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_SimulateRoleChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SimulateRoleChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).SimulateRoleChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_SimulateRoleChange_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).SimulateRoleChange(ctx, req.(*SimulateRoleChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_RegisterTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterTenantRequest)
 	if err := dec(in); err != nil {
@@ -1776,6 +1844,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExplainDecision",
 			Handler:    _AdminService_ExplainDecision_Handler,
+		},
+		{
+			MethodName: "GetRoleGraph",
+			Handler:    _AdminService_GetRoleGraph_Handler,
+		},
+		{
+			MethodName: "SimulateRoleChange",
+			Handler:    _AdminService_SimulateRoleChange_Handler,
 		},
 		{
 			MethodName: "RegisterTenant",
