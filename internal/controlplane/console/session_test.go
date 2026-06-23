@@ -58,3 +58,33 @@ func TestRedisStore_Expiry(t *testing.T) {
 	_, err = s.Get(ctx, id)
 	require.ErrorIs(t, err, ErrNoSession)
 }
+
+func TestRedisStore_FlashOneShot(t *testing.T) {
+	store := newTestStore(t, time.Minute)
+	ctx := context.Background()
+	id, _, err := store.Create(ctx, "root@sydom")
+	require.NoError(t, err)
+
+	// 初始无 flash。
+	msg, err := store.TakeFlash(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, "", msg)
+
+	// 写 flash → 取到 → 再取为空（一次性）。
+	require.NoError(t, store.SetFlash(ctx, id, "角色已删除"))
+	msg, err = store.TakeFlash(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, "角色已删除", msg)
+	msg, err = store.TakeFlash(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, "", msg, "flash 读后即清，一次性")
+
+	// 会话其余字段不被 flash 操作破坏。
+	sess, err := store.Get(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, "root@sydom", sess.Principal)
+	require.NotEmpty(t, sess.CSRF)
+
+	// 空 id 写 flash 走 ErrNoSession 分支（无会话可写）。
+	require.ErrorIs(t, store.SetFlash(ctx, "", "x"), ErrNoSession)
+}
