@@ -72,5 +72,10 @@ func (h *Handler) doWrite(w http.ResponseWriter, r *http.Request, fullMethod str
 		h.renderGRPCError(w, r, fullMethod, err)
 		return
 	}
+	if id := h.sessionID(r); id != "" {
+		if err := h.sessions.SetFlash(ctx, id, flashFor(fullMethod)); err != nil {
+			h.logger.Warn("console set flash", "err", err) // fail-soft：flash 失败不影响已成功的写
+		}
+	}
 	http.Redirect(w, r, redirectTo(r), http.StatusSeeOther)
 }

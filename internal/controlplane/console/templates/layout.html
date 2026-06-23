@@ -14,5 +14,5 @@
   <a href="/operators" {{if eq .Nav "system"}}aria-current="page"{{end}}>系统</a></nav>
   <form method="post" action="/logout" class="logout"><button>登出</button></form>
 </header>{{end}}
-<main id="main">{{block "content" .}}{{end}}</main>
+<main id="main">{{if .Flash}}<div class="toast" role="status" aria-live="polite" data-toast>{{.Flash}}<button type="button" class="toast-close" aria-label="关闭提示">×</button></div>{{end}}{{block "content" .}}{{end}}</main>
 </body></html>{{end}}

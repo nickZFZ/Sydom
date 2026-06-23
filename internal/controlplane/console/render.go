@@ -61,6 +61,13 @@ func (h *Handler) renderPage(w http.ResponseWriter, r *http.Request, page string
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	if _, set := data["Flash"]; !set {
+		if id := h.sessionID(r); id != "" {
+			if msg, err := h.sessions.TakeFlash(r.Context(), id); err == nil && msg != "" {
+				data["Flash"] = msg
+			}
+		}
+	}
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, "layout.html", data); err != nil {
 		h.logger.Error("console render", "page", page, "err", err)
