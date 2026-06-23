@@ -28,7 +28,8 @@ type SubjectDiff struct {
 	RemovedDataViews   []DataView
 }
 
-// nonEmpty 返回 diff 是否有实质内容（四个切片均非空时为假 diff，不收录）。
+// nonEmpty 返回 diff 是否有实质内容——四个切片任一非空即为真实 diff 值得收录；
+// 四个全空说明本次假设变更对该用户净效果为零，过滤掉。
 func (d SubjectDiff) nonEmpty() bool {
 	return len(d.AddedPermissions) > 0 || len(d.RemovedPermissions) > 0 ||
 		len(d.AddedDataViews) > 0 || len(d.RemovedDataViews) > 0
