@@ -741,7 +741,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 48 路由（app 域 24 + 应用管理 4 + system 域 11 + 账户层 4 + 租户自有模板 5）。
+// allRoutes 汇总全部 50 路由（app 域 24 + 应用管理 4 + system 域 11 + 账户层 4 + 租户自有模板 5 + 角色全景 2）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
@@ -749,5 +749,6 @@ func allRoutes() []route {
 	rs = append(rs, systemRoutes()...)
 	rs = append(rs, accountRoutes()...)
 	rs = append(rs, tenantTemplateRoutes()...)
+	rs = append(rs, roleGraphRoutes()...)
 	return rs
 }
