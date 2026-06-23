@@ -1,0 +1,45 @@
+{{define "title"}}角色全景 · {{.RoleName}}{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people">人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+<a href="/ops/apps/{{.AppID}}/templates">模板库</a>
+</aside>
+<section>
+<nav class="breadcrumb" aria-label="面包屑"><a href="/ops/apps/{{.AppID}}/roles">← 业务角色</a> · 全景</nav>
+<h1>{{.RoleName}} <span class="badge badge-muted">角色全景</span></h1>
+
+<div class="card">
+<h2 class="card-header">绑定用户 · {{len .BoundUsers}}</h2>
+{{if .BoundUsers}}<ul class="list-plain">{{range .BoundUsers}}<li>{{.}}</li>{{end}}</ul>{{else}}<div class="empty-state">暂无绑定用户。</div>{{end}}
+</div>
+
+<div class="card">
+<h2 class="card-header">能力 · {{len .Caps}}</h2>
+{{if .Caps}}<ul class="list-plain">{{range .Caps}}<li>{{.Name}} <span class="hint">（{{.Source}}）</span></li>{{end}}</ul>{{else}}<div class="empty-state">暂无能力。</div>{{end}}
+</div>
+
+<div class="card">
+<h2 class="card-header">继承自</h2>
+{{if .Parents}}<ul class="list-plain">{{range .Parents}}<li><a href="/ops/apps/{{$.AppID}}/roles/{{.Id}}/graph">{{.Name}}</a></li>{{end}}</ul>{{else}}<div class="empty-state">无父角色。</div>{{end}}
+</div>
+
+<div class="card">
+<h2 class="card-header">数据范围</h2>
+{{if .Scopes}}<ul class="list-plain">{{range .Scopes}}<li>{{.Resource}}：仅 {{.Predicate}}</li>{{end}}</ul>{{else}}<div class="empty-state">无数据范围。</div>{{end}}
+</div>
+
+<div class="card">
+<h2 class="card-header">假如……（模拟，不落库）</h2>
+<form method="get" action="/ops/apps/{{.AppID}}/roles/{{.RoleID}}/simulate" class="inline-form">
+  <input type="hidden" name="change_type" value="bind_user">
+  <label>把用户绑到本角色：<input name="user_id" placeholder="user_id" required></label>
+  <button class="btn btn-primary">模拟</button>
+</form>
+<form method="get" action="/ops/apps/{{.AppID}}/roles/{{.RoleID}}/simulate" class="inline-form">
+  <input type="hidden" name="change_type" value="add_capability">
+  <label>给本角色加能力：资源 <input name="resource" placeholder="resource" required> 动作 <input name="action" placeholder="action" required></label>
+  <button class="btn btn-primary">模拟</button>
+</form>
+</div>
+</section></div>{{end}}

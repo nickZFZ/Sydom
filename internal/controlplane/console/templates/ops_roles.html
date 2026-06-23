@@ -8,9 +8,10 @@
 <section><h2>业务角色</h2>
 <a href="/ops/apps/{{.AppID}}/roles/new">+ 新建业务角色</a>
 {{if .Roles}}
-<table><thead><tr><th>角色名称</th></tr></thead><tbody>
+<table><thead><tr><th>角色名称</th><th>操作</th></tr></thead><tbody>
 {{range .Roles}}<tr>
 <td>{{if .Name}}{{.Name}}{{else}}（未命名）{{end}}</td>
+<td><a href="/ops/apps/{{$.AppID}}/roles/{{.RoleId}}/graph">全景</a></td>
 </tr>{{end}}
 </tbody></table>
 {{else}}<p>暂无业务角色。</p>{{end}}

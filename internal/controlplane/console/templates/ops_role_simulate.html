@@ -1,0 +1,22 @@
+{{define "title"}}模拟结果 · 运营台{{end}}
+{{define "content"}}<div class="workspace">
+<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
+<a href="/ops/apps/{{.AppID}}/people">人员</a>
+<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
+<a href="/ops/apps/{{.AppID}}/templates">模板库</a>
+</aside>
+<section>
+<nav class="breadcrumb" aria-label="面包屑"><a href="/ops/apps/{{.AppID}}/roles/{{.RoleID}}/graph">← 返回角色全景</a></nav>
+<h1>模拟结果 <span class="badge badge-muted">未落库</span></h1>
+{{if .Subjects}}
+{{range .Subjects}}
+<div class="card" style="margin-bottom:var(--space-4)">
+<h2 class="card-header">{{.UserID}}</h2>
+{{if .Added}}<h3>新增能力</h3><ul class="list-plain">{{range .Added}}<li>＋ {{.Name}}</li>{{end}}</ul>{{end}}
+{{if .Removed}}<h3>失去能力</h3><ul class="list-plain">{{range .Removed}}<li>－ {{.Name}}</li>{{end}}</ul>{{end}}
+{{if .AddedScopes}}<h3>新增数据范围</h3><ul class="list-plain">{{range .AddedScopes}}<li>＋ {{.Resource}}：仅 {{.Predicate}}</li>{{end}}</ul>{{end}}
+{{if .RemScopes}}<h3>失去数据范围</h3><ul class="list-plain">{{range .RemScopes}}<li>－ {{.Resource}}：仅 {{.Predicate}}</li>{{end}}</ul>{{end}}
+</div>
+{{end}}
+{{else}}<div class="empty-state">此假设变更对任何用户的有效权限无影响。</div>{{end}}
+</section></div>{{end}}
