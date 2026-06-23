@@ -105,6 +105,23 @@ func TestGetRoleGraph_AggregatesAndInheritance(t *testing.T) {
 	// 父角色应含 viewer。
 	require.Len(t, resp.Parents, 1)
 	require.Equal(t, "viewer", resp.Parents[0].Code)
+	// admin 自身无直接数据策略。
+	require.Empty(t, resp.DataScopes)
+
+	// viewer 自身有 order 数据范围。
+	vresp, err := srv.GetRoleGraph(ctx, &adminv1.GetRoleGraphRequest{
+		AppId: uint64(appID), RoleId: viewerID})
+	require.NoError(t, err)
+	require.Len(t, vresp.DataScopes, 1)
+	require.Equal(t, "order", vresp.DataScopes[0].Resource)
+	require.Equal(t, "allow", vresp.DataScopes[0].Effect)
+	require.JSONEq(t, `{"field":"tenant_id","op":"EQ","value":"$user.tenant_id"}`, vresp.DataScopes[0].Condition)
+
+	// 跨 App 隔离（RG-6）：app B 的 app_id 配 app A 的 role_id → NotFound。
+	_, appIDB := dbtest.SeedAppInTenant(t, db, "t-b", "dom-b", "AK_b")
+	_, err = srv.GetRoleGraph(ctx, &adminv1.GetRoleGraphRequest{
+		AppId: uint64(appIDB), RoleId: viewerID})
+	require.Equal(t, codes.NotFound, status.Code(err))
 
 	// 未知 role → NotFound（不泄露存在性）。
 	_, err = srv.GetRoleGraph(ctx, &adminv1.GetRoleGraphRequest{

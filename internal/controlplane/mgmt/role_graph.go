@@ -38,15 +38,14 @@ func (s *AdminServer) GetRoleGraph(ctx context.Context, r *adminv1.GetRoleGraphR
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "read parents: %v", err)
 	}
+	defer prows.Close()
 	for prows.Next() {
 		var p adminv1.RoleGraphParent
 		if err := prows.Scan(&p.Id, &p.Code, &p.Name); err != nil {
-			prows.Close()
 			return nil, status.Errorf(codes.Internal, "scan parent: %v", err)
 		}
 		out.Parents = append(out.Parents, &p)
 	}
-	prows.Close()
 	if err := prows.Err(); err != nil {
 		return nil, status.Errorf(codes.Internal, "parents: %v", err)
 	}
@@ -99,15 +98,14 @@ func (s *AdminServer) GetRoleGraph(ctx context.Context, r *adminv1.GetRoleGraphR
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "read data scopes: %v", err)
 	}
+	defer drows.Close()
 	for drows.Next() {
 		var d adminv1.RoleGraphDataScope
 		if err := drows.Scan(&d.Resource, &d.Effect, &d.Condition); err != nil {
-			drows.Close()
 			return nil, status.Errorf(codes.Internal, "scan data scope: %v", err)
 		}
 		out.DataScopes = append(out.DataScopes, &d)
 	}
-	drows.Close()
 	if err := drows.Err(); err != nil {
 		return nil, status.Errorf(codes.Internal, "data scopes: %v", err)
 	}
@@ -116,8 +114,8 @@ func (s *AdminServer) GetRoleGraph(ctx context.Context, r *adminv1.GetRoleGraphR
 
 // roleRef 是递归 CTE 查询祖先时的内部结构。
 type roleRef struct {
-	id         int64
-	code, name string
+	id   int64
+	name string
 }
 
 // roleAncestors 返回角色的所有祖先（最近优先），使用递归 CTE 闭包。
@@ -132,10 +130,10 @@ func (s *AdminServer) roleAncestors(ctx context.Context, appID, roleID int64) ([
 			FROM role_inheritance ri JOIN anc ON ri.child_role_id=anc.rid
 			WHERE ri.app_id=$2
 		)
-		SELECT r.id, r.code, r.name, min(anc.depth) AS d
+		SELECT r.id, r.name, min(anc.depth) AS d
 		FROM anc JOIN role r ON r.id=anc.rid
-		GROUP BY r.id, r.code, r.name
-		ORDER BY d, r.code`, roleID, appID)
+		GROUP BY r.id, r.name
+		ORDER BY d, r.name`, roleID, appID)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +142,7 @@ func (s *AdminServer) roleAncestors(ctx context.Context, appID, roleID int64) ([
 	for rows.Next() {
 		var rr roleRef
 		var depth int
-		if err := rows.Scan(&rr.id, &rr.code, &rr.name, &depth); err != nil {
+		if err := rows.Scan(&rr.id, &rr.name, &depth); err != nil {
 			return nil, err
 		}
 		out = append(out, rr)
