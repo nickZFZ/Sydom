@@ -57,6 +57,18 @@ func mustDataPolicy(t *testing.T, db *sql.DB, appID int64, subjectID, resource, 
 	require.NoError(t, err)
 }
 
+// mustCasbinP 直插一条 casbin p 规则（与 Sidecar 快照同源）。effperm 经 casbin_rule 求值，
+// 而非 relational role_permission——故 effperm 背书的 handler（SimulateRoleChange）须经此播种授权。
+// p 行：v0=sub, v1=dom, v2=obj, v3=act, v4=eft。
+func mustCasbinP(t *testing.T, db *sql.DB, appID int64, sub, dom, obj, act, eft string) {
+	t.Helper()
+	_, err := db.Exec(
+		`INSERT INTO casbin_rule(app_id,ptype,v0,v1,v2,v3,v4,v5,version)
+		 VALUES($1,'p',$2,$3,$4,$5,$6,'',1)`,
+		appID, sub, dom, obj, act, eft)
+	require.NoError(t, err)
+}
+
 // capSource 在 caps 里找匹配 resource+action 的 capability，返回其 Source。未找到返回空串。
 func capSource(caps []*adminv1.RoleGraphCapability, resource, action string) string {
 	for _, c := range caps {
@@ -126,5 +138,35 @@ func TestGetRoleGraph_AggregatesAndInheritance(t *testing.T) {
 	// 未知 role → NotFound（不泄露存在性）。
 	_, err = srv.GetRoleGraph(ctx, &adminv1.GetRoleGraphRequest{
 		AppId: uint64(appID), RoleId: 999999})
+	require.Equal(t, codes.NotFound, status.Code(err))
+}
+
+func TestSimulateRoleChange_BindUserDiff(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	_, appID := dbtest.SeedAppInTenant(t, db, "t-a", "dom-a", "AK_a")
+	srv := accountsSrv(db)
+	ctx := context.Background()
+
+	viewerID := mustRole(t, db, appID, "viewer", "查看员")
+	// effperm 经 casbin_rule 求值（与 Sidecar 同源），故授权须播种 casbin p 行；dom 取 app 域 "dom-a"。
+	mustCasbinP(t, db, appID, "viewer", "dom-a", "order", "read", "allow")
+	mustDataPolicy(t, db, appID, "viewer", "order", `{"field":"tenant_id","op":"EQ","value":"$user.tenant_id"}`)
+
+	resp, err := srv.SimulateRoleChange(ctx, &adminv1.SimulateRoleChangeRequest{
+		AppId: uint64(appID), RoleId: viewerID,
+		ChangeType: adminv1.RoleChangeType_BIND_USER, UserId: "bob"})
+	require.NoError(t, err)
+	require.Len(t, resp.Subjects, 1)
+	require.Equal(t, "bob", resp.Subjects[0].UserId)
+	require.NotEmpty(t, resp.Subjects[0].AddedPermissions)
+	// 精确断言字段映射（防 Resource/Action 错位的静默 bug）。
+	require.Equal(t, "order", resp.Subjects[0].AddedPermissions[0].Resource)
+	require.Equal(t, "read", resp.Subjects[0].AddedPermissions[0].Action)
+	require.NotEmpty(t, resp.Subjects[0].AddedDataPreviews)
+	require.Contains(t, resp.Subjects[0].AddedDataPreviews[0].Predicate, "$user.")
+
+	// 未知 role → NotFound。
+	_, err = srv.SimulateRoleChange(ctx, &adminv1.SimulateRoleChangeRequest{
+		AppId: uint64(appID), RoleId: 999, ChangeType: adminv1.RoleChangeType_BIND_USER, UserId: "x"})
 	require.Equal(t, codes.NotFound, status.Code(err))
 }

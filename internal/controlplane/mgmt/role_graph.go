@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
+	"github.com/nickZFZ/Sydom/internal/controlplane/effperm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -108,6 +109,66 @@ func (s *AdminServer) GetRoleGraph(ctx context.Context, r *adminv1.GetRoleGraphR
 	}
 	if err := drows.Err(); err != nil {
 		return nil, status.Errorf(codes.Internal, "data scopes: %v", err)
+	}
+	return out, nil
+}
+
+// SimulateRoleChange 反事实预览：把假设变更施于角色，返回受影响用户的有效权限 diff（不落库）。
+func (s *AdminServer) SimulateRoleChange(ctx context.Context, r *adminv1.SimulateRoleChangeRequest) (*adminv1.SimulateRoleChangeResponse, error) {
+	appID := int64(r.AppId)
+	var code string
+	err := s.db.QueryRowContext(ctx,
+		`SELECT code FROM role WHERE id=$1 AND app_id=$2`, r.RoleId, appID).Scan(&code)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, status.Error(codes.NotFound, "role not found")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "read role: %v", err)
+	}
+
+	var ch effperm.Change
+	switch r.ChangeType {
+	case adminv1.RoleChangeType_BIND_USER:
+		if r.UserId == "" {
+			return nil, status.Error(codes.InvalidArgument, "user_id required")
+		}
+		ch = effperm.Change{Type: "bind_user", UserID: r.UserId}
+	case adminv1.RoleChangeType_ADD_CAPABILITY:
+		if r.Resource == "" || r.Action == "" {
+			return nil, status.Error(codes.InvalidArgument, "resource/action required")
+		}
+		ch = effperm.Change{Type: "add_capability", Resource: r.Resource, Action: r.Action}
+	default:
+		return nil, status.Error(codes.InvalidArgument, "unknown change_type")
+	}
+
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin read tx: %v", err)
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	diffs, err := effperm.Simulate(ctx, tx, appID, code, ch)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "simulate: %v", err)
+	}
+
+	out := &adminv1.SimulateRoleChangeResponse{}
+	for _, d := range diffs {
+		sd := &adminv1.SubjectDiff{UserId: d.UserID}
+		for _, p := range d.AddedPermissions {
+			sd.AddedPermissions = append(sd.AddedPermissions, &adminv1.EffectivePermission{Resource: p.Resource, Action: p.Action})
+		}
+		for _, p := range d.RemovedPermissions {
+			sd.RemovedPermissions = append(sd.RemovedPermissions, &adminv1.EffectivePermission{Resource: p.Resource, Action: p.Action})
+		}
+		for _, v := range d.AddedDataViews {
+			sd.AddedDataPreviews = append(sd.AddedDataPreviews, &adminv1.DataPolicyPreview{Resource: v.Resource, Match: v.Match, Predicate: v.Predicate})
+		}
+		for _, v := range d.RemovedDataViews {
+			sd.RemovedDataPreviews = append(sd.RemovedDataPreviews, &adminv1.DataPolicyPreview{Resource: v.Resource, Match: v.Match, Predicate: v.Predicate})
+		}
+		out.Subjects = append(out.Subjects, sd)
 	}
 	return out, nil
 }
