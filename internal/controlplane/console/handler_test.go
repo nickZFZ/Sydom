@@ -268,7 +268,7 @@ func TestSetAppStatus_Disable(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, readBody(t, page), "启用")
 
-	form := url.Values{"csrf_token": {csrf}, "status": {"2"}}
+	form := url.Values{"csrf_token": {csrf}, "status": {"2"}, "confirmed": {"1"}} // 停用触发确认门
 	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/status", appID), form)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusSeeOther, resp.StatusCode) // doWrite PRG

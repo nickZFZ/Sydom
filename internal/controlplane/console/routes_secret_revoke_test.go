@@ -54,9 +54,9 @@ func TestConsole_ResetOperatorSecret_ShowsSecretOnce(t *testing.T) {
 	// 查 erin 的 operator_id。
 	var opID int64
 	require.NoError(t, db.QueryRow(`SELECT id FROM admin_operator WHERE principal=$1`, "erin").Scan(&opID))
-	// 重置其 secret。
+	// 重置其 secret（带 confirmed=1 过确认门）。
 	resp, err = c.PostForm(ts.URL+"/operators/"+strconv.FormatInt(opID, 10)+"/reset-secret",
-		url.Values{"csrf_token": {csrf}})
+		url.Values{"csrf_token": {csrf}, "confirmed": {"1"}})
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode) // 非 PRG（PRG 会是 303→GET /operators，丢失 secret）
@@ -71,7 +71,7 @@ func TestConsole_RotateAppSecret_ShowsSecretOnce(t *testing.T) {
 	appID := dbtest.SeedApp(t, db)
 	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
 	resp, err := c.PostForm(ts.URL+"/apps/"+strconv.FormatInt(appID, 10)+"/rotate-secret",
-		url.Values{"csrf_token": {csrf}})
+		url.Values{"csrf_token": {csrf}, "confirmed": {"1"}})
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusOK, resp.StatusCode)

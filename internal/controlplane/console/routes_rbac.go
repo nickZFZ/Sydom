@@ -276,8 +276,11 @@ func (h *Handler) addInheritance(w http.ResponseWriter, r *http.Request) {
 		appListRedirect("inheritances"))
 }
 
-// removeInheritance：写动作走 doWrite（同 RoleInheritanceRequest 类型）。
+// removeInheritance：写动作走 doWrite（同 RoleInheritanceRequest 类型）。破坏性，先过确认门。
 func (h *Handler) removeInheritance(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"RemoveRoleInheritance") {
+		return
+	}
 	h.doWrite(w, r, svc+"RemoveRoleInheritance",
 		func(r *http.Request) (proto.Message, error) {
 			appID, err := pathUint64(r, "app_id")

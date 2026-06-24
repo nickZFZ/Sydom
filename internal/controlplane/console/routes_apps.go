@@ -85,6 +85,12 @@ func (h *Handler) appRedirect(w http.ResponseWriter, r *http.Request) {
 // app_id 取自 path（权威），status ∈ {1=启用, 2=停用}。SetApplicationStatus 豁免
 // status 写闸（isWrite=false），故停用一个已启用 app 不会被拦截。
 func (h *Handler) setAppStatus(w http.ResponseWriter, r *http.Request) {
+	// 仅「停用」(status=2) 才是破坏性，过确认门；「启用」(status=1) 无需确认直接执行。
+	if r.PostFormValue("status") == "2" {
+		if !h.requireConfirm(w, r, svc+"SetApplicationStatus") {
+			return
+		}
+	}
 	h.doWrite(w, r, svc+"SetApplicationStatus",
 		func(r *http.Request) (proto.Message, error) {
 			appID, err := pathUint64(r, "app_id")
@@ -108,6 +114,9 @@ func (h *Handler) setAppStatus(w http.ResponseWriter, r *http.Request) {
 // 将认证失败，直到配置更新）。该明文绝不日志、绝不落盘。RotateApplicationSecret 豁免 status
 // 写闸（isWrite=false），故停用 app 也可轮换。
 func (h *Handler) rotateAppSecret(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"RotateApplicationSecret") {
+		return
+	}
 	principal, sess, ok := h.requireSession(w, r)
 	if !ok {
 		return

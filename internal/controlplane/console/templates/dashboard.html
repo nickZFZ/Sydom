@@ -18,11 +18,11 @@
 <th scope="col">操作</th></tr></thead>
 <tbody>{{range .Apps}}<tr><td><a href="/apps/{{.AppId}}/roles">{{.AppId}}</a></td>
 <td>{{.Name}}</td><td>{{.Domain}}</td><td><span class="badge {{if eq .Status 1}}badge-success{{end}}">{{if eq .Status 1}}启用{{else}}停用{{end}}</span></td>
-<td><form method="post" action="/apps/{{.AppId}}/status" class="inline-form">
+<td><form method="post" action="/apps/{{.AppId}}/status" class="inline-form"{{if eq .Status 1}} data-confirm="确定停用该应用吗？停用后将拒绝该应用的写操作。"{{end}}>
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="status" value="{{if eq .Status 1}}2{{else}}1{{end}}">
 <button class="btn btn-sm">切换状态</button></form>
-<form method="post" action="/apps/{{.AppId}}/rotate-secret" class="inline-form">
+<form method="post" action="/apps/{{.AppId}}/rotate-secret" class="inline-form" data-confirm="确定轮换应用凭据吗？旧凭据将立即失效。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <button class="btn btn-sm btn-ghost">轮换密钥</button></form></td></tr>{{else}}<tr><td colspan="5"><div class="empty-state">暂无应用，点击「+ 新建应用」开始。</div></td></tr>{{end}}</tbody></table>
 {{template "pager" .Pager}}

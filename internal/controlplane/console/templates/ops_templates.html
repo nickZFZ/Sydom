@@ -39,7 +39,7 @@
 <h2 class="card-header">{{.Name}}</h2>
 <p class="hint">{{.Description}}</p>
 <a class="btn" href="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}">预览</a>
-<form method="post" action="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}/delete" class="inline-form" style="display:inline">
+<form method="post" action="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}/delete" class="inline-form" style="display:inline" data-confirm="确定删除该模板吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <button class="btn">删除</button>
 </form>

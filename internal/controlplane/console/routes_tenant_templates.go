@@ -174,6 +174,9 @@ func (h *Handler) opsApplyTenantTemplate(w http.ResponseWriter, r *http.Request)
 // opsDeleteTenantTemplate：POST /ops/apps/{app_id}/tenant-templates/{template_id}/delete —— 删本租户模板。
 // 走 doWrite；租户派生自 app（scopeTenant），PRG 回模板库。
 func (h *Handler) opsDeleteTenantTemplate(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"DeleteTenantTemplate") {
+		return
+	}
 	h.doWrite(w, r, svc+"DeleteTenantTemplate",
 		func(r *http.Request) (proto.Message, error) {
 			appID, err := pathUint64(r, "app_id")

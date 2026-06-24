@@ -18,7 +18,7 @@
 <input name="resource" placeholder="resource">
 <input name="action" placeholder="action">
 <button>授权</button></form>
-<form method="post" action="/admin-roles/{{.RoleId}}/revoke-grant" class="inline-form">
+<form method="post" action="/admin-roles/{{.RoleId}}/revoke-grant" class="inline-form" data-confirm="确定撤销该管理员授权吗？此操作立即生效。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input name="domain" placeholder="domain(app_id 或 *)">
 <input name="resource" placeholder="resource">

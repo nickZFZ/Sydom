@@ -10,7 +10,7 @@
 {{if .Bindings}}
 <table><thead><tr><th>ID</th><th>UserId</th><th>RoleId</th><th></th></tr></thead><tbody>
 {{range .Bindings}}<tr><td>{{.BindingId}}</td><td>{{.UserId}}</td><td>{{.RoleId}}</td>
-<td><form method="post" action="/apps/{{$.AppID}}/effective/unbind" onsubmit="return confirm('解绑？')">
+<td><form method="post" action="/apps/{{$.AppID}}/effective/unbind">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="user_id" value="{{$.UserID}}">
 <input type="hidden" name="role_id" value="{{.RoleId}}">

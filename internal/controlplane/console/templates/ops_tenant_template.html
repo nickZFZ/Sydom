@@ -28,7 +28,7 @@
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <button class="btn btn-primary">应用到本应用</button>
 </form>
-<form method="post" action="/ops/apps/{{.AppID}}/tenant-templates/{{.TemplateID}}/delete" class="inline-form" style="display:inline">
+<form method="post" action="/ops/apps/{{.AppID}}/tenant-templates/{{.TemplateID}}/delete" class="inline-form" style="display:inline" data-confirm="确定删除该模板吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <button class="btn">删除模板</button>
 </form>

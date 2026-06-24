@@ -11,7 +11,7 @@
 <th><a href="?{{sortHref $.Pager.SortQuery "user_id" "asc"}}">UserId ↑</a> <a href="?{{sortHref $.Pager.SortQuery "user_id" "desc"}}">↓</a></th>
 <th>RoleId</th><th></th></tr></thead><tbody>
 {{range .Bindings}}<tr><td>{{.BindingId}}</td><td>{{.UserId}}</td><td>{{.RoleId}}</td>
-<td><form method="post" action="/apps/{{$.AppID}}/bindings/unbind" onsubmit="return confirm('解绑？')">
+<td><form method="post" action="/apps/{{$.AppID}}/bindings/unbind">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="user_id" value="{{.UserId}}"><input type="hidden" name="role_id" value="{{.RoleId}}">
 <button class="danger">解绑</button></form></td></tr>{{end}}

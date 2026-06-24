@@ -11,7 +11,7 @@
 <th><a href="?{{sortHref $.Pager.SortQuery "role_id" "asc"}}">RoleId ↑</a> <a href="?{{sortHref $.Pager.SortQuery "role_id" "desc"}}">↓</a></th>
 <th>PermissionId</th><th>Eft</th><th></th></tr></thead><tbody>
 {{range .Grants}}<tr><td>{{.GrantId}}</td><td>{{.RoleId}}</td><td>{{.PermissionId}}</td><td>{{.Eft}}</td>
-<td><form method="post" action="/apps/{{$.AppID}}/grants/revoke" onsubmit="return confirm('撤销？')">
+<td><form method="post" action="/apps/{{$.AppID}}/grants/revoke">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="role_id" value="{{.RoleId}}"><input type="hidden" name="permission_id" value="{{.PermissionId}}">
 <button class="danger">撤销</button></form></td></tr>{{end}}

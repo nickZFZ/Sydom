@@ -191,6 +191,9 @@ func (h *Handler) grantAdminRole(w http.ResponseWriter, r *http.Request) {
 
 // revokeAdminGrant：撤管理授权走 doWrite。role_id 取自 path（权威），domain/resource/action 取表单。
 func (h *Handler) revokeAdminGrant(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"RevokeAdminGrant") {
+		return
+	}
 	h.doWrite(w, r, svc+"RevokeAdminGrant",
 		func(r *http.Request) (proto.Message, error) {
 			roleID, err := pathInt64(r, "role_id")
@@ -212,6 +215,9 @@ func (h *Handler) revokeAdminGrant(w http.ResponseWriter, r *http.Request) {
 
 // unbindOperatorRole：解绑角色走 doWrite。operator_id 取自 path（权威），role_id/domain 取表单。
 func (h *Handler) unbindOperatorRole(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"UnbindOperatorRole") {
+		return
+	}
 	h.doWrite(w, r, svc+"UnbindOperatorRole",
 		func(r *http.Request) (proto.Message, error) {
 			opID, err := pathInt64(r, "operator_id")
@@ -233,6 +239,9 @@ func (h *Handler) unbindOperatorRole(w http.ResponseWriter, r *http.Request) {
 // resetOperatorSecret：重置 operator 凭据走「一次性 secret」专管线——不经 doWrite，绝不 PRG。
 // 新明文 secret 仅此一次返回，必须当场渲染；旧凭据即刻失效。该明文绝不日志、绝不落盘。
 func (h *Handler) resetOperatorSecret(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"ResetOperatorSecret") {
+		return
+	}
 	principal, sess, ok := h.requireSession(w, r)
 	if !ok {
 		return
