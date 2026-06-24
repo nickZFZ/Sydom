@@ -1,0 +1,12 @@
+{{define "title"}}确认操作 · 司域 Console{{end}}
+{{define "content"}}<div class="login-wrap">
+<div class="card dialog" role="alertdialog" aria-labelledby="confirm-q">
+<h1 id="confirm-q">{{.Prompt}}</h1>
+<form method="post" action="{{.Action}}" class="inline-form">
+  <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+  <input type="hidden" name="confirmed" value="1">
+  {{range .Hidden}}<input type="hidden" name="{{.Name}}" value="{{.Value}}">{{end}}
+  <button type="submit" class="btn danger">确认</button>
+  <a class="btn" href="javascript:history.back()">取消</a>
+</form>
+</div></div>{{end}}
