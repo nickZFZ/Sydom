@@ -15,4 +15,5 @@
   <form method="post" action="/logout" class="logout"><button>登出</button></form>
 </header>{{end}}
 <main id="main">{{if .Flash}}<div class="toast" role="status" aria-live="polite" data-toast>{{.Flash}}<button type="button" class="toast-close" aria-label="关闭提示">×</button></div>{{end}}{{block "content" .}}{{end}}</main>
+<script defer src="/static/interactions.js"></script>
 </body></html>{{end}}
