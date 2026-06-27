@@ -32,6 +32,7 @@ func NewHandler(srv *mgmt.AdminServer, resolver secretResolver, enf *adminauthz.
 	h.registerOps(mux)             // M1.4 运营台：业务向人员/业务角色旅程
 	h.registerTemplates(mux)       // M3.2 运营台模板库
 	h.registerTenantTemplates(mux) // M3.2c-2 运营台「我的模板」（租户自有模板）
+	h.registerOnboarding(mux)      // M3.4c 新 app 首次引导向导
 	h.registerRoleGraph(mux)       // M3.3 角色全景 + 反事实模拟
 	h.registerAudit(mux)           // M2.3 审计页：app appnav tab + admin 系统区
 	return mux
