@@ -6,7 +6,7 @@
 <form method="post" action="/apps/{{.AppID}}/grants" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="role_id" placeholder="role_id" required><input name="permission_id" placeholder="permission_id" required>
-<input name="eft" placeholder="allow/deny，留空=allow"><button class="btn-primary">+ 新增授权</button></form>
+<input name="eft" placeholder="allow/deny，留空=allow"><button class="btn btn-primary">+ 新增授权</button></form>
 {{template "searchbox" .Pager}}
 <table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>

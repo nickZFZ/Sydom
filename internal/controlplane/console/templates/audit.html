@@ -7,7 +7,7 @@
 <input name="entity_type" placeholder="实体类型" value="{{.EntityType}}">
 <input name="entity_id" placeholder="实体 id（变更历史）" value="{{.EntityID}}">
 <input name="action" placeholder="动作" value="{{.Action}}">
-<button class="btn-primary">过滤</button></form>
+<button class="btn btn-primary">过滤</button></form>
 <table class="table"><thead><tr><th>时间</th><th>操作者</th><th>动作</th><th>实体</th><th>版本</th><th>变更</th></tr></thead>
 <tbody>
 {{range .Entries}}<tr><td>{{.CreatedAt}}</td><td>{{.Operator}}</td><td>{{.Action}}</td>

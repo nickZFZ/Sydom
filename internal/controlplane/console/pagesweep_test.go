@@ -17,7 +17,7 @@ func assertSweptPage(t *testing.T, c *http.Client, url string, wantCrumb bool) {
 	require.NoError(t, err)
 	body := readBody(t, resp)
 	require.Equal(t, http.StatusOK, resp.StatusCode, url)
-	require.Equal(t, 1, strings.Count(body, "<h1"), url+" 应恰一个 <h1>")
+	require.Equal(t, 1, strings.Count(body, "<h1>"), url+" 应恰一个 <h1>")
 	if wantCrumb {
 		require.Contains(t, body, `class="breadcrumb"`, url+" 应含 breadcrumb")
 	}

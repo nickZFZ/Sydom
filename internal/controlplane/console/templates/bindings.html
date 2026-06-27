@@ -6,7 +6,7 @@
 <form method="post" action="/apps/{{.AppID}}/bindings" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="user_id" placeholder="user_id" required><input name="role_id" placeholder="role_id" required>
-<button class="btn-primary">+ 绑定用户</button></form>
+<button class="btn btn-primary">+ 绑定用户</button></form>
 {{template "searchbox" .Pager}}
 <table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>

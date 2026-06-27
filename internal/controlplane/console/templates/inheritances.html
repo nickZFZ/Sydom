@@ -6,7 +6,7 @@
 <form method="post" action="/apps/{{.AppID}}/inheritances" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="child_role_id" placeholder="child_role_id" required><input name="parent_role_id" placeholder="parent_role_id" required>
-<button class="btn-primary">+ 新增继承</button></form>
+<button class="btn btn-primary">+ 新增继承</button></form>
 {{template "searchbox" .Pager}}
 <table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>

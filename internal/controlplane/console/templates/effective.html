@@ -5,7 +5,7 @@
 <h1>有效权限</h1>
 <form method="get" action="/apps/{{.AppID}}/effective" class="inline-form">
 <input name="user_id" placeholder="user_id" value="{{.UserID}}">
-<button class="btn-primary">查询</button></form>
+<button class="btn btn-primary">查询</button></form>
 
 {{if .Queried}}
 <h2>当前角色绑定（可解绑）</h2>
@@ -28,7 +28,7 @@
 <option value="">-- 选择角色 --</option>
 {{range .Roles}}<option value="{{.RoleId}}">{{.Name}} ({{.Code}})</option>{{end}}
 </select>
-<button class="btn-primary">+ 分配角色</button></form>
+<button class="btn btn-primary">+ 分配角色</button></form>
 
 <h2>隐式角色闭包（EffRoles）</h2>
 {{if .EffRoles}}
