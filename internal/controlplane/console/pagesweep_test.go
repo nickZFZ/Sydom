@@ -81,7 +81,7 @@ func TestPageSweep_OpsAndError(t *testing.T) {
 	assertSweptPage(t, c, ts.URL+"/ops/apps/"+a+"/people", true)
 	assertSweptPage(t, c, ts.URL+"/ops/apps/"+a+"/roles", true)
 	// error 页：越权 app 的 effective → PermissionDenied → error.html（403），单一 h1、无 breadcrumb
-	badID := strconv.FormatInt(appID+999999, 10)
+	badID := strconv.FormatInt(appID+999999, 10) // 确保不存在于测试库（自增 ID 不会撞）
 	resp, err := c.Get(ts.URL + "/apps/" + badID + "/effective")
 	require.NoError(t, err)
 	body := readBody(t, resp)
