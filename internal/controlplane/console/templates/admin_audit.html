@@ -1,10 +1,11 @@
 {{define "title"}}管理审计{{end}}
 {{define "content"}}
-<h2>管理审计</h2>
+<nav class="breadcrumb" aria-label="面包屑">系统 · 系统审计</nav>
+<h1>管理审计</h1>
 <form method="get" action="/admin/audit" class="inline-form">
 <input name="tenant_id" placeholder="租户 id（0=全部）" value="{{if .TenantID}}{{.TenantID}}{{end}}">
-<button>过滤</button></form>
-<table><thead><tr><th>时间</th><th>租户</th><th>操作者</th><th>动作</th><th>实体</th><th>变更</th></tr></thead>
+<button class="btn btn-primary">过滤</button></form>
+<table class="table"><thead><tr><th>时间</th><th>租户</th><th>操作者</th><th>动作</th><th>实体</th><th>变更</th></tr></thead>
 <tbody>
 {{range .Entries}}<tr><td>{{.CreatedAt}}</td>
 <td>{{if .TenantId}}t:{{.TenantId}}{{else}}系统{{end}}</td>

@@ -1,9 +1,10 @@
 {{define "title"}}我的租户 · 司域 Console{{end}}
 {{define "content"}}
-<h2>我的租户</h2>
+<nav class="breadcrumb" aria-label="面包屑">租户 · 我的租户</nav>
+<h1>我的租户</h1>
 {{if .IsOperatingPlane}}<p class="hint">运营平面（超级管理员）</p>{{end}}
 {{template "searchbox" .Pager}}
-<ul class="tenant-list">
+<ul class="list-plain">
 {{range .Memberships}}
 <li>{{.TenantName}}（tier {{.Tier}}）—
   <a href="/tenants/{{.TenantId}}/members">成员</a> ·

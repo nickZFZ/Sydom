@@ -1,12 +1,13 @@
 {{define "title"}}管理角色 · 司域 Console{{end}}
 {{define "content"}}
-<h2>管理角色</h2>
+<nav class="breadcrumb" aria-label="面包屑">系统 · 管理员角色</nav>
+<h1>管理角色</h1>
 <form method="post" action="/admin-roles" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="code" placeholder="code" required><input name="name" placeholder="名称">
-<button>+ 新建管理角色</button></form>
+<button class="btn btn-primary">+ 新建管理角色</button></form>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "code" "asc"}}">Code ↑</a> <a href="?{{sortHref $.Pager.SortQuery "code" "desc"}}">↓</a></th>
 <th>名称</th><th>授权</th></tr></thead><tbody>
@@ -17,7 +18,7 @@
 <input name="domain" placeholder="domain(app_id 或 *)">
 <input name="resource" placeholder="resource">
 <input name="action" placeholder="action">
-<button>授权</button></form>
+<button class="btn btn-primary">授权</button></form>
 <form method="post" action="/admin-roles/{{.RoleId}}/revoke-grant" class="inline-form" data-confirm="确定撤销该管理员授权吗？此操作立即生效。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input name="domain" placeholder="domain(app_id 或 *)">

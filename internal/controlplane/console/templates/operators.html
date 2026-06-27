@@ -1,9 +1,10 @@
 {{define "title"}}操作员 · 司域 Console{{end}}
 {{define "content"}}
-<h2>操作员</h2>
-<p><a class="btn-primary" href="/operators/new">+ 新建操作员</a></p>
+<nav class="breadcrumb" aria-label="面包屑">系统 · 算子</nav>
+<h1>操作员</h1>
+<p><a class="btn btn-primary" href="/operators/new">+ 新建操作员</a></p>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "principal" "asc"}}">Principal ↑</a> <a href="?{{sortHref $.Pager.SortQuery "principal" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "status" "asc"}}">状态 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "status" "desc"}}">↓</a></th>
@@ -14,12 +15,12 @@
 <form method="post" action="/operators/{{.OperatorId}}/status" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="status" value="{{if eq .Status 1}}2{{else}}1{{end}}">
-<button>切换状态</button></form>
+<button class="btn btn-primary">切换状态</button></form>
 <form method="post" action="/operators/{{.OperatorId}}/roles" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input name="role_id" placeholder="role_id">
 <input name="domain" placeholder="domain(app_id 或 *)">
-<button>绑定角色</button></form>
+<button class="btn btn-primary">绑定角色</button></form>
 <form method="post" action="/operators/{{.OperatorId}}/unbind-role" class="inline-form" data-confirm="确定解绑该算子角色吗？此操作立即生效。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input name="role_id" placeholder="role_id">

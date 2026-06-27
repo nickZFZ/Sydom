@@ -23,6 +23,22 @@ func assertSweptPage(t *testing.T, c *http.Client, url string, wantCrumb bool) {
 	}
 }
 
+func TestPageSweep_System(t *testing.T) {
+	ts, store, db := newConsole(t)
+	// members 需要真实 tenant_id；root 是 super-admin，可访问任意租户。
+	tid, _ := dbtest.SeedAppInTenant(t, db, "sweep-tenant", "sweep-app", "AK_sweep")
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	for _, p := range []string{
+		"/admin-roles",
+		"/admin/audit",
+		"/operators",
+		"/tenants",
+		"/tenants/" + strconv.FormatInt(tid, 10) + "/members",
+	} {
+		assertSweptPage(t, c, ts.URL+p, true)
+	}
+}
+
 func TestPageSweep_Modeling(t *testing.T) {
 	ts, store, db := newConsole(t)
 	appID := dbtest.SeedApp(t, db)

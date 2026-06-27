@@ -1,8 +1,9 @@
 {{define "title"}}成员 · 司域 Console{{end}}
 {{define "content"}}
-<h2>成员（租户 {{.TenantID}}）</h2>
+<nav class="breadcrumb" aria-label="面包屑">租户 · 成员</nav>
+<h1>成员（租户 {{.TenantID}}）</h1>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "operator_id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "operator_id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "principal" "asc"}}">标识 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "principal" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "tier" "asc"}}">档位 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "tier" "desc"}}">↓</a></th>
@@ -10,10 +11,10 @@
 <tbody>{{range .Members}}<tr><td>{{.OperatorId}}</td><td>{{.Principal}}</td><td>{{.Tier}}</td>
 <td>{{if eq .Status 1}}启用{{else}}停用{{end}}</td></tr>{{end}}</tbody></table>
 {{template "pager" .Pager}}
-<h3>邀请成员</h3>
+<h2>邀请成员</h2>
 <form method="post" action="/tenants/{{.TenantID}}/members" class="stacked-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <label>标识 <input name="principal" placeholder="principal" required></label>
-<button class="btn-primary">邀请</button>
+<button class="btn btn-primary">邀请</button>
 </form>
 {{end}}
