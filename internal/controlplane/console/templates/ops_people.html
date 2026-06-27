@@ -1,13 +1,15 @@
 {{define "title"}}人员 · 运营台 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">
-<aside class="appnav"><div class="appname">运营台 · App #{{.AppID}}</div>
+<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
 <a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
 <a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
 <a href="/ops/apps/{{.AppID}}/templates" {{if eq .OpsNav "templates"}}class="active"{{end}}>模板库</a>
 </aside>
-<section><h2>人员</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">运营台 · 人员</nav>
+<h1>人员</h1>
 {{if .People}}
-<table><thead><tr><th>用户</th><th>操作</th></tr></thead><tbody>
+<table class="table"><thead><tr><th>用户</th><th>操作</th></tr></thead><tbody>
 {{range .People}}<tr>
 <td>{{.}}</td>
 <td><a href="/ops/apps/{{$.AppID}}/people/view?user_id={{.}}">查看能力</a></td>

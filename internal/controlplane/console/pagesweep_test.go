@@ -72,3 +72,20 @@ func TestPageSweep_Modeling(t *testing.T) {
 		assertSweptPage(t, c, ts.URL+p, true)
 	}
 }
+
+func TestPageSweep_OpsAndError(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	a := strconv.FormatInt(appID, 10)
+	assertSweptPage(t, c, ts.URL+"/ops/apps/"+a+"/people", true)
+	assertSweptPage(t, c, ts.URL+"/ops/apps/"+a+"/roles", true)
+	// error 页：越权 app 的 effective → PermissionDenied → error.html（403），单一 h1、无 breadcrumb
+	badID := strconv.FormatInt(appID+999999, 10)
+	resp, err := c.Get(ts.URL + "/apps/" + badID + "/effective")
+	require.NoError(t, err)
+	body := readBody(t, resp)
+	require.Equal(t, http.StatusForbidden, resp.StatusCode, "越权 app 应 403 error.html")
+	require.Equal(t, 1, strings.Count(body, "<h1>"), "error 页应恰一个 <h1>")
+	require.NotContains(t, body, `class="breadcrumb"`, "error 页不应含 breadcrumb")
+}
