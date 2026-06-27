@@ -1,6 +1,7 @@
 {{define "title"}}已邀请 · 司域 Console{{end}}
 {{define "content"}}
-<h2>已邀请：{{.Principal}}</h2>
+<nav class="breadcrumb" aria-label="面包屑">成员 · 已邀请</nav>
+<h1>已邀请：{{.Principal}}</h1>
 {{if .Secret}}
 <div class="card">
 <p><strong>App Secret 凭据（仅显示这一次，请妥善保存）：</strong></p>
@@ -9,5 +10,5 @@
 {{else}}
 <p class="hint">该用户已有凭据（多租户成员），沿用既有凭据登录。</p>
 {{end}}
-<a href="/tenants/{{.TenantID}}/members">返回成员</a>
+<a class="btn btn-primary" href="/tenants/{{.TenantID}}/members">返回成员</a>
 {{end}}

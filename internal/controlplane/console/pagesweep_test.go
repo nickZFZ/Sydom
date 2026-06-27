@@ -39,6 +39,21 @@ func TestPageSweep_System(t *testing.T) {
 	}
 }
 
+func TestPageSweep_Forms(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	a := strconv.FormatInt(appID, 10)
+	for _, p := range []string{
+		"/apps/new",
+		"/operators/new",
+		"/register",
+		"/ops/apps/" + a + "/roles/new",
+	} {
+		assertSweptPage(t, c, ts.URL+p, true)
+	}
+}
+
 func TestPageSweep_Modeling(t *testing.T) {
 	ts, store, db := newConsole(t)
 	appID := dbtest.SeedApp(t, db)

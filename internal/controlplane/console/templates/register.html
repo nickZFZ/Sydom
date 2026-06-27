@@ -1,20 +1,21 @@
 {{define "title"}}注册租户 · 司域 Console{{end}}
 {{define "content"}}
-<h2>注册租户</h2>
+<nav class="breadcrumb" aria-label="面包屑">租户 · 注册</nav>
+<h1>注册租户</h1>
 {{if .Created}}
 <div class="card">
 <p>租户已创建：ID <code>{{.TenantID}}</code></p>
 <p>管理员标识：<code>{{.OwnerPrincipal}}</code></p>
 <p><strong>App Secret 凭据（仅显示这一次，请妥善保存）：</strong></p>
 <pre>{{.OwnerSecret}}</pre>
-<a href="/login">前往登录</a>
+<a class="btn btn-primary" href="/login">前往登录</a>
 </div>
 {{else}}
 {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
 <form method="post" action="/register" class="stacked-form">
 <label>租户名 <input name="tenant_name" placeholder="tenant" required></label>
 <label>管理员标识 <input name="owner_principal" placeholder="principal" required></label>
-<button class="btn-primary">注册</button>
+<button class="btn btn-primary">注册</button>
 </form>
 {{end}}
 {{end}}

@@ -1,11 +1,12 @@
 {{define "title"}}操作员已创建 · 司域 Console{{end}}
 {{define "content"}}
-<h2>操作员已创建</h2>
+<nav class="breadcrumb" aria-label="面包屑">算子 · 已创建</nav>
+<h1>操作员已创建</h1>
 <p>Operator ID：<code>{{.OperatorID}}</code></p>
 <div class="secret-box">
   <p class="warn">⚠️ 请立即保存此密钥，仅显示一次，离开本页后无法再次查看。</p>
   <p><strong>Secret</strong></p>
   <p><code class="secret" id="op-secret">{{.Secret}}</code></p>
 </div>
-<p><a class="btn-primary" href="/operators">返回操作员列表</a></p>
+<p><a class="btn btn-primary" href="/operators">返回操作员列表</a></p>
 {{end}}

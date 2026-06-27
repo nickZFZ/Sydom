@@ -1,12 +1,13 @@
 {{define "title"}}新建应用 · 司域 Console{{end}}
 {{define "content"}}
-<h2>新建应用</h2>
+<nav class="breadcrumb" aria-label="面包屑">应用 · 新建</nav>
+<h1>新建应用</h1>
 <form method="post" action="/apps" class="stacked-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <label>租户 <input name="tenant_id" value="{{.TenantID}}" placeholder="tenant_id" required></label>
 <label>Domain <input name="domain" placeholder="domain" required></label>
 <label>应用名 <input name="name" placeholder="名称" required></label>
 <label>App Key <input name="app_key" placeholder="app_key" required></label>
-<button class="btn-primary">创建应用</button>
+<button class="btn btn-primary">创建应用</button>
 </form>
 {{end}}
