@@ -85,6 +85,8 @@ dialog.dialog::backdrop { background:rgba(0,0,0,.4); }
 
 /* 无序列表去默认样式（运营台角色/能力列表） */
 .list-plain { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:var(--space-1); }
+/* 正文内联链接下划线区分（非仅颜色，满足 axe link-in-text-block；列表/正文内容链接） */
+.list-plain a { text-decoration:underline; }
 
 /* 未迁页兼容：提示文本 .hint / 内联错误 .error（对齐 .field-error，重着色入体系） */
 .hint { font-size:var(--text-xs); color:var(--color-text-muted); }

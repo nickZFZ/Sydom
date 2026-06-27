@@ -31,6 +31,7 @@
     groupLabel.textContent = "组合：";
     var groupSel = document.createElement("select");
     groupSel.id = "builder-op";
+    groupSel.setAttribute("aria-label", "条件组合方式（AND/OR）"); // a11y：可访问名（M3.4b axe select-name）
     ["and", "or"].forEach(function (op) {
       var o = document.createElement("option");
       o.value = op;
@@ -67,6 +68,7 @@
 
       var opSel = document.createElement("select");
       opSel.className = "bf-op";
+      opSel.setAttribute("aria-label", "条件运算符"); // a11y：可访问名（M3.4b axe select-name）
       OPS.forEach(function (o) {
         var opt = document.createElement("option");
         opt.value = o;

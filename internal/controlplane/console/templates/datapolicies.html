@@ -9,7 +9,7 @@
 <input name="subject_type" placeholder="subject_type，如 role" required>
 <input name="subject_id" placeholder="subject_id，如 clerk" required>
 <input name="resource" placeholder="resource，如 order" required>
-<select name="effect"><option value="allow">allow</option><option value="deny">deny</option></select>
+<select name="effect" aria-label="效果（allow/deny）"><option value="allow">allow</option><option value="deny">deny</option></select>
 <button type="button" id="builder-toggle" style="display:none">专业模式（原始 JSON）</button>
 <div id="builder" style="display:none"></div>
 <textarea name="condition" id="cond-json" rows="4" placeholder='condition（原始 JSON），如 {"op":"and","children":[]}' required></textarea>
