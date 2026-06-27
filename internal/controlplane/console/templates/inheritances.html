@@ -1,14 +1,16 @@
 {{define "title"}}继承 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">{{template "appnav" .}}
-<section><h2>角色继承</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 角色继承</nav>
+<h1>角色继承</h1>
 <form method="post" action="/apps/{{.AppID}}/inheritances" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="child_role_id" placeholder="child_role_id" required><input name="parent_role_id" placeholder="parent_role_id" required>
-<button>+ 新增继承</button></form>
+<button class="btn-primary">+ 新增继承</button></form>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
-<th>ChildRoleId</th><th>ParentRoleId</th><th></th></tr></thead><tbody>
+<th>ChildRoleId</th><th>ParentRoleId</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
 {{range .Inheritances}}<tr><td>{{.InheritanceId}}</td><td>{{.ChildRoleId}}</td><td>{{.ParentRoleId}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/inheritances/remove" data-confirm="确定移除该继承关系吗？">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">

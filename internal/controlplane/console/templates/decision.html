@@ -1,29 +1,31 @@
 {{define "title"}}决策解释 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">{{template "appnav" .}}
-<section><h2>决策解释器</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 决策解释</nav>
+<h1>决策解释器</h1>
 <p class="hint">输入 user / resource / action，解释这条数据面授权决策为何 allow / deny。</p>
 <form method="get" action="/apps/{{.AppID}}/decision" class="inline-form">
 <input name="user_id" placeholder="user_id" value="{{.UserID}}">
 <input name="resource" placeholder="resource" value="{{.Resource}}">
 <input name="action" placeholder="action" value="{{.Action}}">
-<button>解释</button></form>
+<button class="btn-primary">解释</button></form>
 
 {{if .Queried}}
-<h3>判定结果</h3>
+<h2>判定结果</h2>
 <p>{{if .Allowed}}<strong class="allow">ALLOW</strong>{{else}}<strong class="deny">DENY</strong>{{end}}
  · 原因：<code>{{.Reason}}</code></p>
 
 {{if .DecidingRule}}
-<h3>判定规则</h3>
-<table><thead><tr><th>Subject(角色)</th><th>Resource</th><th>Action</th><th>Effect</th></tr></thead>
+<h2>判定规则</h2>
+<table class="table"><thead><tr><th>Subject(角色)</th><th>Resource</th><th>Action</th><th>Effect</th></tr></thead>
 <tbody><tr><td>{{.DecidingRule.Subject}}</td><td>{{.DecidingRule.Resource}}</td>
 <td>{{.DecidingRule.Action}}</td><td>{{.DecidingRule.Effect}}</td></tr></tbody></table>
 {{else}}<p>无任何授权规则命中（默认拒绝）。</p>{{end}}
 
-<h3>用户有效角色（含继承）</h3>
+<h2>用户有效角色（含继承）</h2>
 {{if .EffRoles}}<ul>{{range .EffRoles}}<li>{{.}}</li>{{end}}</ul>{{else}}<p>无角色。</p>{{end}}
 
-<h3>数据范围（符号谓词）</h3>
+<h2>数据范围（符号谓词）</h2>
 <p>Match：<code>{{.DataScope.Match}}</code>{{if .DataScope.Predicate}} · 谓词：<code>{{.DataScope.Predicate}}</code>{{end}}</p>
 {{end}}
 </section></div>{{end}}

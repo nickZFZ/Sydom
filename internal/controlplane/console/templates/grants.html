@@ -1,15 +1,17 @@
 {{define "title"}}授权 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">{{template "appnav" .}}
-<section><h2>授权</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 授权</nav>
+<h1>授权</h1>
 <form method="post" action="/apps/{{.AppID}}/grants" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="role_id" placeholder="role_id" required><input name="permission_id" placeholder="permission_id" required>
-<input name="eft" placeholder="allow/deny，留空=allow"><button>+ 新增授权</button></form>
+<input name="eft" placeholder="allow/deny，留空=allow"><button class="btn-primary">+ 新增授权</button></form>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "role_id" "asc"}}">RoleId ↑</a> <a href="?{{sortHref $.Pager.SortQuery "role_id" "desc"}}">↓</a></th>
-<th>PermissionId</th><th>Eft</th><th></th></tr></thead><tbody>
+<th>PermissionId</th><th>Eft</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
 {{range .Grants}}<tr><td>{{.GrantId}}</td><td>{{.RoleId}}</td><td>{{.PermissionId}}</td><td>{{.Eft}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/grants/revoke">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">

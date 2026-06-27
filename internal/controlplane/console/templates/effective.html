@@ -1,14 +1,16 @@
 {{define "title"}}有效权限 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">{{template "appnav" .}}
-<section><h2>有效权限</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 有效权限</nav>
+<h1>有效权限</h1>
 <form method="get" action="/apps/{{.AppID}}/effective" class="inline-form">
 <input name="user_id" placeholder="user_id" value="{{.UserID}}">
-<button>查询</button></form>
+<button class="btn-primary">查询</button></form>
 
 {{if .Queried}}
-<h3>当前角色绑定（可解绑）</h3>
+<h2>当前角色绑定（可解绑）</h2>
 {{if .Bindings}}
-<table><thead><tr><th>ID</th><th>UserId</th><th>RoleId</th><th></th></tr></thead><tbody>
+<table class="table"><thead><tr><th>ID</th><th>UserId</th><th>RoleId</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
 {{range .Bindings}}<tr><td>{{.BindingId}}</td><td>{{.UserId}}</td><td>{{.RoleId}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/effective/unbind">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
@@ -18,7 +20,7 @@
 </tbody></table>
 {{else}}<p>该用户暂无角色绑定。</p>{{end}}
 
-<h3>分配角色</h3>
+<h2>分配角色</h2>
 <form method="post" action="/apps/{{.AppID}}/effective/bind" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input type="hidden" name="user_id" value="{{.UserID}}">
@@ -26,23 +28,23 @@
 <option value="">-- 选择角色 --</option>
 {{range .Roles}}<option value="{{.RoleId}}">{{.Name}} ({{.Code}})</option>{{end}}
 </select>
-<button>+ 分配角色</button></form>
+<button class="btn-primary">+ 分配角色</button></form>
 
-<h3>隐式角色闭包（EffRoles）</h3>
+<h2>隐式角色闭包（EffRoles）</h2>
 {{if .EffRoles}}
 <ul>{{range .EffRoles}}<li>{{.}}</li>{{end}}</ul>
 {{else}}<p>无。</p>{{end}}
 
-<h3>功能权限（允许集）</h3>
+<h2>功能权限（允许集）</h2>
 {{if .Permissions}}
-<table><thead><tr><th>Resource</th><th>Action</th></tr></thead><tbody>
+<table class="table"><thead><tr><th>Resource</th><th>Action</th></tr></thead><tbody>
 {{range .Permissions}}<tr><td>{{.Resource}}</td><td>{{.Action}}</td></tr>{{end}}
 </tbody></table>
 {{else}}<p>无功能权限。</p>{{end}}
 
-<h3>数据策略（符号谓词）</h3>
+<h2>数据策略（符号谓词）</h2>
 {{if .DataPreviews}}
-<table><thead><tr><th>Resource</th><th>Match</th><th>Predicate</th></tr></thead><tbody>
+<table class="table"><thead><tr><th>Resource</th><th>Match</th><th>Predicate</th></tr></thead><tbody>
 {{range .DataPreviews}}<tr><td>{{.Resource}}</td><td>{{.Match}}</td><td><code>{{.Predicate}}</code></td></tr>{{end}}
 </tbody></table>
 {{else}}<p>无数据策略。</p>{{end}}

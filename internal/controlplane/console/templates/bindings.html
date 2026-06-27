@@ -1,15 +1,17 @@
 {{define "title"}}用户绑定 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">{{template "appnav" .}}
-<section><h2>用户绑定</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 用户绑定</nav>
+<h1>用户绑定</h1>
 <form method="post" action="/apps/{{.AppID}}/bindings" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="user_id" placeholder="user_id" required><input name="role_id" placeholder="role_id" required>
-<button>+ 绑定用户</button></form>
+<button class="btn-primary">+ 绑定用户</button></form>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "user_id" "asc"}}">UserId ↑</a> <a href="?{{sortHref $.Pager.SortQuery "user_id" "desc"}}">↓</a></th>
-<th>RoleId</th><th></th></tr></thead><tbody>
+<th>RoleId</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
 {{range .Bindings}}<tr><td>{{.BindingId}}</td><td>{{.UserId}}</td><td>{{.RoleId}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/bindings/unbind">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">

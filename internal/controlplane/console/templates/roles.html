@@ -1,16 +1,18 @@
 {{define "title"}}角色 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">{{template "appnav" .}}
-<section><h2>角色</h2>
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 角色</nav>
+<h1>角色</h1>
 <form method="post" action="/apps/{{.AppID}}/roles" class="inline-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input name="code" placeholder="code" required><input name="name" placeholder="名称">
-<button>+ 新建角色</button></form>
+<button class="btn-primary">+ 新建角色</button></form>
 {{template "searchbox" .Pager}}
-<table><thead><tr>
+<table class="table"><thead><tr>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "code" "asc"}}">Code ↑</a> <a href="?{{sortHref $.Pager.SortQuery "code" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "name" "asc"}}">名称 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "name" "desc"}}">↓</a></th>
-<th></th></tr></thead><tbody>
+<th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
 {{range .Roles}}<tr><td>{{.RoleId}}</td><td>{{.Code}}</td><td>{{.Name}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/roles/{{.RoleId}}/delete" data-confirm="确定删除该业务角色吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}"><button class="danger">删除</button></form></td></tr>{{end}}
