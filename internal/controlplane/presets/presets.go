@@ -47,7 +47,14 @@ type Role struct {
 	Description     string      `json:"description"`
 	PermissionCodes []string    `json:"permission_codes"`
 	DataScopes      []DataScope `json:"data_scopes"`
-	// onboarding 预留：本片不解析（M3.4），未知字段被 json 忽略。
+}
+
+// Onboarding 是预设包的可选首次引导策展（M3.4c）。全字段可选；缺省即无策展。
+// 仅用于运营台向导的展示/排序，不参与 ApplyTemplate 的授权模型种入。
+type Onboarding struct {
+	Recommended bool     `json:"recommended"` // true → 向导选包步骤置顶并标「推荐」
+	Intro       string   `json:"intro"`       // 业务语言简介（每包一句）
+	NextSteps   []string `json:"next_steps"`  // 完成页「接下来你可以…」文案
 }
 
 // Template 是一个预设包。
@@ -58,6 +65,7 @@ type Template struct {
 	Version     uint32       `json:"version"`
 	Permissions []Permission `json:"permissions"`
 	Roles       []Role       `json:"roles"`
+	Onboarding  *Onboarding  `json:"onboarding"` // M3.4c 可选策展；loader 不强制、不校验内容
 }
 
 var loaded []Template

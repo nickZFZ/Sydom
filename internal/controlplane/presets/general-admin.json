@@ -14,5 +14,10 @@
     {"key": "admin", "name": "管理员", "description": "全部能力", "permission_codes": ["content.read", "content.write", "content.delete", "user.read", "user.write"]},
     {"key": "editor", "name": "编辑", "description": "查看与编辑内容", "permission_codes": ["content.read", "content.write"], "data_scopes": [{"resource": "content", "effect": "allow", "condition": {"field": "owner_id", "op": "EQ", "value": "$user.id"}}]},
     {"key": "viewer", "name": "只读", "description": "仅查看", "permission_codes": ["content.read", "user.read"]}
-  ]
+  ],
+  "onboarding": {
+    "recommended": true,
+    "intro": "适合大多数后台：内容查看/编辑/删除 + 三个常用角色，一键起步",
+    "next_steps": ["在「人员」给更多同事分配角色", "在「业务角色」按需微调能力", "在「模板库」追加更多预设"]
+  }
 }

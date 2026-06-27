@@ -102,6 +102,52 @@ func TestLoad_ParsesDataScopes(t *testing.T) {
 	}
 }
 
+// TestOnboarding_Curation 断言两个官方包都携带完整 onboarding 策展元数据。
+// 显式断言 general-admin 与 ecommerce-ops 的 Onboarding 都非 nil，防止任一包 onboarding
+// 字段拼写错误被 fail-soft 静默吞掉；并对所有带 onboarding 的包断言字段完整。
+func TestOnboarding_Curation(t *testing.T) {
+	for _, id := range []string{"general-admin", "ecommerce-ops"} {
+		tpl, ok := Get(id)
+		if !ok {
+			t.Fatalf("%s not found", id)
+		}
+		if tpl.Onboarding == nil {
+			t.Fatalf("%s.Onboarding should not be nil", id)
+		}
+	}
+	// 对所有携带 onboarding 的包断言字段完整（recommended/intro/next_steps）。
+	for _, tpl := range All() {
+		if tpl.Onboarding == nil {
+			continue
+		}
+		if !tpl.Onboarding.Recommended {
+			t.Errorf("%s.Onboarding.Recommended should be true", tpl.ID)
+		}
+		if tpl.Onboarding.Intro == "" {
+			t.Errorf("%s.Onboarding.Intro should not be empty", tpl.ID)
+		}
+		if len(tpl.Onboarding.NextSteps) == 0 {
+			t.Errorf("%s.Onboarding.NextSteps should not be empty", tpl.ID)
+		}
+	}
+}
+
+// TestOnboarding_AbsentIsNilNotError 验证 loader 对无 onboarding 字段的包不报错（fail-soft，向后兼容）。
+func TestOnboarding_AbsentIsNilNotError(t *testing.T) {
+	body := `{"id":"x","name":"X","version":1,"permissions":[{"code":"a.read","resource":"a","action":"read","type":"act","name":"看"}],"roles":[{"key":"r","name":"R","permission_codes":["a.read"]}]}`
+	fsys := fstest.MapFS{"pack.json": {Data: []byte(body)}}
+	ts, err := load(fsys)
+	if err != nil {
+		t.Fatalf("load should not error for pack without onboarding, got: %v", err)
+	}
+	if len(ts) == 0 {
+		t.Fatal("expected 1 template, got 0")
+	}
+	if ts[0].Onboarding != nil {
+		t.Errorf("Onboarding should be nil when absent from JSON, got %+v", ts[0].Onboarding)
+	}
+}
+
 // validate 在 Load 失败时返回 error；这里直接对内置内容跑校验确保发布内容合法。
 func TestValidate_BuiltinPacksAreConsistent(t *testing.T) {
 	for _, tpl := range All() {

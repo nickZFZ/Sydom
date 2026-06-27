@@ -14,5 +14,10 @@
     {"key": "ops-manager", "name": "运营经理", "description": "订单商品退款全管", "permission_codes": ["order.read", "order.export", "product.read", "product.write", "refund.approve"]},
     {"key": "customer-service", "name": "客服", "description": "看订单、审退款", "permission_codes": ["order.read", "refund.approve"], "data_scopes": [{"resource": "order", "effect": "allow", "condition": {"field": "department", "op": "EQ", "value": "$user.department"}}]},
     {"key": "merchandiser", "name": "商品运营", "description": "管商品", "permission_codes": ["product.read", "product.write"]}
-  ]
+  ],
+  "onboarding": {
+    "recommended": true,
+    "intro": "适合电商运营：订单/商品/客服分级权限，开箱即用",
+    "next_steps": ["在「人员」分配客服/运营同事", "在「业务角色」细化数据范围", "在「模板库」查看更多"]
+  }
 }
