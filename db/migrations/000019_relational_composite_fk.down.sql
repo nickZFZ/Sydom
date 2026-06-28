@@ -1,4 +1,5 @@
--- 逆序还原为单列 FK；先卸所有复合 FK，再删唯一键。
+-- 逐表还原为单列 FK（DROP 复合 FK + ADD 单列 FK 交替）；两个 UNIQUE 约束置最后删除
+-- （此时所有引用它们的复合 FK 已卸除）。
 ALTER TABLE user_role_binding DROP CONSTRAINT fk_user_role_binding_role_app;
 ALTER TABLE user_role_binding ADD CONSTRAINT fk_user_role_binding_role
     FOREIGN KEY (role_id) REFERENCES role(id);
