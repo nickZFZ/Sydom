@@ -1,6 +1,7 @@
 package console
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 	"github.com/nickZFZ/Sydom/internal/controlplane/presets"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 )
 
 // onboardingPack 是选包步骤的渲染视图（业务名 + 策展）。
@@ -123,10 +125,52 @@ func (h *Handler) onboardingDone(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// onboardingAssignForm：GET …/onboarding/assign —— 选业务角色 + 输入首个用户标识（可跳过）。
+func (h *Handler) onboardingAssignForm(w http.ResponseWriter, r *http.Request) {
+	principal, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	appID, err := pathUint64(r, "app_id")
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	msg := &adminv1.ListRolesRequest{AppId: appID}
+	ctx, err := mgmt.AuthorizeRule(r.Context(), h.enf, svc+"ListRoles", principal, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	resp, err := h.srv.ListRoles(ctx, msg)
+	if err != nil {
+		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		return
+	}
+	h.renderPage(w, r, "onboarding_assign.html", http.StatusOK, map[string]any{
+		"AppID": appID, "Roles": resp.Roles, "TemplateID": r.FormValue("template_id"),
+		"CSRF": sess.CSRF, "OpsNav": "onboarding",
+	})
+}
+
+// onboardingAssign：POST …/onboarding/assign —— 绑定首个用户到业务角色（doWrite + BindUserRole），
+// 成功后进完成步骤。复用 decodeUserRoleRequest（app_id path + role_id/user_id form）。
+func (h *Handler) onboardingAssign(w http.ResponseWriter, r *http.Request) {
+	h.doWrite(w, r, svc+"BindUserRole",
+		decodeUserRoleRequest,
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.BindUserRole(ctx, m.(*adminv1.UserRoleRequest))
+		},
+		func(r *http.Request) string {
+			return "/ops/apps/" + r.PathValue("app_id") + "/onboarding/done?template_id=" + url.QueryEscape(r.FormValue("template_id"))
+		})
+}
+
 // registerOnboarding 注册新 app 首次引导向导（复用既有 RPC + AuthorizeRule，零新增鉴权）。
 func (h *Handler) registerOnboarding(mux *http.ServeMux) {
 	mux.HandleFunc("GET /ops/apps/{app_id}/onboarding", h.onboardingSelect)
 	mux.HandleFunc("POST /ops/apps/{app_id}/onboarding/apply", h.onboardingApply)
 	mux.HandleFunc("GET /ops/apps/{app_id}/onboarding/done", h.onboardingDone)
-	// 分配步骤（GET/POST .../onboarding/assign）由任务 3 加入本函数。
+	mux.HandleFunc("GET /ops/apps/{app_id}/onboarding/assign", h.onboardingAssignForm)
+	mux.HandleFunc("POST /ops/apps/{app_id}/onboarding/assign", h.onboardingAssign)
 }

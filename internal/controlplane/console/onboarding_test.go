@@ -2,6 +2,7 @@ package console
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -33,4 +34,19 @@ func TestOnboarding_SelectAndDone(t *testing.T) {
 	require.Contains(t, sel, "一键起步") // general-admin intro 片段
 	done := getOK(t, c, ts.URL+"/ops/apps/"+a+"/onboarding/done?template_id=general-admin")
 	require.Contains(t, done, "接下来")
+}
+
+func TestOnboarding_AssignFormAndBind(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	a := strconv.FormatInt(appID, 10)
+	// 先 bootstrap 建出角色（直接调既有模板应用路由，幂等）
+	_, err := c.PostForm(ts.URL+"/ops/apps/"+a+"/onboarding/apply",
+		url.Values{"csrf_token": {csrf}, "template_id": {"general-admin"}})
+	require.NoError(t, err)
+	// 分配表单：应渲染角色下拉（业务名「管理员」），单 h1 + breadcrumb
+	form := getOK(t, c, ts.URL+"/ops/apps/"+a+"/onboarding/assign?template_id=general-admin")
+	require.Contains(t, form, "管理员")
+	require.Contains(t, form, "跳过") // 可跳过链接
 }
