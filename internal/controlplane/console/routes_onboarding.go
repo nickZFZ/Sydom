@@ -166,6 +166,21 @@ func (h *Handler) onboardingAssign(w http.ResponseWriter, r *http.Request) {
 		})
 }
 
+// appHasNoBizRoles 判 app 是否无业务角色（用于空态横幅；fail-soft：出错→false 不显示横幅，
+// 宁可不打扰也不在非空/异常时误显）。复用既有 AuthorizeRule + ListRoles（role/read scopeApp）。
+func (h *Handler) appHasNoBizRoles(ctx context.Context, principal string, appID uint64) bool {
+	msg := &adminv1.ListRolesRequest{AppId: appID}
+	actx, err := mgmt.AuthorizeRule(ctx, h.enf, svc+"ListRoles", principal, msg)
+	if err != nil {
+		return false
+	}
+	resp, err := h.srv.ListRoles(actx, msg)
+	if err != nil {
+		return false
+	}
+	return len(resp.Roles) == 0
+}
+
 // registerOnboarding 注册新 app 首次引导向导（复用既有 RPC + AuthorizeRule，零新增鉴权）。
 func (h *Handler) registerOnboarding(mux *http.ServeMux) {
 	mux.HandleFunc("GET /ops/apps/{app_id}/onboarding", h.onboardingSelect)

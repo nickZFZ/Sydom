@@ -1,11 +1,6 @@
 {{define "title"}}开始引导 · 运营台 · App {{.AppID}}{{end}}
 {{define "content"}}<div class="workspace">
-<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
-<a href="/ops/apps/{{.AppID}}/onboarding" {{if eq .OpsNav "onboarding"}}class="active"{{end}}>引导</a>
-<a href="/ops/apps/{{.AppID}}/people" {{if eq .OpsNav "people"}}class="active"{{end}}>人员</a>
-<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
-<a href="/ops/apps/{{.AppID}}/templates" {{if eq .OpsNav "templates"}}class="active"{{end}}>模板库</a>
-</aside>
+{{template "ops_appnav" .}}
 <section>
 <nav class="breadcrumb" aria-label="面包屑">运营台 · 开始引导</nav>
 <h1>开始引导</h1>

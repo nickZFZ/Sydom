@@ -3,6 +3,7 @@ package console
 import (
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -49,4 +50,50 @@ func TestOnboarding_AssignFormAndBind(t *testing.T) {
 	form := getOK(t, c, ts.URL+"/ops/apps/"+a+"/onboarding/assign?template_id=general-admin")
 	require.Contains(t, form, "管理员")
 	require.Contains(t, form, "跳过") // 可跳过链接
+}
+
+func TestOnboarding_BannerWhenEmptyGoneWhenSeeded(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	a := strconv.FormatInt(appID, 10)
+	// 空 app：业务角色页应含引导横幅（"开始引导" 是横幅按钮文案，仅来自横幅）
+	empty := readBody(t, mustGet(t, c, ts.URL+"/ops/apps/"+a+"/roles"))
+	require.Contains(t, empty, "开始引导", "空 app 应显示引导横幅")
+	require.Contains(t, empty, "data-onboarding-banner", "空 app 应显示引导横幅锚")
+	// bootstrap 后非空：横幅消失
+	_, err := c.PostForm(ts.URL+"/ops/apps/"+a+"/onboarding/apply",
+		url.Values{"csrf_token": {csrf}, "template_id": {"general-admin"}})
+	require.NoError(t, err)
+	seeded := readBody(t, mustGet(t, c, ts.URL+"/ops/apps/"+a+"/roles"))
+	require.NotContains(t, seeded, "data-onboarding-banner", "非空 app 不应显示引导横幅")
+}
+
+// TestOnboarding_AssignBindsAndRedirectsToDone 覆盖分配步骤 POST 主路径（任务3 审查 次要2 补）。
+func TestOnboarding_AssignBindsAndRedirectsToDone(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+	a := strconv.FormatInt(appID, 10)
+	_, err := c.PostForm(ts.URL+"/ops/apps/"+a+"/onboarding/apply",
+		url.Values{"csrf_token": {csrf}, "template_id": {"general-admin"}})
+	require.NoError(t, err)
+	form := getOK(t, c, ts.URL+"/ops/apps/"+a+"/onboarding/assign?template_id=general-admin")
+	m := regexp.MustCompile(`<option value="(\d+)"`).FindStringSubmatch(form)
+	require.NotNil(t, m, "assign 表单应含至少一个角色 option")
+	// loginAndCSRF 的 client 用 ErrUseLastResponse 不跟随重定向；复用同 jar 建跟随 client
+	// 落到 PRG 目标页（既有 flash_test.go/confirm_test.go 同惯用法）。
+	cf := &http.Client{Jar: c.Jar}
+	resp, err := cf.PostForm(ts.URL+"/ops/apps/"+a+"/onboarding/assign",
+		url.Values{"csrf_token": {csrf}, "template_id": {"general-admin"}, "user_id": {"alice@corp"}, "role_id": {m[1]}})
+	require.NoError(t, err)
+	require.Contains(t, resp.Request.URL.Path, "/onboarding/done", "分配成功应重定向到完成页")
+	require.Contains(t, readBody(t, resp), "引导完成")
+}
+
+func mustGet(t *testing.T, c *http.Client, url string) *http.Response {
+	t.Helper()
+	resp, err := c.Get(url)
+	require.NoError(t, err)
+	return resp
 }

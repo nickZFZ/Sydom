@@ -1,10 +1,6 @@
 {{define "title"}}角色全景 · {{.RoleName}}{{end}}
 {{define "content"}}<div class="workspace">
-<aside class="appnav" aria-label="运营台导航"><div class="appname">运营台 · App #{{.AppID}}</div>
-<a href="/ops/apps/{{.AppID}}/people">人员</a>
-<a href="/ops/apps/{{.AppID}}/roles" {{if eq .OpsNav "roles"}}class="active"{{end}}>业务角色</a>
-<a href="/ops/apps/{{.AppID}}/templates">模板库</a>
-</aside>
+{{template "ops_appnav" .}}
 <section>
 <nav class="breadcrumb" aria-label="面包屑"><a href="/ops/apps/{{.AppID}}/roles">← 业务角色</a> · 全景</nav>
 <h1>{{.RoleName}} <span class="badge badge-muted">角色全景</span></h1>

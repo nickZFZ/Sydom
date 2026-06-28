@@ -116,10 +116,11 @@ func (h *Handler) opsPeople(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	h.renderPage(w, r, "ops_people.html", http.StatusOK, map[string]any{
-		"AppID":  appID,
-		"People": people,
-		"CSRF":   sess.CSRF,
-		"OpsNav": "people",
+		"AppID":          appID,
+		"People":         people,
+		"CSRF":           sess.CSRF,
+		"OpsNav":         "people",
+		"ShowOnboarding": h.appHasNoBizRoles(r.Context(), principal, appID),
 	})
 }
 
@@ -271,6 +272,7 @@ func (h *Handler) opsRoles(w http.ResponseWriter, r *http.Request) {
 	}
 	h.renderPage(w, r, "ops_roles.html", http.StatusOK, map[string]any{
 		"AppID": appID, "Roles": resp.Roles, "CSRF": sess.CSRF, "OpsNav": "roles",
+		"ShowOnboarding": len(resp.Roles) == 0,
 	})
 }
 

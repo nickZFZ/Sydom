@@ -1,0 +1,6 @@
+{{define "onboarding_banner"}}{{if .ShowOnboarding}}
+<div class="card" data-onboarding-banner role="note">
+<strong>这个应用还是空的。</strong> 用官方预设几步建好权限与角色 →
+<a class="btn btn-primary" href="/ops/apps/{{.AppID}}/onboarding">开始引导</a>
+</div>
+{{end}}{{end}}

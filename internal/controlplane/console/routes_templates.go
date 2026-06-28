@@ -99,6 +99,7 @@ func (h *Handler) opsTemplates(w http.ResponseWriter, r *http.Request) {
 	h.renderPage(w, r, "ops_templates.html", http.StatusOK, map[string]any{
 		"AppID": appID, "Templates": views, "MyTemplates": myTemplates,
 		"CSRF": sess.CSRF, "OpsNav": "templates",
+		"ShowOnboarding": h.appHasNoBizRoles(r.Context(), principal, appID),
 	})
 }
 
