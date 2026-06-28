@@ -7,7 +7,7 @@
 <h1>模板库</h1>
 {{if .Templates}}
 {{range .Templates}}
-<div class="card" style="margin-bottom:var(--space-4)">
+<div class="card card-spaced">
 <h2 class="card-header">{{.Name}} <span class="badge badge-muted">{{.PermCount}} 权限点 · {{.RoleCount}} 角色</span></h2>
 <p class="hint">{{.Description}}</p>
 <details>
@@ -28,17 +28,17 @@
 <div class="empty-state">暂无可用模板。</div>
 {{end}}
 
-<h1 style="margin-top:var(--space-6)">我的模板</h1>
+<h2 class="ops-subsection">我的模板</h2>
 <p class="hint">把本应用当前的权限点与业务角色存为本租户专属模板，便于复用到其他应用。</p>
 {{if .MyTemplates}}
 {{range .MyTemplates}}
-<div class="card" style="margin-bottom:var(--space-4)">
+<div class="card card-spaced">
 <h2 class="card-header">{{.Name}}</h2>
 <p class="hint">{{.Description}}</p>
 <a class="btn" href="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}">预览</a>
-<form method="post" action="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}/delete" class="inline-form" style="display:inline" data-confirm="确定删除该模板吗？此操作不可撤销。">
+<form method="post" action="/ops/apps/{{$.AppID}}/tenant-templates/{{.ID}}/delete" class="inline-form" data-confirm="确定删除该模板吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-<button class="btn">删除</button>
+<button class="btn danger">删除</button>
 </form>
 </div>
 {{end}}
@@ -46,7 +46,7 @@
 <div class="empty-state">本租户暂无自有模板。</div>
 {{end}}
 
-<div class="card" style="margin-top:var(--space-4)">
+<div class="card card-spaced-top">
 <h2 class="card-header">存为模板</h2>
 <p class="hint">为当前应用的权限点与业务角色拍一份快照，存为本租户模板。</p>
 <form method="post" action="/ops/apps/{{.AppID}}/template-captures" class="inline-form">

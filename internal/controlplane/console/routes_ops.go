@@ -299,8 +299,19 @@ func (h *Handler) opsRoleNewForm(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"ListPermissions", err)
 		return
 	}
+	type permOption struct {
+		PermissionId int64
+		Label        string
+	}
+	var perms []permOption
+	for _, p := range resp.Permissions {
+		perms = append(perms, permOption{
+			PermissionId: p.PermissionId,
+			Label:        capabilityName(p.Name, p.Resource, p.Action), // 缺名→「resource · 动词」，不裸 resource:action
+		})
+	}
 	h.renderPage(w, r, "ops_role_new.html", http.StatusOK, map[string]any{
-		"AppID": appID, "Permissions": resp.Permissions, "CSRF": sess.CSRF, "OpsNav": "roles",
+		"AppID": appID, "Permissions": perms, "CSRF": sess.CSRF, "OpsNav": "roles",
 	})
 }
 

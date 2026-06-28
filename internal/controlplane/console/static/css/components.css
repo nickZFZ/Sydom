@@ -91,3 +91,8 @@ dialog.dialog::backdrop { background:rgba(0,0,0,.4); }
 /* 未迁页兼容：提示文本 .hint / 内联错误 .error（对齐 .field-error，重着色入体系） */
 .hint { font-size:var(--text-xs); color:var(--color-text-muted); }
 .error { color:var(--color-danger); font-size:var(--text-sm); }
+
+/* 运营台模板库版式（替代行内 style） */
+.ops-subsection { margin-top: var(--space-6); }
+.card-spaced { margin-bottom: var(--space-4); }
+.card-spaced-top { margin-top: var(--space-4); }

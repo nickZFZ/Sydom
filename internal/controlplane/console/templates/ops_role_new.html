@@ -9,7 +9,7 @@
 <p><label>角色名称<br><input name="name" required placeholder="如：销售经理"></label></p>
 <fieldset><legend>包含的能力</legend>
 {{range .Permissions}}
-<label><input type="checkbox" name="permission_ids" value="{{.PermissionId}}"> {{if .Name}}{{.Name}}{{else}}{{.Resource}}:{{.Action}}{{end}}</label><br>
+<label><input type="checkbox" name="permission_ids" value="{{.PermissionId}}"> {{.Label}}</label><br>
 {{end}}
 </fieldset>
 <button type="submit" class="btn btn-primary">创建</button>

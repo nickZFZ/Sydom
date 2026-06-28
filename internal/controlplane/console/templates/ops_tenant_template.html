@@ -26,7 +26,7 @@
 </form>
 <form method="post" action="/ops/apps/{{.AppID}}/tenant-templates/{{.TemplateID}}/delete" class="inline-form" style="display:inline" data-confirm="确定删除该模板吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
-<button class="btn">删除模板</button>
+<button class="btn danger">删除模板</button>
 </form>
 <p><a href="/ops/apps/{{.AppID}}/templates">返回模板库</a></p>
 </section></div>{{end}}
