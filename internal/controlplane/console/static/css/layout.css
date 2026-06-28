@@ -24,6 +24,8 @@ main { display:block; }
 main > section { padding:var(--space-5); max-width:1100px; }
 /* breadcrumb 壳（文案补全留 M3.4） */
 .breadcrumb { color:var(--color-text-muted); font-size:var(--text-sm); margin-bottom:var(--space-3); }
+/* breadcrumb 内返回链接加下划线：避免「仅靠颜色区分链接」的 axe link-in-text-block（对齐 .list-plain a 既有处理） */
+.breadcrumb a { text-decoration:underline; }
 /* 响应式：窄屏 sidenav 堆叠、nav 换行（纯 CSS 无 JS） */
 @media (max-width:720px) {
   .workspace { grid-template-columns:1fr; }
