@@ -1,6 +1,6 @@
 {{define "title"}}操作员 · 司域 Console{{end}}
 {{define "content"}}
-<nav class="breadcrumb" aria-label="面包屑">系统 · 算子</nav>
+<nav class="breadcrumb" aria-label="面包屑">系统 · 操作员</nav>
 <h1>操作员</h1>
 <p><a class="btn btn-primary" href="/operators/new">+ 新建操作员</a></p>
 {{template "searchbox" .Pager}}
@@ -21,12 +21,12 @@
 <input name="role_id" placeholder="role_id">
 <input name="domain" placeholder="domain(app_id 或 *)">
 <button class="btn btn-primary">绑定角色</button></form>
-<form method="post" action="/operators/{{.OperatorId}}/unbind-role" class="inline-form" data-confirm="确定解绑该算子角色吗？此操作立即生效。">
+<form method="post" action="/operators/{{.OperatorId}}/unbind-role" class="inline-form" data-confirm="确定解绑该操作员角色吗？此操作立即生效。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input name="role_id" placeholder="role_id">
 <input name="domain" placeholder="domain(app_id 或 *)">
 <button>解绑角色</button></form>
-<form method="post" action="/operators/{{.OperatorId}}/reset-secret" class="inline-form" data-confirm="确定重置该算子凭据吗？旧凭据将立即失效。">
+<form method="post" action="/operators/{{.OperatorId}}/reset-secret" class="inline-form" data-confirm="确定重置该操作员凭据吗？旧凭据将立即失效。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <button>重置密钥</button></form>
 </td></tr>{{end}}

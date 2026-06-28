@@ -122,7 +122,7 @@ func TestConfirm_UnbindOperatorRole_NoConfirmed_NotExecuted(t *testing.T) {
 	require.NoError(t, err)
 	body := readBody(t, resp2)
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
-	require.Contains(t, body, "确定解绑该算子角色吗？此操作立即生效。")
+	require.Contains(t, body, "确定解绑该操作员角色吗？此操作立即生效。")
 	require.Contains(t, body, `name="confirmed" value="1"`)
 	require.Equal(t, 1, countBind(), "无 confirmed 时绑定不应被解绑")
 }
@@ -261,7 +261,7 @@ func TestConfirm_ResetOperatorSecret_NoConfirmed_NotExecuted(t *testing.T) {
 	require.NoError(t, err)
 	body := readBody(t, resp2)
 	require.Equal(t, http.StatusOK, resp2.StatusCode)
-	require.Contains(t, body, "确定重置该算子凭据吗？旧凭据将立即失效。")
+	require.Contains(t, body, "确定重置该操作员凭据吗？旧凭据将立即失效。")
 	require.Contains(t, body, `name="confirmed" value="1"`)
 	require.NotContains(t, body, "已重置") // 未落到一次性 secret 页
 	require.Equal(t, before, secretEnc(), "无 confirmed 时 secret 不应重置")
