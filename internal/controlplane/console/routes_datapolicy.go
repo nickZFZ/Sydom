@@ -77,6 +77,9 @@ func (h *Handler) upsertDataPolicy(w http.ResponseWriter, r *http.Request) {
 
 // deleteDataPolicy：写动作走 doWrite。app_id 先解码（错则直接返回），再取 path 的 id。
 func (h *Handler) deleteDataPolicy(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"DeleteDataPolicy") {
+		return
+	}
 	h.doWrite(w, r, svc+"DeleteDataPolicy",
 		func(r *http.Request) (proto.Message, error) {
 			appID, err := pathUint64(r, "app_id")

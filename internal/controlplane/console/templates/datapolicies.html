@@ -23,7 +23,7 @@
 <th><a href="?{{sortHref $.Pager.SortQuery "effect" "asc"}}">Effect ↑</a> <a href="?{{sortHref $.Pager.SortQuery "effect" "desc"}}">↓</a></th>
 <th>Condition</th><th>业务说明</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
 {{range .DataPolicies}}<tr><td>{{.DataPolicyId}}</td><td>{{.SubjectType}}</td><td>{{.SubjectId}}</td><td>{{.Resource}}</td><td>{{.Effect}}</td><td><code>{{.Condition}}</code></td><td>{{.Description}}</td>
-<td><form method="post" action="/apps/{{$.AppID}}/data-policies/{{.DataPolicyId}}/delete">
+<td><form method="post" action="/apps/{{$.AppID}}/data-policies/{{.DataPolicyId}}/delete" data-confirm="确定删除该数据策略吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <button class="danger">删除</button></form></td></tr>{{end}}
 </tbody></table>

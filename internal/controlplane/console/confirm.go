@@ -14,6 +14,7 @@ var confirmPrompts = map[string]string{
 	svc + "UnbindOperatorRole":      "确定解绑该操作员角色吗？此操作立即生效。",
 	svc + "RotateApplicationSecret": "确定轮换应用凭据吗？旧凭据将立即失效。",
 	svc + "ResetOperatorSecret":     "确定重置该操作员凭据吗？旧凭据将立即失效。",
+	svc + "DeleteDataPolicy":        "确定删除该数据策略吗？此操作不可撤销。",
 	svc + "DeleteTenantTemplate":    "确定删除该模板吗？此操作不可撤销。",
 	svc + "SetApplicationStatus":    "确定停用该应用吗？停用后将拒绝该应用的写操作。",
 }
