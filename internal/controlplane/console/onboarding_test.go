@@ -91,6 +91,8 @@ func TestOnboarding_AssignBindsAndRedirectsToDone(t *testing.T) {
 	require.Contains(t, readBody(t, resp), "引导完成")
 }
 
+// mustGet 取页面只断言无传输错误，返回原始响应供调用方检测正文内容
+// （与 getOK 互补：getOK 还断言单 h1 + breadcrumb，本 helper 用于只关心横幅有无、不验证页面结构的场景）。
 func mustGet(t *testing.T, c *http.Client, url string) *http.Response {
 	t.Helper()
 	resp, err := c.Get(url)
