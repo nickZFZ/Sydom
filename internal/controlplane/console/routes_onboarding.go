@@ -55,7 +55,7 @@ func (h *Handler) onboardingSelect(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	h.renderPage(w, r, "onboarding_select.html", http.StatusOK, map[string]any{
-		"AppID": appID, "Recommended": recommended, "Others": others,
+		"AppID": appID, "Packs": append(recommended, others...), // 推荐置顶 + 其余，badge 区分
 		"CSRF": sess.CSRF, "OpsNav": "onboarding",
 	})
 }
@@ -111,7 +111,7 @@ func (h *Handler) onboardingDone(w http.ResponseWriter, r *http.Request) {
 	}
 	appID, err := pathUint64(r, "app_id")
 	if err != nil {
-		h.renderGRPCError(w, r, svc+"ListRoles", err)
+		h.renderGRPCError(w, r, "console/onboarding/done", err) // 纯渲染页，无 RPC：标签忠实反映 handler
 		return
 	}
 	var nextSteps []string

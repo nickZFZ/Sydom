@@ -10,8 +10,8 @@
 <nav class="breadcrumb" aria-label="面包屑">运营台 · 开始引导</nav>
 <h1>开始引导</h1>
 <p class="hint">选一个官方预设包，一键为本应用建好权限点与业务角色，几步即可上手。</p>
-{{range .Recommended}}<div class="card">
-<h2>{{.Name}} <span class="badge badge-success">推荐</span></h2>
+{{range .Packs}}<div class="card">
+<h2>{{.Name}} {{if .Recommended}}<span class="badge badge-success">推荐</span>{{end}}</h2>
 {{if .Intro}}<p>{{.Intro}}</p>{{end}}
 <p class="hint">{{.PermCount}} 个权限点 · {{.RoleCount}} 个业务角色</p>
 <form method="post" action="/ops/apps/{{$.AppID}}/onboarding/apply" data-confirm="将为本应用应用预设「{{.Name}}」，建好权限点与业务角色，确定吗？">
@@ -19,14 +19,5 @@
 <input type="hidden" name="template_id" value="{{.ID}}">
 <button class="btn btn-primary">应用此预设</button></form>
 </div>{{end}}
-{{range .Others}}<div class="card">
-<h2>{{.Name}}</h2>
-{{if .Intro}}<p>{{.Intro}}</p>{{end}}
-<p class="hint">{{.PermCount}} 个权限点 · {{.RoleCount}} 个业务角色</p>
-<form method="post" action="/ops/apps/{{$.AppID}}/onboarding/apply" data-confirm="将为本应用应用预设「{{.Name}}」，建好权限点与业务角色，确定吗？">
-<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-<input type="hidden" name="template_id" value="{{.ID}}">
-<button class="btn btn-primary">应用此预设</button></form>
-</div>{{end}}
-{{if not (or .Recommended .Others)}}<p class="empty-state">暂无可用预设包。</p>{{end}}
+{{if not .Packs}}<p class="empty-state">暂无可用预设包。</p>{{end}}
 </section></div>{{end}}
