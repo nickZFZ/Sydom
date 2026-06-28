@@ -10,6 +10,7 @@
 <nav class="breadcrumb" aria-label="面包屑">运营台 · 分配首个成员</nav>
 <h1>分配首个成员</h1>
 <p class="hint">把第一个同事分配到一个业务角色，应用就真正能用了。也可以现在跳过，稍后在「人员」里做。</p>
+{{if not .Roles}}<p class="hint">还没有业务角色，请先返回「开始引导」应用一个预设包。</p>{{end}}
 <form method="post" action="/ops/apps/{{.AppID}}/onboarding/assign" class="stacked-form">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <input type="hidden" name="template_id" value="{{.TemplateID}}">
