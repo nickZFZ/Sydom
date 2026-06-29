@@ -30,6 +30,8 @@ type Permission struct {
 	Type        string `json:"type" yaml:"type"`
 	Name        string `json:"name" yaml:"name"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	// Source 是 output-only 来源标记（export 填充）：import/Diff 不消费它（采纳判定只看 DB Current 的 source）。
+	Source string `json:"source,omitempty" yaml:"source,omitempty"`
 }
 
 type Role struct {
@@ -38,6 +40,8 @@ type Role struct {
 	Description     string      `json:"description,omitempty" yaml:"description,omitempty"`
 	PermissionCodes []string    `json:"permission_codes" yaml:"permission_codes"`
 	DataScopes      []DataScope `json:"data_scopes,omitempty" yaml:"data_scopes,omitempty"`
+	// Source 同 Permission.Source：output-only，import/Diff 不消费。
+	Source string `json:"source,omitempty" yaml:"source,omitempty"`
 }
 
 type DataScope struct {
@@ -52,6 +56,8 @@ type DataPolicy struct {
 	Resource    string    `json:"resource" yaml:"resource"`
 	Effect      string    `json:"effect" yaml:"effect"`
 	Condition   Condition `json:"condition" yaml:"condition"`
+	// Source 同 Permission.Source：output-only，import/Diff 不消费。
+	Source string `json:"source,omitempty" yaml:"source,omitempty"`
 }
 
 // Condition 是数据条件的桥接类型：内部恒以规范化 JSON 字节存储，

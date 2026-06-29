@@ -202,3 +202,48 @@ func RoleHasUserBindings(ctx context.Context, ex cp.DBTX, appID, roleID int64) (
 		appID, roleID).Scan(&exists)
 	return exists, err
 }
+
+// RolePermissionCodes 返回该角色当前被授权的权限点 code（按 code 排序，供 import 先清后设对齐授权）。
+func RolePermissionCodes(ctx context.Context, ex cp.DBTX, appID, roleID int64) ([]string, error) {
+	rows, err := ex.QueryContext(ctx, `
+		SELECT p.code FROM role_permission rp
+		JOIN permission p ON p.id = rp.permission_id
+		WHERE rp.app_id=$1 AND rp.role_id=$2
+		ORDER BY p.code`, appID, roleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			return nil, err
+		}
+		out = append(out, code)
+	}
+	return out, rows.Err()
+}
+
+// DeletePermission 删除一条权限点。fail-close：仅当该权限点不再被任何 role_permission 引用时才删；
+// 命中 0 行（不存在或仍被引用）即报错——绝不在仍有授权悬挂时静默删权限点（权限一致性铁律）。
+func DeletePermission(ctx context.Context, ex cp.DBTX, appID int64, code string) error {
+	res, err := ex.ExecContext(ctx, `
+		DELETE FROM permission
+		WHERE app_id=$1 AND code=$2
+		  AND NOT EXISTS (
+		      SELECT 1 FROM role_permission rp
+		      WHERE rp.app_id=$1 AND rp.permission_id = permission.id
+		  )`, appID, code)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("store: permission %q in app %d not deleted (not found or still referenced by role_permission)", code, appID)
+	}
+	return nil
+}
