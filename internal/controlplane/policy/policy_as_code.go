@@ -65,11 +65,16 @@ func (m *PolicyManager) ExportAppPolicy(ctx context.Context, appID int64, format
 			Name: p.Name, Description: p.Description, Source: p.Source,
 		})
 	}
+	seenKey := map[string]bool{}
 	for _, r := range roles {
 		key := iacRoleKey(r.Code)
 		if !isExpressibleRoleKey(key) {
 			continue // 不可表达（如 tpl: 模板角色）→ 不受 IaC 治理，跳过
 		}
+		if seenKey[key] {
+			return "", fmt.Errorf("policy: export: role key %q derived from multiple role codes (identity collision)", key)
+		}
+		seenKey[key] = true
 		codes, err := store.RolePermissionCodes(ctx, m.db, appID, r.ID)
 		if err != nil {
 			return "", fmt.Errorf("policy: export role %d permissions: %w", r.ID, err)
@@ -120,29 +125,47 @@ func (m *PolicyManager) ImportAppPolicy(ctx context.Context, appID int64, conten
 		return plan, ver, nil, nil
 	}
 
+	// pre-tx 早退：pre-lock 快照已见 conflict 即拒，省去开事务（最终判定以锁内重算为准）。
 	if n := plan.Count("conflict"); n > 0 {
 		return plan, 0, nil, fmt.Errorf("policy: import has %d unresolved conflict(s)", n)
 	}
 
 	ctx = cp.WithOperator(ctx, "iac-import") // bump 路径的 audit actor
+	// 关闭 TOCTOU（PC-6）：snapshot→Diff→conflict 闸门移进 runVersionedWrite 取锁后重算，并 apply
+	// 这份锁内新算的 plan。否则 Diff 在未加锁的 m.db 上算、apply 在取锁后执行——并发下某 iac 角色可在
+	// Diff 之后、取锁之前被加用户绑定，pre-tx plan 仍标 delete，级联删掉新绑定（违反 PC-6 却返回成功）。
+	// *sql.Tx 满足 cp.DBTX，可直接在锁内 snapshotCurrent。dryRun 路径不取写锁、保持上面 pre-tx 语义不变。
+	var applied *iac.Plan
 	d, err := m.runVersionedWrite(ctx, appID, writeOp{
 		action: "import_policy", entityType: "app", entityID: fmt.Sprint(appID),
 		mutate: func(ctx context.Context, tx *sql.Tx) ([]cp.DataPolicyChange, error) {
-			return m.applyImportPlan(ctx, tx, appID, doc, plan)
+			freshCur, e := m.snapshotCurrent(ctx, tx, appID) // 锁内重读，TOCTOU-free
+			if e != nil {
+				return nil, e
+			}
+			applied = iac.Diff(doc, freshCur)
+			if n := applied.Count("conflict"); n > 0 {
+				return nil, fmt.Errorf("policy: import has %d unresolved conflict(s)", n)
+			}
+			return m.applyImportPlan(ctx, tx, appID, doc, applied)
 		},
 	})
 	if err != nil {
 		return plan, 0, nil, err
 	}
+	result := applied  // 锁内实际生效的 plan（成功路径必非 nil）
+	if result == nil { // 防御：mutate 必跑，理论上不到这
+		result = plan
+	}
 	if d == nil {
 		// 无投影变化且无数据变更 → runVersionedWrite 未 bump；回当前版本、delta=nil（幂等收敛）。
 		ver, e := store.LockAppVersion(ctx, m.db, appID)
 		if e != nil {
-			return plan, 0, nil, fmt.Errorf("policy: import read version app %d: %w", appID, e)
+			return result, 0, nil, fmt.Errorf("policy: import read version app %d: %w", appID, e)
 		}
-		return plan, ver, nil, nil
+		return result, ver, nil, nil
 	}
-	return plan, d.Version, d, nil
+	return result, d.Version, d, nil
 }
 
 // snapshotCurrent 用来源感知 store 读组装 iac.Current（只读）。角色按 key 收敛，
@@ -203,8 +226,8 @@ func (m *PolicyManager) snapshotCurrent(ctx context.Context, ex cp.DBTX, appID i
 }
 
 // applyImportPlan 在写事务内按 FK 安全序执行收敛计划，返回 data_policy 变更供 runVersionedWrite
-// 进 audit/广播。事务内重读快照得新鲜定位映射（post-lock，一致），按 pre-tx 计划项执行：
-// 计划项指向的实体若已不存在则 fail-close。
+// 进 audit/广播。plan 由调用方在同一锁内（post-lock）重算并传入；本函数另在事务内重读快照得新鲜
+// 定位映射（与 plan 同处一锁，一致），按计划项执行：计划项指向的实体若已不存在则 fail-close。
 func (m *PolicyManager) applyImportPlan(ctx context.Context, tx *sql.Tx, appID int64, doc *iac.Document, plan *iac.Plan) ([]cp.DataPolicyChange, error) {
 	roles, err := store.ListAppRolesWithSource(ctx, tx, appID)
 	if err != nil {
@@ -304,20 +327,19 @@ func (m *PolicyManager) applyImportPlan(ctx context.Context, tx *sql.Tx, appID i
 	}
 
 	// ── Phase B：建/改/采纳 ─────────────────────────────────────────────────────
-	// B1. 权限点 create/update（upsert source=iac）；adopt（manual→iac，仅翻 source）。
+	// B1. 权限点 create/update/adopt 一律走全量 upsert(source=iac)：ON CONFLICT 无条件覆盖
+	// 既翻 source(manual→iac)又对齐字段。adopt 与 create/update 同走对齐分支，使被采纳的 manual
+	// 权限点字段（resource/action/name…）立即对齐文件（唯一真相源），避免旧值投影分叉一个收敛周期，
+	// 并与角色/数据策略 adopt 全量对齐对称。
 	for _, it := range plan.Items {
 		if it.EntityType != "permission" {
 			continue
 		}
 		switch it.Kind {
-		case "create", "update":
+		case "create", "update", "adopt":
 			p := desiredPermByCode[it.Identity]
 			if _, e := store.UpsertPermissionWithSource(ctx, tx, appID,
 				p.Code, p.Resource, p.Action, p.Type, p.Name, p.Description, iacSource); e != nil {
-				return nil, e
-			}
-		case "adopt":
-			if e := store.AdoptPermissionSource(ctx, tx, appID, it.Identity); e != nil {
 				return nil, e
 			}
 		}

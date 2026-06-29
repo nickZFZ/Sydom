@@ -22,7 +22,7 @@ type RoleWithSource struct {
 
 // DataPolicyWithSource 是含 source 标记的数据策略快照行（无 Description，对齐 SELECT 列）。
 type DataPolicyWithSource struct {
-	ID                                                    int64
+	ID                                                          int64
 	SubjectType, SubjectID, Resource, Effect, Condition, Source string
 }
 
