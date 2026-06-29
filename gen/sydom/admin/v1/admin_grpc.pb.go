@@ -68,6 +68,8 @@ const (
 	AdminService_GetTenantTemplate_FullMethodName       = "/sydom.admin.v1.AdminService/GetTenantTemplate"
 	AdminService_ApplyTenantTemplate_FullMethodName     = "/sydom.admin.v1.AdminService/ApplyTenantTemplate"
 	AdminService_DeleteTenantTemplate_FullMethodName    = "/sydom.admin.v1.AdminService/DeleteTenantTemplate"
+	AdminService_ExportAppPolicy_FullMethodName         = "/sydom.admin.v1.AdminService/ExportAppPolicy"
+	AdminService_ImportAppPolicy_FullMethodName         = "/sydom.admin.v1.AdminService/ImportAppPolicy"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -136,6 +138,9 @@ type AdminServiceClient interface {
 	GetTenantTemplate(ctx context.Context, in *GetTenantTemplateRequest, opts ...grpc.CallOption) (*TenantTemplate, error)
 	ApplyTenantTemplate(ctx context.Context, in *ApplyTenantTemplateRequest, opts ...grpc.CallOption) (*ApplyTemplateResponse, error)
 	DeleteTenantTemplate(ctx context.Context, in *DeleteTenantTemplateRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	// —— M4.1 策略即代码（导出/导入）——
+	ExportAppPolicy(ctx context.Context, in *ExportAppPolicyRequest, opts ...grpc.CallOption) (*ExportAppPolicyResponse, error)
+	ImportAppPolicy(ctx context.Context, in *ImportAppPolicyRequest, opts ...grpc.CallOption) (*ImportAppPolicyResponse, error)
 }
 
 type adminServiceClient struct {
@@ -587,6 +592,24 @@ func (c *adminServiceClient) DeleteTenantTemplate(ctx context.Context, in *Delet
 	return out, nil
 }
 
+func (c *adminServiceClient) ExportAppPolicy(ctx context.Context, in *ExportAppPolicyRequest, opts ...grpc.CallOption) (*ExportAppPolicyResponse, error) {
+	out := new(ExportAppPolicyResponse)
+	err := c.cc.Invoke(ctx, AdminService_ExportAppPolicy_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ImportAppPolicy(ctx context.Context, in *ImportAppPolicyRequest, opts ...grpc.CallOption) (*ImportAppPolicyResponse, error) {
+	out := new(ImportAppPolicyResponse)
+	err := c.cc.Invoke(ctx, AdminService_ImportAppPolicy_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility
@@ -653,6 +676,9 @@ type AdminServiceServer interface {
 	GetTenantTemplate(context.Context, *GetTenantTemplateRequest) (*TenantTemplate, error)
 	ApplyTenantTemplate(context.Context, *ApplyTenantTemplateRequest) (*ApplyTemplateResponse, error)
 	DeleteTenantTemplate(context.Context, *DeleteTenantTemplateRequest) (*WriteResponse, error)
+	// —— M4.1 策略即代码（导出/导入）——
+	ExportAppPolicy(context.Context, *ExportAppPolicyRequest) (*ExportAppPolicyResponse, error)
+	ImportAppPolicy(context.Context, *ImportAppPolicyRequest) (*ImportAppPolicyResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -806,6 +832,12 @@ func (UnimplementedAdminServiceServer) ApplyTenantTemplate(context.Context, *App
 }
 func (UnimplementedAdminServiceServer) DeleteTenantTemplate(context.Context, *DeleteTenantTemplateRequest) (*WriteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteTenantTemplate not implemented")
+}
+func (UnimplementedAdminServiceServer) ExportAppPolicy(context.Context, *ExportAppPolicyRequest) (*ExportAppPolicyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExportAppPolicy not implemented")
+}
+func (UnimplementedAdminServiceServer) ImportAppPolicy(context.Context, *ImportAppPolicyRequest) (*ImportAppPolicyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportAppPolicy not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 
@@ -1702,6 +1734,42 @@ func _AdminService_DeleteTenantTemplate_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ExportAppPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportAppPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ExportAppPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ExportAppPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ExportAppPolicy(ctx, req.(*ExportAppPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ImportAppPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportAppPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ImportAppPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ImportAppPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ImportAppPolicy(ctx, req.(*ImportAppPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1904,6 +1972,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteTenantTemplate",
 			Handler:    _AdminService_DeleteTenantTemplate_Handler,
+		},
+		{
+			MethodName: "ExportAppPolicy",
+			Handler:    _AdminService_ExportAppPolicy_Handler,
+		},
+		{
+			MethodName: "ImportAppPolicy",
+			Handler:    _AdminService_ImportAppPolicy_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

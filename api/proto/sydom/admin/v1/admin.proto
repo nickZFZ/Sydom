@@ -82,6 +82,10 @@ service AdminService {
   rpc GetTenantTemplate(GetTenantTemplateRequest) returns (TenantTemplate);
   rpc ApplyTenantTemplate(ApplyTenantTemplateRequest) returns (ApplyTemplateResponse);
   rpc DeleteTenantTemplate(DeleteTenantTemplateRequest) returns (WriteResponse);
+
+  // —— M4.1 策略即代码（导出/导入）——
+  rpc ExportAppPolicy(ExportAppPolicyRequest) returns (ExportAppPolicyResponse);
+  rpc ImportAppPolicy(ImportAppPolicyRequest) returns (ImportAppPolicyResponse);
 }
 
 // WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
@@ -597,3 +601,33 @@ message SubjectDiff {
   repeated DataPolicyPreview   removed_data_previews = 5;
 }
 message SimulateRoleChangeResponse { repeated SubjectDiff subjects = 1; }
+
+// —— M4.1 策略即代码（导出/导入）——
+message ExportAppPolicyRequest {
+  uint64 app_id = 1;
+  string format = 2; // "yaml" | "json"
+}
+message ExportAppPolicyResponse {
+  string content = 1;
+}
+message ImportAppPolicyRequest {
+  uint64 app_id = 1;
+  string content = 2;
+  bool dry_run = 3;
+}
+message PolicyDiffEntry {
+  string kind = 1;        // "create" | "adopt" | "update" | "delete" | "conflict"
+  string entity_type = 2; // "permission" | "role" | "data_policy"
+  string identity = 3;    // code / key / subject:resource
+  string detail = 4;      // 人读差异摘要（绝不含 secret）
+}
+message ImportAppPolicyResponse {
+  repeated PolicyDiffEntry diff = 1;
+  bool applied = 2;        // dry_run=true 恒 false
+  int64 version = 3;       // apply 后的新版本；dry_run 回当前版本
+  int32 creates = 4;
+  int32 adopts = 5;
+  int32 updates = 6;
+  int32 deletes = 7;
+  int32 conflicts = 8;
+}
