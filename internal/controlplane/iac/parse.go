@@ -92,6 +92,7 @@ func Validate(d *Document) error {
 			}
 		}
 	}
+	dpSeen := map[string]bool{}
 	for _, dp := range d.DataPolicies {
 		if strings.TrimSpace(dp.SubjectType) == "" || strings.TrimSpace(dp.SubjectID) == "" ||
 			strings.TrimSpace(dp.Resource) == "" {
@@ -103,6 +104,11 @@ func Validate(d *Document) error {
 		if err := validEffect(dp.Effect); err != nil {
 			return fmt.Errorf("iac: data_policy %s/%s: %w", dp.SubjectID, dp.Resource, err)
 		}
+		id := dp.SubjectType + ":" + dp.SubjectID + ":" + dp.Resource
+		if dpSeen[id] {
+			return fmt.Errorf("iac: duplicate data_policy identity %q", id)
+		}
+		dpSeen[id] = true
 	}
 	return nil
 }

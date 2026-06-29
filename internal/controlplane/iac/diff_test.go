@@ -128,3 +128,83 @@ func TestDiff_AutoSourceNeverTouched(t *testing.T) {
 		t.Fatalf("auto-source entity declared in file must produce no plan item, got %+v", p.Items)
 	}
 }
+
+func TestDiff_DataPolicy_DuplicateCurIdentity_Conflict(t *testing.T) {
+	desired := &Document{DataPolicies: []DataPolicy{
+		mustDP(t, `{"subject_type":"user","subject_id":"u1","resource":"order","effect":"allow","condition":{"a":1}}`),
+	}}
+	cur := &Current{DataPolicies: []CurrentDataPolicy{
+		{SubjectType: "user", SubjectID: "u1", Resource: "order", Effect: "allow", Source: "iac", Condition: []byte(`{"a":1}`)},
+		{SubjectType: "user", SubjectID: "u1", Resource: "order", Effect: "deny", Source: "iac", Condition: []byte(`{"b":2}`)},
+	}}
+	p := Diff(desired, cur)
+	if p.Count("conflict") != 1 {
+		t.Fatalf("want 1 conflict for ambiguous data_policy identity, got %+v", p.Items)
+	}
+	if p.Count("update")+p.Count("create")+p.Count("delete")+p.Count("adopt") != 0 {
+		t.Fatalf("ambiguous identity must not produce other items, got %+v", p.Items)
+	}
+}
+
+func TestDiff_DataPolicy_DuplicateManualNotInFile_Ignored(t *testing.T) {
+	desired := &Document{}
+	cur := &Current{DataPolicies: []CurrentDataPolicy{
+		{SubjectType: "user", SubjectID: "u1", Resource: "order", Effect: "allow", Source: "manual", Condition: []byte(`{"a":1}`)},
+		{SubjectType: "user", SubjectID: "u1", Resource: "order", Effect: "deny", Source: "manual", Condition: []byte(`{"b":2}`)},
+	}}
+	p := Diff(desired, cur)
+	if len(p.Items) != 0 {
+		t.Fatalf("duplicate manual data_policies not in file must be ignored (PC-3), got %+v", p.Items)
+	}
+}
+
+func TestValidate_RejectsDuplicateDataPolicyIdentity(t *testing.T) {
+	d, err := Parse([]byte(`{"data_policies":[{"subject_type":"user","subject_id":"u1","resource":"order","effect":"allow","condition":{"a":1}},{"subject_type":"user","subject_id":"u1","resource":"order","effect":"deny","condition":{"b":2}}]}`))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if err := Validate(d); err == nil {
+		t.Fatal("expected error for duplicate data_policy identity in file")
+	}
+}
+
+func TestDiff_RoleUpdate_OnDataScopeAndNameChange(t *testing.T) {
+	desired := &Document{
+		Roles: []Role{{Key: "viewer", Name: "新名", DataScopes: []DataScope{
+			{Resource: "order", Effect: "allow", Condition: ConditionFromJSON([]byte(`{"dept":"sales"}`))},
+		}}},
+	}
+	cur := &Current{
+		Roles: []CurrentRole{{Key: "viewer", Name: "旧名", Source: "iac", DataScopes: []DataScope{
+			{Resource: "order", Effect: "allow", Condition: ConditionFromJSON([]byte(`{"dept":"hr"}`))},
+		}}},
+	}
+	p := Diff(desired, cur)
+	if p.Count("update") != 1 {
+		t.Fatalf("want 1 role update (name + data_scope changed), got %+v", p.Items)
+	}
+}
+
+func TestDiff_RoleNoUpdate_OnDataScopeReorder(t *testing.T) {
+	desired := &Document{Roles: []Role{{Key: "viewer", Name: "V", DataScopes: []DataScope{
+		{Resource: "order", Effect: "allow", Condition: ConditionFromJSON([]byte(`{"dept":"sales"}`))},
+		{Resource: "item", Effect: "deny", Condition: ConditionFromJSON([]byte(`{"x":1}`))},
+	}}}}
+	cur := &Current{Roles: []CurrentRole{{Key: "viewer", Name: "V", Source: "iac", DataScopes: []DataScope{
+		{Resource: "item", Effect: "deny", Condition: ConditionFromJSON([]byte(`{"x":1}`))},
+		{Resource: "order", Effect: "allow", Condition: ConditionFromJSON([]byte(`{"dept":"sales"}`))},
+	}}}}
+	p := Diff(desired, cur)
+	if p.Count("update") != 0 {
+		t.Fatalf("reordered data_scopes must not produce update, got %+v", p.Items)
+	}
+}
+
+func TestDiff_PermissionCreate(t *testing.T) {
+	desired := &Document{Permissions: []Permission{{Code: "new:read", Resource: "new", Action: "read", Type: "app", Name: "N"}}}
+	cur := &Current{}
+	p := Diff(desired, cur)
+	if p.Count("create") != 1 {
+		t.Fatalf("want 1 create, got %+v", p.Items)
+	}
+}

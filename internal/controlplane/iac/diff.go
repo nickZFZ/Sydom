@@ -63,6 +63,12 @@ func ConditionFromJSON(b []byte) Condition {
 // 来源治理规则（PC-3）：只治理 source=iac 实体；manual→iac 为 adopt；auto/其他永不触碰（fail-close）。
 // 删除安全（PC-6）：iac 角色有用户绑定时删除降级为 conflict。
 func Diff(desired *Document, cur *Current) *Plan {
+	if desired == nil {
+		desired = &Document{}
+	}
+	if cur == nil {
+		cur = &Current{}
+	}
 	plan := &Plan{}
 
 	// ── 权限点 ────────────────────────────────────────────────────────────────
@@ -152,7 +158,7 @@ func Diff(desired *Document, cur *Current) *Plan {
 				if !roleFieldsEqual(cr, dr) {
 					plan.Items = append(plan.Items, PlanItem{
 						Kind: "update", EntityType: "role", Identity: cr.Key,
-						Detail: "字段变更",
+						Detail: roleUpdateDetail(cr, dr),
 					})
 				}
 			} else {
@@ -199,63 +205,118 @@ func Diff(desired *Document, cur *Current) *Plan {
 	}
 
 	// ── 数据策略 ──────────────────────────────────────────────────────────────
+	// 注意：data_policy 在 schema 上无 (subject_type,subject_id,resource) 自然唯一键
+	// （effect 是独立维度，同一身份可有 allow+deny 等多行）。因此按身份分组：
+	// 对「会影响收敛」的不唯一身份 fail-close 产 conflict，绝不 last-wins 静默坍缩；
+	// 纯 manual/auto 且文件未声明的多行仍按 PC-3 忽略（永不触碰）。
 	dpID := func(subjectType, subjectID, resource string) string {
 		return subjectType + ":" + subjectID + ":" + resource
 	}
 
-	desiredDPMap := make(map[string]DataPolicy, len(desired.DataPolicies))
+	desiredDPByID := make(map[string][]DataPolicy, len(desired.DataPolicies))
 	for _, dp := range desired.DataPolicies {
-		desiredDPMap[dpID(dp.SubjectType, dp.SubjectID, dp.Resource)] = dp
+		id := dpID(dp.SubjectType, dp.SubjectID, dp.Resource)
+		desiredDPByID[id] = append(desiredDPByID[id], dp)
 	}
-	curDPMap := make(map[string]CurrentDataPolicy, len(cur.DataPolicies))
+	curDPByID := make(map[string][]CurrentDataPolicy, len(cur.DataPolicies))
 	for _, cdp := range cur.DataPolicies {
-		curDPMap[dpID(cdp.SubjectType, cdp.SubjectID, cdp.Resource)] = cdp
+		id := dpID(cdp.SubjectType, cdp.SubjectID, cdp.Resource)
+		curDPByID[id] = append(curDPByID[id], cdp)
 	}
 
-	curDPKeys := make([]string, 0, len(cur.DataPolicies))
-	for _, cdp := range cur.DataPolicies {
-		curDPKeys = append(curDPKeys, dpID(cdp.SubjectType, cdp.SubjectID, cdp.Resource))
+	// 身份并集，排序保证输出确定。
+	dpIDSet := make(map[string]bool, len(desiredDPByID)+len(curDPByID))
+	for id := range desiredDPByID {
+		dpIDSet[id] = true
 	}
-	sort.Strings(curDPKeys)
+	for id := range curDPByID {
+		dpIDSet[id] = true
+	}
+	dpIDs := make([]string, 0, len(dpIDSet))
+	for id := range dpIDSet {
+		dpIDs = append(dpIDs, id)
+	}
+	sort.Strings(dpIDs)
 
-	for _, id := range curDPKeys {
-		cdp := curDPMap[id]
-		switch cdp.Source {
-		case "iac":
-			if dp, ok := desiredDPMap[id]; ok {
-				if !dpFieldsEqual(cdp, dp) {
+	for _, id := range dpIDs {
+		desiredRows := desiredDPByID[id]
+		curRows := curDPByID[id]
+
+		// 文件侧身份不唯一 → fail-close conflict（Validate 通常已拦，此处纯函数防御）。
+		if len(desiredRows) > 1 {
+			plan.Items = append(plan.Items, PlanItem{
+				Kind: "conflict", EntityType: "data_policy", Identity: id,
+				Detail: "文件中数据策略身份不唯一，无法安全收敛",
+			})
+			continue
+		}
+		// 库侧身份不唯一：仅当会影响收敛时才 conflict（文件声明了它，或多行中含 iac 行）；
+		// 否则（全 manual/auto 且文件未声明）按 PC-3 忽略。
+		if len(curRows) > 1 {
+			governed := len(desiredRows) > 0
+			if !governed {
+				for _, cdp := range curRows {
+					if cdp.Source == "iac" {
+						governed = true
+						break
+					}
+				}
+			}
+			if governed {
+				plan.Items = append(plan.Items, PlanItem{
+					Kind: "conflict", EntityType: "data_policy", Identity: id,
+					Detail: "库中数据策略身份不唯一，无法安全收敛，请人工厘清",
+				})
+			}
+			continue
+		}
+
+		// len(desiredRows) ≤ 1 且 len(curRows) ≤ 1：单条收敛逻辑。
+		var (
+			cdp   CurrentDataPolicy
+			haveC bool
+		)
+		if len(curRows) == 1 {
+			cdp, haveC = curRows[0], true
+		}
+		var (
+			dp    DataPolicy
+			haveD bool
+		)
+		if len(desiredRows) == 1 {
+			dp, haveD = desiredRows[0], true
+		}
+
+		switch {
+		case haveC:
+			switch cdp.Source {
+			case "iac":
+				if haveD {
+					if !dpFieldsEqual(cdp, dp) {
+						plan.Items = append(plan.Items, PlanItem{
+							Kind: "update", EntityType: "data_policy", Identity: id,
+							Detail: dpUpdateDetail(cdp, dp),
+						})
+					}
+				} else {
 					plan.Items = append(plan.Items, PlanItem{
-						Kind: "update", EntityType: "data_policy", Identity: id,
-						Detail: "condition/effect 变更",
+						Kind: "delete", EntityType: "data_policy", Identity: id,
+						Detail: "删除",
 					})
 				}
-			} else {
-				plan.Items = append(plan.Items, PlanItem{
-					Kind: "delete", EntityType: "data_policy", Identity: id,
-					Detail: "删除",
-				})
+			case "manual":
+				if haveD {
+					plan.Items = append(plan.Items, PlanItem{
+						Kind: "adopt", EntityType: "data_policy", Identity: id,
+						Detail: "纳入 IaC 托管(manual→iac)",
+					})
+				}
+				// 文件未声明 → 忽略（PC-3）
+			default:
+				// auto / 其他 → 永不触碰（PC-3）
 			}
-		case "manual":
-			if _, ok := desiredDPMap[id]; ok {
-				plan.Items = append(plan.Items, PlanItem{
-					Kind: "adopt", EntityType: "data_policy", Identity: id,
-					Detail: "纳入 IaC 托管(manual→iac)",
-				})
-			}
-			// 文件未声明 → 忽略（PC-3）
-		default:
-			// auto / 其他 → 永不触碰
-		}
-	}
-
-	// 文件声明、库侧不存在 → create
-	desiredDPKeys := make([]string, 0, len(desired.DataPolicies))
-	for _, dp := range desired.DataPolicies {
-		desiredDPKeys = append(desiredDPKeys, dpID(dp.SubjectType, dp.SubjectID, dp.Resource))
-	}
-	sort.Strings(desiredDPKeys)
-	for _, id := range desiredDPKeys {
-		if _, ok := curDPMap[id]; !ok {
+		case haveD:
+			// 库侧无此身份 → create
 			plan.Items = append(plan.Items, PlanItem{
 				Kind: "create", EntityType: "data_policy", Identity: id,
 				Detail: "新建",
@@ -328,6 +389,45 @@ func dpFieldsEqual(cdp CurrentDataPolicy, dp DataPolicy) bool {
 	// 条件双侧规范化后比较，避免 key 顺序/空白误判 update
 	curCond := ConditionFromJSON(cdp.Condition)
 	return string(curCond.JSON()) == string(dp.Condition.JSON())
+}
+
+func roleUpdateDetail(cr CurrentRole, dr Role) string {
+	var parts []string
+	if cr.Name != dr.Name {
+		parts = append(parts, fmt.Sprintf("name: %s → %s", cr.Name, dr.Name))
+	}
+	if cr.Description != dr.Description {
+		parts = append(parts, "description 变更")
+	}
+	if !strSlicesEqual(sortedCopy(cr.PermissionCodes), sortedCopy(dr.PermissionCodes)) {
+		parts = append(parts, "授权码集变更")
+	}
+	crScopes := dataScopeKeys(cr.DataScopes)
+	drScopes := dataScopeKeys(dr.DataScopes)
+	sort.Strings(crScopes)
+	sort.Strings(drScopes)
+	if !strSlicesEqual(crScopes, drScopes) {
+		parts = append(parts, "data_scopes 变更")
+	}
+	if len(parts) == 0 {
+		return "字段变更"
+	}
+	return strings.Join(parts, "; ")
+}
+
+// dpUpdateDetail 仅描述变更维度，不写出 condition 具体值（保持人读、简洁）。
+func dpUpdateDetail(cdp CurrentDataPolicy, dp DataPolicy) string {
+	var parts []string
+	if cdp.Effect != dp.Effect {
+		parts = append(parts, fmt.Sprintf("effect: %s → %s", cdp.Effect, dp.Effect))
+	}
+	if string(ConditionFromJSON(cdp.Condition).JSON()) != string(dp.Condition.JSON()) {
+		parts = append(parts, "condition 变更")
+	}
+	if len(parts) == 0 {
+		return "字段变更"
+	}
+	return strings.Join(parts, "; ")
 }
 
 func sortedCopy(ss []string) []string {
