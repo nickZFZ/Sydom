@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
@@ -116,6 +117,43 @@ func (s *AdminServer) UpsertDataPolicy(ctx context.Context, r *adminv1.UpsertDat
 }
 func (s *AdminServer) DeleteDataPolicy(ctx context.Context, r *adminv1.DeleteDataPolicyRequest) (*adminv1.WriteResponse, error) {
 	return writeResp(s.mgr.DeleteDataPolicy(ctx, int64(r.AppId), r.DataPolicyId))
+}
+
+func (s *AdminServer) ExportAppPolicy(ctx context.Context, r *adminv1.ExportAppPolicyRequest) (*adminv1.ExportAppPolicyResponse, error) {
+	content, err := s.mgr.ExportAppPolicy(ctx, int64(r.AppId), r.Format)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "export policy: %v", err)
+	}
+	return &adminv1.ExportAppPolicyResponse{Content: content}, nil
+}
+
+func (s *AdminServer) ImportAppPolicy(ctx context.Context, r *adminv1.ImportAppPolicyRequest) (*adminv1.ImportAppPolicyResponse, error) {
+	plan, version, _, err := s.mgr.ImportAppPolicy(ctx, int64(r.AppId), []byte(r.Content), r.DryRun)
+	if err != nil {
+		switch {
+		case errors.Is(err, policy.ErrImportConflict):
+			return nil, status.Errorf(codes.FailedPrecondition, "import policy: %v", err)
+		case errors.Is(err, policy.ErrImportInvalid):
+			return nil, status.Errorf(codes.InvalidArgument, "import policy: %v", err)
+		default:
+			return nil, status.Errorf(codes.Internal, "import policy: %v", err)
+		}
+	}
+	resp := &adminv1.ImportAppPolicyResponse{
+		Applied: !r.DryRun,
+		Version: version,
+	}
+	for _, it := range plan.Items {
+		resp.Diff = append(resp.Diff, &adminv1.PolicyDiffEntry{
+			Kind: it.Kind, EntityType: it.EntityType, Identity: it.Identity, Detail: it.Detail,
+		})
+	}
+	resp.Creates = int32(plan.Count("create"))
+	resp.Adopts = int32(plan.Count("adopt"))
+	resp.Updates = int32(plan.Count("update"))
+	resp.Deletes = int32(plan.Count("delete"))
+	resp.Conflicts = int32(plan.Count("conflict"))
+	return resp, nil
 }
 
 // NewGRPCServer 装配脱敏→认证→鉴权→status 四拦截器（按序）并注册 AdminService。

@@ -91,6 +91,8 @@ var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/ListMyTenants":           {"", "", false, scopeSelf},
 	"/sydom.admin.v1.AdminService/InviteMember":            {"member", "create", false, scopeTenant},
 	"/sydom.admin.v1.AdminService/ListMembers":             {"member", "read", false, scopeTenant},
+	"/sydom.admin.v1.AdminService/ExportAppPolicy":         {"policy/export", "read", false, scopeApp},
+	"/sydom.admin.v1.AdminService/ImportAppPolicy":         {"policy/import", "update", true, scopeApp},
 }
 
 // DomainOfAppID 把 app_id 转成 casbin domain 字符串。

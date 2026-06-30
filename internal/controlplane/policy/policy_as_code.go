@@ -3,12 +3,20 @@ package policy
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/iac"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
+)
+
+var (
+	// ErrImportConflict 表示 import 文档含无法自动解消的冲突项（如带用户绑定的 iac 角色被文件省略）。
+	ErrImportConflict = errors.New("policy: import has unresolved conflicts")
+	// ErrImportInvalid 表示 import 文档格式错误或未通过校验。
+	ErrImportInvalid = errors.New("policy: import document invalid")
 )
 
 // M4.1 策略即代码（Policy-as-Code）导入导出。
@@ -105,10 +113,10 @@ func (m *PolicyManager) ExportAppPolicy(ctx context.Context, appID int64, format
 func (m *PolicyManager) ImportAppPolicy(ctx context.Context, appID int64, content []byte, dryRun bool) (*iac.Plan, int64, *cp.Delta, error) {
 	doc, err := iac.Parse(content)
 	if err != nil {
-		return nil, 0, nil, fmt.Errorf("policy: import parse: %w", err)
+		return nil, 0, nil, fmt.Errorf("policy: import parse: %v (%w)", err, ErrImportInvalid)
 	}
 	if err := iac.Validate(doc); err != nil {
-		return nil, 0, nil, fmt.Errorf("policy: import validate: %w", err)
+		return nil, 0, nil, fmt.Errorf("policy: import validate: %v (%w)", err, ErrImportInvalid)
 	}
 
 	cur, err := m.snapshotCurrent(ctx, m.db, appID)
@@ -127,7 +135,7 @@ func (m *PolicyManager) ImportAppPolicy(ctx context.Context, appID int64, conten
 
 	// pre-tx 早退：pre-lock 快照已见 conflict 即拒，省去开事务（最终判定以锁内重算为准）。
 	if n := plan.Count("conflict"); n > 0 {
-		return plan, 0, nil, fmt.Errorf("policy: import has %d unresolved conflict(s)", n)
+		return plan, 0, nil, fmt.Errorf("policy: import has %d unresolved conflict(s): %w", n, ErrImportConflict)
 	}
 
 	ctx = cp.WithOperator(ctx, "iac-import") // bump 路径的 audit actor
@@ -145,7 +153,7 @@ func (m *PolicyManager) ImportAppPolicy(ctx context.Context, appID int64, conten
 			}
 			applied = iac.Diff(doc, freshCur)
 			if n := applied.Count("conflict"); n > 0 {
-				return nil, fmt.Errorf("policy: import has %d unresolved conflict(s)", n)
+				return nil, fmt.Errorf("policy: import has %d unresolved conflict(s): %w", n, ErrImportConflict)
 			}
 			return m.applyImportPlan(ctx, tx, appID, doc, applied)
 		},
