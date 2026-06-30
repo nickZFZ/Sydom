@@ -54,9 +54,15 @@ func (c *restClient) do(method, pathQuery string, bodyObj interface{}) (*http.Re
 	c.t.Helper()
 	var body []byte
 	if bodyObj != nil {
-		b, err := json.Marshal(bodyObj)
-		require.NoError(c.t, err)
-		body = b
+		switch v := bodyObj.(type) {
+		case []byte:
+			// 原始字节直传（如策略即代码 import：body = 策略文件原文），HMAC 对该字节计算。
+			body = v
+		default:
+			b, err := json.Marshal(v)
+			require.NoError(c.t, err)
+			body = b
+		}
 	}
 	target := pathQuery
 	sum := sha256.Sum256(body)
@@ -219,7 +225,7 @@ func TestREST_SystemDomain_RequiresSuperAdmin(t *testing.T) {
 }
 
 func TestREST_RouteTable_Complete(t *testing.T) {
-	// 通过 NewHandler 注册不 panic 即证明 28 条 method+pattern 无 ServeMux 冲突。
+	// 通过 NewHandler 注册不 panic 即证明 52 条 method+pattern 无 ServeMux 冲突。
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	require.NotPanics(t, func() {
 		_ = restgw.NewHandler(nil, nil, nil, nil, logger)

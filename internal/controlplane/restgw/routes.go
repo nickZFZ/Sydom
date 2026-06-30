@@ -86,6 +86,19 @@ func queryUint32(r *http.Request, key string) (uint32, error) {
 	return uint32(v), nil
 }
 
+// queryBool 取可选 bool query（缺=false，不报错；非法值→InvalidArgument）。
+func queryBool(r *http.Request, key string) (bool, error) {
+	s := r.URL.Query().Get(key)
+	if s == "" {
+		return false, nil
+	}
+	v, err := strconv.ParseBool(s)
+	if err != nil {
+		return false, status.Errorf(codes.InvalidArgument, "invalid query %s", key)
+	}
+	return v, nil
+}
+
 // parseListPage 从 query 解析 ListPage（缺省零值）。
 func parseListPage(r *http.Request) (*adminv1.ListPage, error) {
 	limit, err := queryUint32(r, "limit")
@@ -103,7 +116,7 @@ func parseListPage(r *http.Request) (*adminv1.ListPage, error) {
 	}, nil
 }
 
-// appRoutes 是 app 域 24 路由（授权域=path app_id；path 值权威覆写 body）。
+// appRoutes 是 app 域 26 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -503,6 +516,34 @@ func appRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ApplyTemplate(ctx, m.(*adminv1.ApplyTemplateRequest))
 			}},
+		// M4.1 策略即代码：export（GET，format 取 query）+ import（POST，body=原始策略文件内容，不走 decodeBody）。
+		{"GET", "/v1/apps/{app_id}/policy/export", pfx + "ExportAppPolicy",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.ExportAppPolicyRequest{AppId: id, Format: r.URL.Query().Get("format")}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ExportAppPolicy(ctx, m.(*adminv1.ExportAppPolicyRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/policy/import", pfx + "ImportAppPolicy",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				dryRun, err := queryBool(r, "dry_run")
+				if err != nil {
+					return nil, err
+				}
+				// body 是原始策略文件内容（YAML/JSON 文本本身），不经 protojson 解码。
+				return &adminv1.ImportAppPolicyRequest{AppId: id, Content: string(body), DryRun: dryRun}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ImportAppPolicy(ctx, m.(*adminv1.ImportAppPolicyRequest))
+			}},
 	}
 }
 
@@ -741,7 +782,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 50 路由（app 域 24 + 应用管理 4 + system 域 11 + 账户层 4 + 租户自有模板 5 + 角色全景 2）。
+// allRoutes 汇总全部 52 路由（app 域 26 + 应用管理 4 + system 域 11 + 账户层 4 + 租户自有模板 5 + 角色全景 2）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
