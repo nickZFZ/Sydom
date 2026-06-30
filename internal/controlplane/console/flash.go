@@ -25,6 +25,7 @@ var flashMessages = map[string]string{
 	svc + "UpsertPermission":      "权限点已保存",
 	svc + "UpsertDataPolicy":      "数据策略已保存",
 	svc + "DeleteDataPolicy":      "数据策略已删除",
+	svc + "ImportAppPolicy":       "策略已导入并应用",
 	// 一次性 secret 动作(轮换/重置)不进 flash(走专管线)。
 }
 

@@ -1,0 +1,23 @@
+{{define "title"}}策略即代码 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">{{template "appnav" .}}
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 策略即代码</nav>
+<h1>策略即代码</h1>
+<p>导出当前授权模型为 YAML 或 JSON，或粘贴策略文件预览变更并应用。</p>
+<h2>导出</h2>
+<form method="get" action="/apps/{{.AppID}}/policy-code/export" class="inline-form">
+<label for="format">格式</label>
+<select id="format" name="format">
+<option value="yaml">YAML</option>
+<option value="json">JSON</option>
+</select>
+<button class="btn">导出下载</button>
+</form>
+<h2>导入</h2>
+<form method="post" action="/apps/{{.AppID}}/policy-code/import">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<label for="content">策略内容（YAML 或 JSON）</label>
+<textarea id="content" name="content" rows="16" placeholder="粘贴策略文件（YAML 或 JSON）" required></textarea>
+<button class="btn btn-primary">预览变更</button>
+</form>
+</section></div>{{end}}

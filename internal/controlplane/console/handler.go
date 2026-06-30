@@ -27,6 +27,7 @@ func NewHandler(srv *mgmt.AdminServer, resolver secretResolver, enf *adminauthz.
 	h.registerApps(mux)            // 任务 4/8
 	h.registerRBAC(mux)            // 任务 5/6
 	h.registerDataPolicy(mux)      // 任务 7
+	h.registerPolicyCode(mux)      // M4.1 策略即代码
 	h.registerSystem(mux)          // 任务 9
 	h.registerAccounts(mux)        // M1.2 账户层：注册/我的租户/成员
 	h.registerOps(mux)             // M1.4 运营台：业务向人员/业务角色旅程

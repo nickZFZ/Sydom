@@ -1,0 +1,23 @@
+{{define "title"}}变更预览 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">{{template "appnav" .}}
+<section>
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 策略即代码 · 变更预览</nav>
+<h1>策略即代码变更预览</h1>
+<p>新建 {{.Creates}} · 采纳 {{.Adopts}} · 更新 {{.Updates}} · 删除 {{.Deletes}} · 冲突 {{.Conflicts}}</p>
+<table class="table"><thead><tr>
+<th>动作</th><th>类型</th><th>标识</th><th>说明</th>
+</tr></thead><tbody>
+{{range .Diff}}<tr><td>{{.Kind}}</td><td>{{.EntityType}}</td><td>{{.Identity}}</td><td>{{.Detail}}</td></tr>{{end}}
+</tbody></table>
+{{if gt .Conflicts 0}}
+<p class="danger">存在冲突，需先解决后再应用。</p>
+{{else}}
+<form method="post" action="/apps/{{.AppID}}/policy-code/import">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<input type="hidden" name="confirmed" value="1">
+<textarea name="content" hidden>{{.Content}}</textarea>
+<button class="btn btn-primary">确认应用</button>
+</form>
+{{end}}
+<a href="/apps/{{.AppID}}/policy-code">取消</a>
+</section></div>{{end}}
