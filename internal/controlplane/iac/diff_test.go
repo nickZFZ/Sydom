@@ -13,7 +13,7 @@ func TestDiff_CreateUpdateDeleteAdopt(t *testing.T) {
 	cur := &Current{
 		Permissions: []CurrentPermission{
 			{Code: "order:read", Resource: "order", Action: "read", Type: "app", Name: "旧名", Source: "iac"},   // update（name 变）
-			{Code: "order:write", Resource: "order", Action: "write", Type: "app", Name: "写", Source: "iac"},   // delete（文件未声明）
+			{Code: "order:write", Resource: "order", Action: "write", Type: "app", Name: "写", Source: "iac"},  // delete（文件未声明）
 			{Code: "order:list", Resource: "order", Action: "list", Type: "app", Name: "列", Source: "manual"}, // 不碰
 		},
 		Roles: []CurrentRole{{Key: "viewer", Name: "查看员", Source: "manual", PermissionCodes: nil}}, // adopt（manual→iac）
