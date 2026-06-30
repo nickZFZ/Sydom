@@ -113,10 +113,11 @@ func (m *PolicyManager) ExportAppPolicy(ctx context.Context, appID int64, format
 func (m *PolicyManager) ImportAppPolicy(ctx context.Context, appID int64, content []byte, dryRun bool) (*iac.Plan, int64, *cp.Delta, error) {
 	doc, err := iac.Parse(content)
 	if err != nil {
-		return nil, 0, nil, fmt.Errorf("policy: import parse: %v (%w)", err, ErrImportInvalid)
+		// sentinel 领头、底层细节随后：避免与 sentinel 自带的 "policy: import" 前缀重复堆叠。
+		return nil, 0, nil, fmt.Errorf("%w: %v", ErrImportInvalid, err)
 	}
 	if err := iac.Validate(doc); err != nil {
-		return nil, 0, nil, fmt.Errorf("policy: import validate: %v (%w)", err, ErrImportInvalid)
+		return nil, 0, nil, fmt.Errorf("%w: %v", ErrImportInvalid, err)
 	}
 
 	cur, err := m.snapshotCurrent(ctx, m.db, appID)
@@ -135,7 +136,7 @@ func (m *PolicyManager) ImportAppPolicy(ctx context.Context, appID int64, conten
 
 	// pre-tx 早退：pre-lock 快照已见 conflict 即拒，省去开事务（最终判定以锁内重算为准）。
 	if n := plan.Count("conflict"); n > 0 {
-		return plan, 0, nil, fmt.Errorf("policy: import has %d unresolved conflict(s): %w", n, ErrImportConflict)
+		return plan, 0, nil, fmt.Errorf("%w (%d item(s))", ErrImportConflict, n)
 	}
 
 	ctx = cp.WithOperator(ctx, "iac-import") // bump 路径的 audit actor
@@ -153,7 +154,7 @@ func (m *PolicyManager) ImportAppPolicy(ctx context.Context, appID int64, conten
 			}
 			applied = iac.Diff(doc, freshCur)
 			if n := applied.Count("conflict"); n > 0 {
-				return nil, fmt.Errorf("policy: import has %d unresolved conflict(s): %w", n, ErrImportConflict)
+				return nil, fmt.Errorf("%w (%d item(s))", ErrImportConflict, n)
 			}
 			return m.applyImportPlan(ctx, tx, appID, doc, applied)
 		},

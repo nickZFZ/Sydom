@@ -222,7 +222,7 @@ func TestPolicyAsCode_InvalidDocReturnsInvalidArgument(t *testing.T) {
 
 	_, appID := dbtest.SeedAppInTenant(t, db, "tenant-invalid", "invalid-domain", "AK_invalid")
 
-	// Case 1: 语法错误（JSON 解析失败 → ErrImportInvalid）。
+	// Case 1: 语法错误。首字符 '{' → Parse 路由到 JSON 分支 → json 解析失败 → ErrImportInvalid。
 	_, err := srv.ImportAppPolicy(ctx, &adminv1.ImportAppPolicyRequest{
 		AppId:   uint64(appID),
 		Content: `{invalid json not parseable`,
