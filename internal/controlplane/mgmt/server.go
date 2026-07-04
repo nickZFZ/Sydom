@@ -11,12 +11,16 @@ import (
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
+	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 const maxMsgSize = 16 * 1024 * 1024
+
+// maxBatchItems 是单次批量写允许的最大条目数（防止超大批把单事务/单锁窗口拖得过长）。
+const maxBatchItems = 1000
 
 // AdminServer 实现 adminv1.AdminServiceServer。
 type AdminServer struct {
@@ -154,6 +158,73 @@ func (s *AdminServer) ImportAppPolicy(ctx context.Context, r *adminv1.ImportAppP
 	resp.Deletes = int32(plan.Count("delete"))
 	resp.Conflicts = int32(plan.Count("conflict"))
 	return resp, nil
+}
+
+// batchResp 把 (delta, applied, requested, err) 归一为 BatchWriteResponse；delta==nil 表示无策略影响。
+func batchResp(d *cp.Delta, applied, requested int, err error) (*adminv1.BatchWriteResponse, error) {
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "batch write: %v", err)
+	}
+	resp := &adminv1.BatchWriteResponse{
+		Requested: uint32(requested),
+		Applied:   uint32(applied),
+	}
+	if d != nil {
+		resp.Version, resp.Changed = uint64(d.Version), true
+	}
+	return resp, nil
+}
+
+func (s *AdminServer) BatchUnbindUserRole(ctx context.Context, r *adminv1.BatchUnbindUserRoleRequest) (*adminv1.BatchWriteResponse, error) {
+	if len(r.Items) == 0 || len(r.Items) > maxBatchItems {
+		return nil, status.Errorf(codes.InvalidArgument, "items 数须在 1..%d", maxBatchItems)
+	}
+	pairs := make([]store.UserRolePair, len(r.Items))
+	for i, it := range r.Items {
+		pairs[i] = store.UserRolePair{UserID: it.UserId, RoleID: it.RoleId}
+	}
+	d, applied, err := s.mgr.BatchUnbindUserRole(ctx, int64(r.AppId), pairs)
+	return batchResp(d, applied, len(r.Items), err)
+}
+
+func (s *AdminServer) BatchRevokePermission(ctx context.Context, r *adminv1.BatchRevokePermissionRequest) (*adminv1.BatchWriteResponse, error) {
+	if len(r.Items) == 0 || len(r.Items) > maxBatchItems {
+		return nil, status.Errorf(codes.InvalidArgument, "items 数须在 1..%d", maxBatchItems)
+	}
+	pairs := make([]store.GrantPair, len(r.Items))
+	for i, it := range r.Items {
+		pairs[i] = store.GrantPair{RoleID: it.RoleId, PermissionID: it.PermissionId}
+	}
+	d, applied, err := s.mgr.BatchRevokePermission(ctx, int64(r.AppId), pairs)
+	return batchResp(d, applied, len(r.Items), err)
+}
+
+func (s *AdminServer) BatchRemoveRoleInheritance(ctx context.Context, r *adminv1.BatchRemoveRoleInheritanceRequest) (*adminv1.BatchWriteResponse, error) {
+	if len(r.Items) == 0 || len(r.Items) > maxBatchItems {
+		return nil, status.Errorf(codes.InvalidArgument, "items 数须在 1..%d", maxBatchItems)
+	}
+	pairs := make([]store.InheritancePair, len(r.Items))
+	for i, it := range r.Items {
+		pairs[i] = store.InheritancePair{ChildRoleID: it.ChildRoleId, ParentRoleID: it.ParentRoleId}
+	}
+	d, applied, err := s.mgr.BatchRemoveRoleInheritance(ctx, int64(r.AppId), pairs)
+	return batchResp(d, applied, len(r.Items), err)
+}
+
+func (s *AdminServer) BatchDeleteRole(ctx context.Context, r *adminv1.BatchDeleteRoleRequest) (*adminv1.BatchWriteResponse, error) {
+	if len(r.RoleIds) == 0 || len(r.RoleIds) > maxBatchItems {
+		return nil, status.Errorf(codes.InvalidArgument, "role_ids 数须在 1..%d", maxBatchItems)
+	}
+	d, applied, err := s.mgr.BatchDeleteRole(ctx, int64(r.AppId), r.RoleIds)
+	return batchResp(d, applied, len(r.RoleIds), err)
+}
+
+func (s *AdminServer) BatchDeleteDataPolicy(ctx context.Context, r *adminv1.BatchDeleteDataPolicyRequest) (*adminv1.BatchWriteResponse, error) {
+	if len(r.DataPolicyIds) == 0 || len(r.DataPolicyIds) > maxBatchItems {
+		return nil, status.Errorf(codes.InvalidArgument, "data_policy_ids 数须在 1..%d", maxBatchItems)
+	}
+	d, applied, err := s.mgr.BatchDeleteDataPolicy(ctx, int64(r.AppId), r.DataPolicyIds)
+	return batchResp(d, applied, len(r.DataPolicyIds), err)
 }
 
 // NewGRPCServer 装配脱敏→认证→鉴权→status 四拦截器（按序）并注册 AdminService。
