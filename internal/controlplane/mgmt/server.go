@@ -160,8 +160,9 @@ func (s *AdminServer) ImportAppPolicy(ctx context.Context, r *adminv1.ImportAppP
 	return resp, nil
 }
 
-// batchResp 把 (delta, applied, requested, err) 归一为 BatchWriteResponse；delta==nil 表示无策略影响。
-func batchResp(d *cp.Delta, applied, requested int, err error) (*adminv1.BatchWriteResponse, error) {
+// batchResp 把 (delta, requested, applied, err) 归一为 BatchWriteResponse；delta==nil 表示无策略影响。
+// 形参顺序刻意对齐 BatchWriteResponse 的字段顺序（requested 先于 applied），二者同为 int 时防手滑传反。
+func batchResp(d *cp.Delta, requested, applied int, err error) (*adminv1.BatchWriteResponse, error) {
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "batch write: %v", err)
 	}
@@ -184,7 +185,7 @@ func (s *AdminServer) BatchUnbindUserRole(ctx context.Context, r *adminv1.BatchU
 		pairs[i] = store.UserRolePair{UserID: it.UserId, RoleID: it.RoleId}
 	}
 	d, applied, err := s.mgr.BatchUnbindUserRole(ctx, int64(r.AppId), pairs)
-	return batchResp(d, applied, len(r.Items), err)
+	return batchResp(d, len(r.Items), applied, err)
 }
 
 func (s *AdminServer) BatchRevokePermission(ctx context.Context, r *adminv1.BatchRevokePermissionRequest) (*adminv1.BatchWriteResponse, error) {
@@ -196,7 +197,7 @@ func (s *AdminServer) BatchRevokePermission(ctx context.Context, r *adminv1.Batc
 		pairs[i] = store.GrantPair{RoleID: it.RoleId, PermissionID: it.PermissionId}
 	}
 	d, applied, err := s.mgr.BatchRevokePermission(ctx, int64(r.AppId), pairs)
-	return batchResp(d, applied, len(r.Items), err)
+	return batchResp(d, len(r.Items), applied, err)
 }
 
 func (s *AdminServer) BatchRemoveRoleInheritance(ctx context.Context, r *adminv1.BatchRemoveRoleInheritanceRequest) (*adminv1.BatchWriteResponse, error) {
@@ -208,7 +209,7 @@ func (s *AdminServer) BatchRemoveRoleInheritance(ctx context.Context, r *adminv1
 		pairs[i] = store.InheritancePair{ChildRoleID: it.ChildRoleId, ParentRoleID: it.ParentRoleId}
 	}
 	d, applied, err := s.mgr.BatchRemoveRoleInheritance(ctx, int64(r.AppId), pairs)
-	return batchResp(d, applied, len(r.Items), err)
+	return batchResp(d, len(r.Items), applied, err)
 }
 
 func (s *AdminServer) BatchDeleteRole(ctx context.Context, r *adminv1.BatchDeleteRoleRequest) (*adminv1.BatchWriteResponse, error) {
@@ -216,7 +217,7 @@ func (s *AdminServer) BatchDeleteRole(ctx context.Context, r *adminv1.BatchDelet
 		return nil, status.Errorf(codes.InvalidArgument, "role_ids 数须在 1..%d", maxBatchItems)
 	}
 	d, applied, err := s.mgr.BatchDeleteRole(ctx, int64(r.AppId), r.RoleIds)
-	return batchResp(d, applied, len(r.RoleIds), err)
+	return batchResp(d, len(r.RoleIds), applied, err)
 }
 
 func (s *AdminServer) BatchDeleteDataPolicy(ctx context.Context, r *adminv1.BatchDeleteDataPolicyRequest) (*adminv1.BatchWriteResponse, error) {
@@ -224,7 +225,7 @@ func (s *AdminServer) BatchDeleteDataPolicy(ctx context.Context, r *adminv1.Batc
 		return nil, status.Errorf(codes.InvalidArgument, "data_policy_ids 数须在 1..%d", maxBatchItems)
 	}
 	d, applied, err := s.mgr.BatchDeleteDataPolicy(ctx, int64(r.AppId), r.DataPolicyIds)
-	return batchResp(d, applied, len(r.DataPolicyIds), err)
+	return batchResp(d, len(r.DataPolicyIds), applied, err)
 }
 
 // NewGRPCServer 装配脱敏→认证→鉴权→status 四拦截器（按序）并注册 AdminService。
