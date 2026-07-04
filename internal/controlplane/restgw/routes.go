@@ -116,7 +116,7 @@ func parseListPage(r *http.Request) (*adminv1.ListPage, error) {
 	}, nil
 }
 
-// appRoutes 是 app 域 26 路由（授权域=path app_id；path 值权威覆写 body）。
+// appRoutes 是 app 域 31 路由（授权域=path app_id；path 值权威覆写 body）。
 func appRoutes() []route {
 	const pfx = "/sydom.admin.v1.AdminService/"
 	return []route{
@@ -544,6 +544,89 @@ func appRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ImportAppPolicy(ctx, m.(*adminv1.ImportAppPolicyRequest))
 			}},
+		// M4.2 批量操作：5 条 POST .../batch-delete。body 直接 protojson 解到目标 Request（Items 为嵌套 message 数组，
+		// protojson 原生支持），app_id 恒取 path 权威覆写 body（即便 body 带 app_id 也不读）。鉴权/status 写闸
+		// 复用既有 AuthorizeRule/CheckStatusWrite（ruleTable 任务 3 已 +5），与单数 DELETE 路由完全一致。
+		{"POST", "/v1/apps/{app_id}/user-bindings/batch-delete", pfx + "BatchUnbindUserRole",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.BatchUnbindUserRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // path 权威覆写
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.BatchUnbindUserRole(ctx, m.(*adminv1.BatchUnbindUserRoleRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/grants/batch-delete", pfx + "BatchRevokePermission",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.BatchRevokePermissionRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // path 权威覆写
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.BatchRevokePermission(ctx, m.(*adminv1.BatchRevokePermissionRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/role-inheritances/batch-delete", pfx + "BatchRemoveRoleInheritance",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.BatchRemoveRoleInheritanceRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // path 权威覆写
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.BatchRemoveRoleInheritance(ctx, m.(*adminv1.BatchRemoveRoleInheritanceRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/roles/batch-delete", pfx + "BatchDeleteRole",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.BatchDeleteRoleRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // path 权威覆写
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.BatchDeleteRole(ctx, m.(*adminv1.BatchDeleteRoleRequest))
+			}},
+		{"POST", "/v1/apps/{app_id}/data-policies/batch-delete", pfx + "BatchDeleteDataPolicy",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.BatchDeleteDataPolicyRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // path 权威覆写
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.BatchDeleteDataPolicy(ctx, m.(*adminv1.BatchDeleteDataPolicyRequest))
+			}},
 	}
 }
 
@@ -782,7 +865,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 52 路由（app 域 26 + 应用管理 4 + system 域 11 + 账户层 4 + 租户自有模板 5 + 角色全景 2）。
+// allRoutes 汇总全部 57 路由（app 域 31 + 应用管理 4 + system 域 11 + 账户层 4 + 租户自有模板 5 + 角色全景 2）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
