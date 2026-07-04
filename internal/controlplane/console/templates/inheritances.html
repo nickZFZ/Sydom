@@ -8,13 +8,17 @@
 <input name="child_role_id" placeholder="child_role_id" required><input name="parent_role_id" placeholder="parent_role_id" required>
 <button class="btn btn-primary">+ 新增继承</button></form>
 {{template "searchbox" .Pager}}
+<form id="bulk-inheritances" method="post" action="/apps/{{.AppID}}/inheritances/batch-delete" data-confirm="确认批量移除选中的继承关系？">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}"></form>
 <table class="table"><thead><tr>
+<th><span class="visually-hidden">选择</span></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th>ChildRoleId</th><th>ParentRoleId</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
-{{range .Inheritances}}<tr><td>{{.InheritanceId}}</td><td>{{.ChildRoleId}}</td><td>{{.ParentRoleId}}</td>
+{{range .Inheritances}}<tr><td><input type="checkbox" name="ids" value="{{.ChildRoleId}}:{{.ParentRoleId}}" form="bulk-inheritances" aria-label="选择继承 子角色{{.ChildRoleId}}-父角色{{.ParentRoleId}}"></td><td>{{.InheritanceId}}</td><td>{{.ChildRoleId}}</td><td>{{.ParentRoleId}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/inheritances/remove" data-confirm="确定移除该继承关系吗？">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="child_role_id" value="{{.ChildRoleId}}"><input type="hidden" name="parent_role_id" value="{{.ParentRoleId}}">
 <button class="danger">移除</button></form></td></tr>{{end}}
 </tbody></table>
+<button type="submit" form="bulk-inheritances" class="danger">批量移除选中</button>
 {{template "pager" .Pager}}</section></div>{{end}}

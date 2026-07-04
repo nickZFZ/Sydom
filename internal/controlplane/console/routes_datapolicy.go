@@ -15,6 +15,7 @@ func (h *Handler) registerDataPolicy(mux *http.ServeMux) {
 	mux.HandleFunc("GET /apps/{app_id}/data-policies", h.listDataPolicies)
 	mux.HandleFunc("POST /apps/{app_id}/data-policies", h.upsertDataPolicy)
 	mux.HandleFunc("POST /apps/{app_id}/data-policies/{id}/delete", h.deleteDataPolicy)
+	mux.HandleFunc("POST /apps/{app_id}/data-policies/batch-delete", h.batchDeleteDataPolicy) // 任务5：多选批量删除数据策略
 }
 
 // listDataPolicies：读页内联范式。可选 ?resource= 过滤（""→全部）。
@@ -91,6 +92,30 @@ func (h *Handler) deleteDataPolicy(w http.ResponseWriter, r *http.Request) {
 		},
 		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 			return s.DeleteDataPolicy(ctx, m.(*adminv1.DeleteDataPolicyRequest))
+		},
+		appListRedirect("data-policies"))
+}
+
+// batchDeleteDataPolicy：多选批量删除数据策略。requireConfirm 二次确认门 + doWrite PRG
+// （同构 routes_rbac.go 的 batchDeleteRole；parseInt64s 定义于该文件，同包直接复用）。
+func (h *Handler) batchDeleteDataPolicy(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"BatchDeleteDataPolicy") {
+		return
+	}
+	h.doWrite(w, r, svc+"BatchDeleteDataPolicy",
+		func(r *http.Request) (proto.Message, error) {
+			appID, err := pathUint64(r, "app_id")
+			if err != nil {
+				return nil, err
+			}
+			ids := parseInt64s(r.PostForm["ids"])
+			if len(ids) == 0 {
+				return nil, errNoSelection
+			}
+			return &adminv1.BatchDeleteDataPolicyRequest{AppId: appID, DataPolicyIds: ids}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.BatchDeleteDataPolicy(ctx, m.(*adminv1.BatchDeleteDataPolicyRequest))
 		},
 		appListRedirect("data-policies"))
 }

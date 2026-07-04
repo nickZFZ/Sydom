@@ -16,16 +16,20 @@
 <input name="description" placeholder="业务说明（运营台显示，如：仅限本人区域的订单）">
 <button class="btn btn-primary">+ 保存策略</button></form>
 {{template "searchbox" .Pager}}
+<form id="bulk-datapolicies" method="post" action="/apps/{{.AppID}}/data-policies/batch-delete" data-confirm="确认批量删除选中的数据策略？此操作不可撤销。">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}"></form>
 <table class="table"><thead><tr>
+<th><span class="visually-hidden">选择</span></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th>SubjectType</th><th>SubjectId</th>
 <th><a href="?{{sortHref $.Pager.SortQuery "resource" "asc"}}">Resource ↑</a> <a href="?{{sortHref $.Pager.SortQuery "resource" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "effect" "asc"}}">Effect ↑</a> <a href="?{{sortHref $.Pager.SortQuery "effect" "desc"}}">↓</a></th>
 <th>Condition</th><th>业务说明</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
-{{range .DataPolicies}}<tr><td>{{.DataPolicyId}}</td><td>{{.SubjectType}}</td><td>{{.SubjectId}}</td><td>{{.Resource}}</td><td>{{.Effect}}</td><td><code>{{.Condition}}</code></td><td>{{.Description}}</td>
+{{range .DataPolicies}}<tr><td><input type="checkbox" name="ids" value="{{.DataPolicyId}}" form="bulk-datapolicies" aria-label="选择数据策略 {{.Resource}}"></td><td>{{.DataPolicyId}}</td><td>{{.SubjectType}}</td><td>{{.SubjectId}}</td><td>{{.Resource}}</td><td>{{.Effect}}</td><td><code>{{.Condition}}</code></td><td>{{.Description}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/data-policies/{{.DataPolicyId}}/delete" data-confirm="确定删除该数据策略吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <button class="danger">删除</button></form></td></tr>{{end}}
 </tbody></table>
+<button type="submit" form="bulk-datapolicies" class="danger">批量移除选中</button>
 {{template "pager" .Pager}}</section>
 <script src="/static/datapolicy.js"></script></div>{{end}}

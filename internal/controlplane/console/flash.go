@@ -27,6 +27,13 @@ var flashMessages = map[string]string{
 	svc + "DeleteDataPolicy":      "数据策略已删除",
 	svc + "ImportAppPolicy":       "策略已导入并应用",
 	// 一次性 secret 动作(轮换/重置)不进 flash(走专管线)。
+
+	// 任务5：批量操作（M4.2）。
+	svc + "BatchDeleteRole":            "已移除选中项",
+	svc + "BatchRevokePermission":      "已移除选中项",
+	svc + "BatchRemoveRoleInheritance": "已移除选中项",
+	svc + "BatchUnbindUserRole":        "已移除选中项",
+	svc + "BatchDeleteDataPolicy":      "已移除选中项",
 }
 
 // flashFor 返回该 fullMethod 的成功文案，缺省回退通用语。

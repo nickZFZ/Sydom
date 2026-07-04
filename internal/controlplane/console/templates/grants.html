@@ -8,14 +8,18 @@
 <input name="role_id" placeholder="role_id" required><input name="permission_id" placeholder="permission_id" required>
 <input name="eft" placeholder="allow/deny，留空=allow"><button class="btn btn-primary">+ 新增授权</button></form>
 {{template "searchbox" .Pager}}
+<form id="bulk-grants" method="post" action="/apps/{{.AppID}}/grants/batch-delete" data-confirm="确认批量撤销选中的授权？">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}"></form>
 <table class="table"><thead><tr>
+<th><span class="visually-hidden">选择</span></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "role_id" "asc"}}">RoleId ↑</a> <a href="?{{sortHref $.Pager.SortQuery "role_id" "desc"}}">↓</a></th>
 <th>PermissionId</th><th>Eft</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
-{{range .Grants}}<tr><td>{{.GrantId}}</td><td>{{.RoleId}}</td><td>{{.PermissionId}}</td><td>{{.Eft}}</td>
+{{range .Grants}}<tr><td><input type="checkbox" name="ids" value="{{.RoleId}}:{{.PermissionId}}" form="bulk-grants" aria-label="选择授权 角色{{.RoleId}}-权限{{.PermissionId}}"></td><td>{{.GrantId}}</td><td>{{.RoleId}}</td><td>{{.PermissionId}}</td><td>{{.Eft}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/grants/revoke">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="role_id" value="{{.RoleId}}"><input type="hidden" name="permission_id" value="{{.PermissionId}}">
 <button class="danger">撤销</button></form></td></tr>{{end}}
 </tbody></table>
+<button type="submit" form="bulk-grants" class="danger">批量移除选中</button>
 {{template "pager" .Pager}}</section></div>{{end}}

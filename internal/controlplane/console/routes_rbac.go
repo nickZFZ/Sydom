@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -16,17 +20,21 @@ func (h *Handler) registerRBAC(mux *http.ServeMux) {
 	mux.HandleFunc("GET /apps/{app_id}/roles", h.listRoles)
 	mux.HandleFunc("POST /apps/{app_id}/roles", h.createRole)
 	mux.HandleFunc("POST /apps/{app_id}/roles/{role_id}/delete", h.deleteRole)
+	mux.HandleFunc("POST /apps/{app_id}/roles/batch-delete", h.batchDeleteRole) // 任务5：多选批量删除角色
 	mux.HandleFunc("GET /apps/{app_id}/permissions", h.listPermissions)
 	mux.HandleFunc("POST /apps/{app_id}/permissions", h.upsertPermission)
 	mux.HandleFunc("GET /apps/{app_id}/grants", h.listGrants)
 	mux.HandleFunc("POST /apps/{app_id}/grants", h.grantPermission)
 	mux.HandleFunc("POST /apps/{app_id}/grants/revoke", h.revokePermission)
+	mux.HandleFunc("POST /apps/{app_id}/grants/batch-delete", h.batchRevokePermission) // 任务5：多选批量撤销授权
 	mux.HandleFunc("GET /apps/{app_id}/inheritances", h.listInheritances)
 	mux.HandleFunc("POST /apps/{app_id}/inheritances", h.addInheritance)
 	mux.HandleFunc("POST /apps/{app_id}/inheritances/remove", h.removeInheritance)
+	mux.HandleFunc("POST /apps/{app_id}/inheritances/batch-delete", h.batchRemoveInheritance) // 任务5：多选批量移除继承
 	mux.HandleFunc("GET /apps/{app_id}/bindings", h.listBindings)
 	mux.HandleFunc("POST /apps/{app_id}/bindings", h.bindUser)
 	mux.HandleFunc("POST /apps/{app_id}/bindings/unbind", h.unbindUser)
+	mux.HandleFunc("POST /apps/{app_id}/bindings/batch-delete", h.batchUnbindUser) // 任务5：多选批量解绑用户角色
 	mux.HandleFunc("GET /apps/{app_id}/effective", h.effectivePermissions)
 	mux.HandleFunc("POST /apps/{app_id}/effective/bind", h.bindUserOnEffective)
 	mux.HandleFunc("POST /apps/{app_id}/effective/unbind", h.unbindUserOnEffective)
@@ -360,6 +368,176 @@ func (h *Handler) unbindUser(w http.ResponseWriter, r *http.Request) {
 		decodeUserRoleRequest,
 		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 			return s.UnbindUserRole(ctx, m.(*adminv1.UserRoleRequest))
+		},
+		appListRedirect("bindings"))
+}
+
+// ---- 任务5：批量操作（多选 UX，无新 JS，requireConfirm 二次确认 + doWrite PRG）----
+
+// errNoSelection：勾选 0 项时的友好提示（InvalidArgument → renderGRPCError 渲 400，不 500、不空调 RPC）。
+var errNoSelection = status.Error(codes.InvalidArgument, "请至少选择一项")
+
+// parseInt64s 解析表单重复字段（如复选框 ids[]）为 []int64；非法项一律忽略（不中断整批、不 500）。
+func parseInt64s(vals []string) []int64 {
+	out := make([]int64, 0, len(vals))
+	for _, v := range vals {
+		n, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			continue
+		}
+		out = append(out, n)
+	}
+	return out
+}
+
+// parseInt64Pair 解析形如 "a:b" 的复合 checkbox value 为一对 int64；
+// 缺冒号或任一段非数字 → ok=false（调用方应跳过该项，不中断整批）。
+func parseInt64Pair(s string) (a, b int64, ok bool) {
+	left, right, found := strings.Cut(s, ":")
+	if !found {
+		return 0, 0, false
+	}
+	a, errA := strconv.ParseInt(left, 10, 64)
+	b, errB := strconv.ParseInt(right, 10, 64)
+	if errA != nil || errB != nil {
+		return 0, 0, false
+	}
+	return a, b, true
+}
+
+// parseGrantRefs 解析 grants 页复合 checkbox value "role_id:permission_id" 为 []*GrantRef。
+func parseGrantRefs(vals []string) []*adminv1.GrantRef {
+	out := make([]*adminv1.GrantRef, 0, len(vals))
+	for _, v := range vals {
+		roleID, permID, ok := parseInt64Pair(v)
+		if !ok {
+			continue
+		}
+		out = append(out, &adminv1.GrantRef{RoleId: roleID, PermissionId: permID})
+	}
+	return out
+}
+
+// parseInheritanceRefs 解析 inheritances 页复合 checkbox value "child_role_id:parent_role_id" 为 []*InheritanceRef。
+func parseInheritanceRefs(vals []string) []*adminv1.InheritanceRef {
+	out := make([]*adminv1.InheritanceRef, 0, len(vals))
+	for _, v := range vals {
+		childID, parentID, ok := parseInt64Pair(v)
+		if !ok {
+			continue
+		}
+		out = append(out, &adminv1.InheritanceRef{ChildRoleId: childID, ParentRoleId: parentID})
+	}
+	return out
+}
+
+// parseUserRoleRefs 解析 bindings 页复合 checkbox value "user_id:role_id" 为 []*UserRoleRef；
+// user_id 为字符串取首个冒号之前的全部内容（role_id 恒为数字，取之后部分）。
+func parseUserRoleRefs(vals []string) []*adminv1.UserRoleRef {
+	out := make([]*adminv1.UserRoleRef, 0, len(vals))
+	for _, v := range vals {
+		userID, roleStr, found := strings.Cut(v, ":")
+		if !found || userID == "" {
+			continue
+		}
+		roleID, err := strconv.ParseInt(roleStr, 10, 64)
+		if err != nil {
+			continue
+		}
+		out = append(out, &adminv1.UserRoleRef{UserId: userID, RoleId: roleID})
+	}
+	return out
+}
+
+// batchDeleteRole：多选批量删除角色。requireConfirm 二次确认门（无 JS 时渲服务端确认页，
+// 回显原勾选 ids 隐藏件）；确认后走 doWrite（CSRF → 授权 → status 闸 → 直调 → PRG）。
+func (h *Handler) batchDeleteRole(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"BatchDeleteRole") {
+		return
+	}
+	h.doWrite(w, r, svc+"BatchDeleteRole",
+		func(r *http.Request) (proto.Message, error) {
+			appID, err := pathUint64(r, "app_id")
+			if err != nil {
+				return nil, err
+			}
+			ids := parseInt64s(r.PostForm["ids"])
+			if len(ids) == 0 {
+				return nil, errNoSelection
+			}
+			return &adminv1.BatchDeleteRoleRequest{AppId: appID, RoleIds: ids}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.BatchDeleteRole(ctx, m.(*adminv1.BatchDeleteRoleRequest))
+		},
+		appListRedirect("roles"))
+}
+
+// batchRevokePermission：多选批量撤销授权（同构 batchDeleteRole，复合 ids）。
+func (h *Handler) batchRevokePermission(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"BatchRevokePermission") {
+		return
+	}
+	h.doWrite(w, r, svc+"BatchRevokePermission",
+		func(r *http.Request) (proto.Message, error) {
+			appID, err := pathUint64(r, "app_id")
+			if err != nil {
+				return nil, err
+			}
+			items := parseGrantRefs(r.PostForm["ids"])
+			if len(items) == 0 {
+				return nil, errNoSelection
+			}
+			return &adminv1.BatchRevokePermissionRequest{AppId: appID, Items: items}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.BatchRevokePermission(ctx, m.(*adminv1.BatchRevokePermissionRequest))
+		},
+		appListRedirect("grants"))
+}
+
+// batchRemoveInheritance：多选批量移除角色继承（同构 batchDeleteRole，复合 ids）。
+func (h *Handler) batchRemoveInheritance(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"BatchRemoveRoleInheritance") {
+		return
+	}
+	h.doWrite(w, r, svc+"BatchRemoveRoleInheritance",
+		func(r *http.Request) (proto.Message, error) {
+			appID, err := pathUint64(r, "app_id")
+			if err != nil {
+				return nil, err
+			}
+			items := parseInheritanceRefs(r.PostForm["ids"])
+			if len(items) == 0 {
+				return nil, errNoSelection
+			}
+			return &adminv1.BatchRemoveRoleInheritanceRequest{AppId: appID, Items: items}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.BatchRemoveRoleInheritance(ctx, m.(*adminv1.BatchRemoveRoleInheritanceRequest))
+		},
+		appListRedirect("inheritances"))
+}
+
+// batchUnbindUser：多选批量解绑用户角色（同构 batchDeleteRole，复合 ids："user_id:role_id"）。
+func (h *Handler) batchUnbindUser(w http.ResponseWriter, r *http.Request) {
+	if !h.requireConfirm(w, r, svc+"BatchUnbindUserRole") {
+		return
+	}
+	h.doWrite(w, r, svc+"BatchUnbindUserRole",
+		func(r *http.Request) (proto.Message, error) {
+			appID, err := pathUint64(r, "app_id")
+			if err != nil {
+				return nil, err
+			}
+			items := parseUserRoleRefs(r.PostForm["ids"])
+			if len(items) == 0 {
+				return nil, errNoSelection
+			}
+			return &adminv1.BatchUnbindUserRoleRequest{AppId: appID, Items: items}, nil
+		},
+		func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+			return s.BatchUnbindUserRole(ctx, m.(*adminv1.BatchUnbindUserRoleRequest))
 		},
 		appListRedirect("bindings"))
 }

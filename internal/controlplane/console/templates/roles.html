@@ -8,13 +8,17 @@
 <input name="code" placeholder="code" required><input name="name" placeholder="名称">
 <button class="btn btn-primary">+ 新建角色</button></form>
 {{template "searchbox" .Pager}}
+<form id="bulk-roles" method="post" action="/apps/{{.AppID}}/roles/batch-delete" data-confirm="确认批量移除选中的角色？将一并移除其授权与绑定。">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}"></form>
 <table class="table"><thead><tr>
+<th><span class="visually-hidden">选择</span></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "code" "asc"}}">Code ↑</a> <a href="?{{sortHref $.Pager.SortQuery "code" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "name" "asc"}}">名称 ↑</a> <a href="?{{sortHref $.Pager.SortQuery "name" "desc"}}">↓</a></th>
 <th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
-{{range .Roles}}<tr><td>{{.RoleId}}</td><td>{{.Code}}</td><td>{{.Name}}</td>
+{{range .Roles}}<tr><td><input type="checkbox" name="ids" value="{{.RoleId}}" form="bulk-roles" aria-label="选择角色 {{.Code}}"></td><td>{{.RoleId}}</td><td>{{.Code}}</td><td>{{.Name}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/roles/{{.RoleId}}/delete" data-confirm="确定删除该业务角色吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}"><button class="danger">删除</button></form></td></tr>{{end}}
 </tbody></table>
+<button type="submit" form="bulk-roles" class="danger">批量移除选中</button>
 {{template "pager" .Pager}}</section></div>{{end}}

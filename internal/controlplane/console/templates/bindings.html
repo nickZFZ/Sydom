@@ -8,14 +8,18 @@
 <input name="user_id" placeholder="user_id" required><input name="role_id" placeholder="role_id" required>
 <button class="btn btn-primary">+ 绑定用户</button></form>
 {{template "searchbox" .Pager}}
+<form id="bulk-bindings" method="post" action="/apps/{{.AppID}}/bindings/batch-delete" data-confirm="确认批量解绑选中的用户角色？">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}"></form>
 <table class="table"><thead><tr>
+<th><span class="visually-hidden">选择</span></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "id" "asc"}}">ID ↑</a> <a href="?{{sortHref $.Pager.SortQuery "id" "desc"}}">↓</a></th>
 <th><a href="?{{sortHref $.Pager.SortQuery "user_id" "asc"}}">UserId ↑</a> <a href="?{{sortHref $.Pager.SortQuery "user_id" "desc"}}">↓</a></th>
 <th>RoleId</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>
-{{range .Bindings}}<tr><td>{{.BindingId}}</td><td>{{.UserId}}</td><td>{{.RoleId}}</td>
+{{range .Bindings}}<tr><td><input type="checkbox" name="ids" value="{{.UserId}}:{{.RoleId}}" form="bulk-bindings" aria-label="选择绑定 用户{{.UserId}}-角色{{.RoleId}}"></td><td>{{.BindingId}}</td><td>{{.UserId}}</td><td>{{.RoleId}}</td>
 <td><form method="post" action="/apps/{{$.AppID}}/bindings/unbind">
 <input type="hidden" name="csrf_token" value="{{$.CSRF}}">
 <input type="hidden" name="user_id" value="{{.UserId}}"><input type="hidden" name="role_id" value="{{.RoleId}}">
 <button class="danger">解绑</button></form></td></tr>{{end}}
 </tbody></table>
+<button type="submit" form="bulk-bindings" class="danger">批量移除选中</button>
 {{template "pager" .Pager}}</section></div>{{end}}
