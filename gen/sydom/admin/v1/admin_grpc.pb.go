@@ -146,7 +146,7 @@ type AdminServiceClient interface {
 	// —— M4.1 策略即代码（导出/导入）——
 	ExportAppPolicy(ctx context.Context, in *ExportAppPolicyRequest, opts ...grpc.CallOption) (*ExportAppPolicyResponse, error)
 	ImportAppPolicy(ctx context.Context, in *ImportAppPolicyRequest, opts ...grpc.CallOption) (*ImportAppPolicyResponse, error)
-	// ---- M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）----
+	// —— M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）——
 	BatchUnbindUserRole(ctx context.Context, in *BatchUnbindUserRoleRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
 	BatchRevokePermission(ctx context.Context, in *BatchRevokePermissionRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
 	BatchRemoveRoleInheritance(ctx context.Context, in *BatchRemoveRoleInheritanceRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
@@ -735,7 +735,7 @@ type AdminServiceServer interface {
 	// —— M4.1 策略即代码（导出/导入）——
 	ExportAppPolicy(context.Context, *ExportAppPolicyRequest) (*ExportAppPolicyResponse, error)
 	ImportAppPolicy(context.Context, *ImportAppPolicyRequest) (*ImportAppPolicyResponse, error)
-	// ---- M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）----
+	// —— M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）——
 	BatchUnbindUserRole(context.Context, *BatchUnbindUserRoleRequest) (*BatchWriteResponse, error)
 	BatchRevokePermission(context.Context, *BatchRevokePermissionRequest) (*BatchWriteResponse, error)
 	BatchRemoveRoleInheritance(context.Context, *BatchRemoveRoleInheritanceRequest) (*BatchWriteResponse, error)

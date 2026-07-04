@@ -87,7 +87,7 @@ service AdminService {
   rpc ExportAppPolicy(ExportAppPolicyRequest) returns (ExportAppPolicyResponse);
   rpc ImportAppPolicy(ImportAppPolicyRequest) returns (ImportAppPolicyResponse);
 
-  // ---- M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）----
+  // —— M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）——
   rpc BatchUnbindUserRole       (BatchUnbindUserRoleRequest)        returns (BatchWriteResponse);
   rpc BatchRevokePermission     (BatchRevokePermissionRequest)      returns (BatchWriteResponse);
   rpc BatchRemoveRoleInheritance(BatchRemoveRoleInheritanceRequest) returns (BatchWriteResponse);
