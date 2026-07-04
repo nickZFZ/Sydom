@@ -35,6 +35,21 @@ func TestParseUserRoleRefs_UserIDWithColon(t *testing.T) {
 	require.Empty(t, parseUserRoleRefs([]string{"nocolon", "user:notnum", ":42"}))
 }
 
+// parseInt64s / parseInt64Pair 对非法项一律忽略、不中断整批（批量移除只作用于可解析出的项）。
+func TestParseHelpers_SkipIllegal(t *testing.T) {
+	require.Equal(t, []int64{1, 2, 3}, parseInt64s([]string{"1", "x", "2", "", "3", " "}), "非法项被跳过,合法项全保留")
+	require.Empty(t, parseInt64s([]string{"x", ""}), "全非法→空")
+
+	a, b, ok := parseInt64Pair("5:3")
+	require.True(t, ok)
+	require.Equal(t, int64(5), a)
+	require.Equal(t, int64(3), b)
+	for _, bad := range []string{"nocolon", "5:", ":3", "x:3", "5:y", ""} {
+		_, _, ok := parseInt64Pair(bad)
+		require.False(t, ok, "非法 pair %q 应返回 ok=false", bad)
+	}
+}
+
 // ---- 1. roles：确认门全套 ----
 
 func TestConsole_BatchDeleteRole_ConfirmGate(t *testing.T) {
@@ -182,6 +197,15 @@ func TestConsole_BatchUnbindUser_Confirmed(t *testing.T) {
 		return n
 	}
 	require.Equal(t, 2, countBindings(), "前置：两条绑定应已建立")
+
+	// 未确认（缺 confirmed）→ 渲确认页(200)、不落库：确认门对复合 id(user_id:role_id)路径同样生效。
+	unconf := url.Values{"csrf_token": {csrf},
+		"ids": {fmt.Sprintf("alice@corp:%d", roleID), fmt.Sprintf("bob@corp:%d", roleID)}}
+	respGate, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/bindings/batch-delete", appID), unconf)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, respGate.StatusCode, "未确认应渲确认页(200)")
+	require.Contains(t, readBody(t, respGate), "确认批量解绑选中的用户角色", "确认页应显示批量专属文案")
+	require.Equal(t, 2, countBindings(), "未确认不应解绑")
 
 	form := url.Values{
 		"csrf_token": {csrf}, "confirmed": {"1"},
