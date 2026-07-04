@@ -17,6 +17,12 @@ var confirmPrompts = map[string]string{
 	svc + "DeleteDataPolicy":        "确定删除该数据策略吗？此操作不可撤销。",
 	svc + "DeleteTenantTemplate":    "确定删除该模板吗？此操作不可撤销。",
 	svc + "SetApplicationStatus":    "确定停用该应用吗？停用后将拒绝该应用的写操作。",
+	// M4.2 批量移除族：无 JS 确认页文案与各模板 data-confirm（有 JS 路径）逐字一致。
+	svc + "BatchDeleteRole":            "确认批量移除选中的角色？将一并移除其授权与绑定。",
+	svc + "BatchRevokePermission":      "确认批量撤销选中的授权？",
+	svc + "BatchRemoveRoleInheritance": "确认批量移除选中的继承关系？",
+	svc + "BatchUnbindUserRole":        "确认批量解绑选中的用户角色？",
+	svc + "BatchDeleteDataPolicy":      "确认批量删除选中的数据策略？此操作不可撤销。",
 }
 
 func confirmPrompt(fullMethod string) string {

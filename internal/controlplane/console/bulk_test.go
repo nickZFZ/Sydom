@@ -42,6 +42,7 @@ func TestConsole_BatchDeleteRole_ConfirmGate(t *testing.T) {
 	require.Contains(t, body, `name="confirmed" value="1"`)
 	require.Contains(t, body, fmt.Sprintf(`value="%d"`, id1))
 	require.Contains(t, body, fmt.Sprintf(`value="%d"`, id2))
+	require.Contains(t, body, "确认批量移除选中的角色", "确认页应显示批量专属业务文案(confirmPrompts 命中,非通用兜底语)")
 	require.Equal(t, 2, countRoles(), "未确认不应删")
 
 	// confirmed=1 → 批量删 + 303 PRG。
