@@ -140,6 +140,61 @@ func TestBatchDeleteRole_ConcurrentSerialized(t *testing.T) {
 	require.Equal(t, 0, bulkCountRows(t, db, `SELECT count(*) FROM role WHERE app_id=$1`, appID))
 }
 
+// BC-1 原子回滚有齿：向一批注入一个会在 DB 层报错的项——用测试专属的 BEFORE DELETE 触发器
+// 让删除哨兵角色时 RAISE EXCEPTION，使整批 set-based DELETE 事务在末条(删 role)失败。
+// 验证整批无一落库，尤其是批次内已「先于失败」执行的级联子行（r1 的授权/绑定在同一事务里
+// 已被 DELETE，原子回滚必须把它们复原）——这正是「有齿」所在——且 version 未 bump。
+//
+// 反向验证（对齐 M2.4 教训「回归测试须验证能捕获回归」）：本测试的齿在于「r1 的级联子行
+// 残留=1」这两条断言。已实测：临时把 bulk.go 中 BatchDeleteRole 的
+// store.DeleteRolesBatch(ctx, tx, ...) 改为在 m.db(autocommit) 上执行——即去掉原子性——
+// 级联子删各自提交、不随外层事务回滚，这两条断言即变为 0 → 测试 FAIL；恢复为 tx 后重新 PASS。
+// 故本测试确实能捕获「批量级联非原子」这一回归。
+func TestBatchDeleteRole_AtomicRollback_Injected(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	mgr := policy.NewPolicyManager(db, nil)
+	ctx := context.Background()
+
+	permID := bulkSeedPermission(t, db, appID, "p.read", "read")
+	r1, _, err := mgr.CreateRole(ctx, appID, "iac:r1", "R1")
+	require.NoError(t, err)
+	sentinel, _, err := mgr.CreateRole(ctx, appID, "iac:sentinel", "Sentinel")
+	require.NoError(t, err)
+	// 给 r1 一条授权 + 一条绑定，作为级联子行「被回滚复原」的见证。
+	_, err = mgr.GrantPermission(ctx, appID, r1, permID, cp.EffectAllow)
+	require.NoError(t, err)
+	_, err = mgr.BindUserRole(ctx, appID, "u1", r1)
+	require.NoError(t, err)
+	v0 := bulkCurrentVersion(t, db, appID)
+
+	// 测试专属故障注入：删除哨兵角色(code=iac:sentinel)时抛异常，使整批 DELETE 事务失败。
+	_, err = db.Exec(`CREATE OR REPLACE FUNCTION sydom_test_block_role_del() RETURNS trigger
+AS $$ BEGIN RAISE EXCEPTION 'injected: blocked delete of role %', OLD.id; END; $$ LANGUAGE plpgsql`)
+	require.NoError(t, err)
+	_, err = db.Exec(`CREATE TRIGGER sydom_test_block_role_del BEFORE DELETE ON role
+FOR EACH ROW WHEN (OLD.code = 'iac:sentinel') EXECUTE FUNCTION sydom_test_block_role_del()`)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, _ = db.Exec(`DROP TRIGGER IF EXISTS sydom_test_block_role_del ON role`)
+		_, _ = db.Exec(`DROP FUNCTION IF EXISTS sydom_test_block_role_del()`)
+	})
+
+	// 批量删 [r1, sentinel]：级联先删 r1 的授权/绑定，随后删 role 时哨兵触发器抛错 → 整批回滚。
+	d, applied, err := mgr.BatchDeleteRole(ctx, appID, []int64{r1, sentinel})
+	require.Error(t, err, "注入的触发器应使整批事务失败")
+	require.Nil(t, d, "失败不产出 Delta")
+	require.Equal(t, 0, applied)
+
+	// 整批无一落库——两角色都仍在。
+	require.Equal(t, 2, bulkCountRows(t, db, `SELECT count(*) FROM role WHERE app_id=$1`, appID), "两角色都应仍在")
+	// 有齿点：r1 的级联子行在同一事务里已被删，原子回滚后必须复原（非原子则此处为 0）。
+	require.Equal(t, 1, bulkCountRows(t, db, `SELECT count(*) FROM role_permission WHERE app_id=$1 AND role_id=$2`, appID, r1), "r1 授权应随整批回滚复原")
+	require.Equal(t, 1, bulkCountRows(t, db, `SELECT count(*) FROM user_role_binding WHERE app_id=$1 AND role_id=$2`, appID, r1), "r1 绑定应随整批回滚复原")
+	// version 未 bump。
+	require.Equal(t, v0, bulkCurrentVersion(t, db, appID), "失败事务不应 bump 版本")
+}
+
 // ── BatchRevokePermission ──
 
 func TestBatchRevokePermission_AtomicAndCounts(t *testing.T) {
