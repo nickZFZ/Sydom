@@ -431,15 +431,18 @@ func parseInheritanceRefs(vals []string) []*adminv1.InheritanceRef {
 	return out
 }
 
-// parseUserRoleRefs 解析 bindings 页复合 checkbox value "user_id:role_id" 为 []*UserRoleRef；
-// user_id 为字符串取首个冒号之前的全部内容（role_id 恒为数字，取之后部分）。
+// parseUserRoleRefs 解析 bindings 页复合 checkbox value "user_id:role_id" 为 []*UserRoleRef。
+// 必须按【末】冒号切分：role_id 恒为纯数字（末冒号之后），user_id 是自由文本 VARCHAR(128) 且
+// 联合身份常含冒号（如 "google-oauth2:110169..."）取末冒号之前的全部内容。若按首冒号切分，
+// user_id 含冒号时 role 段会解析失败被静默丢弃——批量报成功却漏解绑，造成权限残留（fail-close 反例）。
 func parseUserRoleRefs(vals []string) []*adminv1.UserRoleRef {
 	out := make([]*adminv1.UserRoleRef, 0, len(vals))
 	for _, v := range vals {
-		userID, roleStr, found := strings.Cut(v, ":")
-		if !found || userID == "" {
+		i := strings.LastIndex(v, ":")
+		if i <= 0 { // 无冒号，或冒号在首位(user_id 为空)
 			continue
 		}
+		userID, roleStr := v[:i], v[i+1:]
 		roleID, err := strconv.ParseInt(roleStr, 10, 64)
 		if err != nil {
 			continue

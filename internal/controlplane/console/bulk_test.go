@@ -16,6 +16,25 @@ import (
 //   2) 无 confirmed 的批量提交 → 200 确认页 + 底层行数不变（确认门真拦住）；
 //   3) confirmed=1 → 303 PRG + 底层行数归零（批量真执行）。
 
+// parseUserRoleRefs 必须按【末】冒号切分：user_id 是自由文本可含冒号（联合身份如
+// "google-oauth2:110169..."），role_id 恒纯数字。用首冒号切分会在 user_id 含冒号时把该绑定
+// 静默丢弃（批量报成功却漏解绑=权限残留）。本测试对旧的 strings.Cut(首冒号)实现会 FAIL。
+func TestParseUserRoleRefs_UserIDWithColon(t *testing.T) {
+	refs := parseUserRoleRefs([]string{"google-oauth2:110169484474386276334:42"})
+	require.Len(t, refs, 1, "含冒号的 user_id 不应被静默丢弃(否则批量解绑漏项、权限残留)")
+	require.Equal(t, "google-oauth2:110169484474386276334", refs[0].UserId)
+	require.Equal(t, int64(42), refs[0].RoleId)
+
+	// 普通 user_id(无冒号)仍正确。
+	refs2 := parseUserRoleRefs([]string{"alice@corp:7"})
+	require.Len(t, refs2, 1)
+	require.Equal(t, "alice@corp", refs2[0].UserId)
+	require.Equal(t, int64(7), refs2[0].RoleId)
+
+	// 非法项(无冒号/role 非数字/user_id 空)被丢弃。
+	require.Empty(t, parseUserRoleRefs([]string{"nocolon", "user:notnum", ":42"}))
+}
+
 // ---- 1. roles：确认门全套 ----
 
 func TestConsole_BatchDeleteRole_ConfirmGate(t *testing.T) {
