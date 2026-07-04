@@ -80,17 +80,44 @@ func TestDeleteRolesBatch_CascadesAndCounts(t *testing.T) {
 	require.Equal(t, 0, countRows(t, db, `SELECT count(*) FROM role_permission WHERE app_id=$1`, appID), "级联删授权")
 }
 
+// DeleteRolesBatch 必须先清理被删角色的 role_inheritance 边（作父与作子两个分支），否则删 role
+// 时会撞 role_inheritance→role 的 FK（无 ON DELETE CASCADE）直接报错。本用例覆盖该级联分支：
+// 给待删角色分别建"作子"和"作父"的边，另建一条纯存活角色间的边，批量删除后断言待删角色的边被
+// 清空、存活边不受影响。自带齿：若该条级联 DELETE 回归，删有边的角色即抛 FK 违例，require.NoError 失败。
+func TestDeleteRolesBatch_CascadesInheritance(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	ctx := context.Background()
+
+	del1 := insertRole(t, db, appID, "iac:del1", "Del1")
+	del2 := insertRole(t, db, appID, "iac:del2", "Del2")
+	keepParent := insertRole(t, db, appID, "iac:keepP", "KeepParent")
+	keepChild := insertRole(t, db, appID, "iac:keepC", "KeepChild")
+
+	addRoleInheritance(t, db, appID, del1, keepParent)      // del1 作子（覆盖 child_role_id 分支）
+	addRoleInheritance(t, db, appID, keepChild, del2)       // del2 作父（覆盖 parent_role_id 分支）
+	addRoleInheritance(t, db, appID, keepChild, keepParent) // 纯存活边，不应被触碰
+
+	applied, err := store.DeleteRolesBatch(ctx, db, appID, []int64{del1, del2})
+	require.NoError(t, err, "级联须先清 role_inheritance 边,否则删 role 撞 FK")
+	require.EqualValues(t, 2, applied)
+
+	require.Equal(t, 1, countRows(t, db, `SELECT count(*) FROM role_inheritance WHERE app_id=$1`, appID), "仅存活边保留")
+	require.Equal(t, 1, countRows(t, db,
+		`SELECT count(*) FROM role_inheritance WHERE app_id=$1 AND child_role_id=$2 AND parent_role_id=$3`,
+		appID, keepChild, keepParent), "纯存活角色间的边不受影响")
+}
+
 func TestDeleteRolesBatch_EmptyInput_NoOp(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	appID := dbtest.SeedApp(t, db)
 	ctx := context.Background()
-	r1 := insertRole(t, db, appID, "iac:a", "A")
+	insertRole(t, db, appID, "iac:a", "A")
 
 	applied, err := store.DeleteRolesBatch(ctx, db, appID, nil)
 	require.NoError(t, err)
 	require.EqualValues(t, 0, applied)
 	require.Equal(t, 1, countRows(t, db, `SELECT count(*) FROM role WHERE app_id=$1`, appID), "空批不应触碰任何行")
-	_ = r1
 }
 
 func TestDeleteRolesBatch_AllNoOp(t *testing.T) {
