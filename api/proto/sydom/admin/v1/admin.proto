@@ -86,6 +86,13 @@ service AdminService {
   // —— M4.1 策略即代码（导出/导入）——
   rpc ExportAppPolicy(ExportAppPolicyRequest) returns (ExportAppPolicyResponse);
   rpc ImportAppPolicy(ImportAppPolicyRequest) returns (ImportAppPolicyResponse);
+
+  // ---- M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）----
+  rpc BatchUnbindUserRole       (BatchUnbindUserRoleRequest)        returns (BatchWriteResponse);
+  rpc BatchRevokePermission     (BatchRevokePermissionRequest)      returns (BatchWriteResponse);
+  rpc BatchRemoveRoleInheritance(BatchRemoveRoleInheritanceRequest) returns (BatchWriteResponse);
+  rpc BatchDeleteRole           (BatchDeleteRoleRequest)            returns (BatchWriteResponse);
+  rpc BatchDeleteDataPolicy     (BatchDeleteDataPolicyRequest)      returns (BatchWriteResponse);
 }
 
 // WriteResponse 是写类 RPC 通用响应：回带写后版本（无策略影响时 version 同当前、changed=false）。
@@ -630,4 +637,22 @@ message ImportAppPolicyResponse {
   int32 updates = 6;
   int32 deletes = 7;
   int32 conflicts = 8;
+}
+
+// —— M4.2 批量操作（app 域移除族）——
+message UserRoleRef    { string user_id = 1; int64 role_id = 2; }
+message GrantRef       { int64 role_id = 1; int64 permission_id = 2; }
+message InheritanceRef { int64 child_role_id = 1; int64 parent_role_id = 2; }
+
+message BatchUnbindUserRoleRequest        { uint64 app_id = 1; repeated UserRoleRef    items = 2; }
+message BatchRevokePermissionRequest      { uint64 app_id = 1; repeated GrantRef       items = 2; }
+message BatchRemoveRoleInheritanceRequest { uint64 app_id = 1; repeated InheritanceRef items = 2; }
+message BatchDeleteRoleRequest            { uint64 app_id = 1; repeated int64 role_ids = 2; }
+message BatchDeleteDataPolicyRequest      { uint64 app_id = 1; repeated int64 data_policy_ids = 2; }
+
+message BatchWriteResponse {
+  uint64 version   = 1; // bump 后新版本（全 no-op 时为当前值）
+  uint32 requested = 2; // 请求项数
+  uint32 applied   = 3; // 实际改变项数（requested−applied = no-op 跳过数）
+  bool   changed   = 4; // applied>0 → 已 bump+广播（数据策略批量非空即 changed）
 }

@@ -19,57 +19,62 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	AdminService_CreateRole_FullMethodName              = "/sydom.admin.v1.AdminService/CreateRole"
-	AdminService_DeleteRole_FullMethodName              = "/sydom.admin.v1.AdminService/DeleteRole"
-	AdminService_UpsertPermission_FullMethodName        = "/sydom.admin.v1.AdminService/UpsertPermission"
-	AdminService_GrantPermission_FullMethodName         = "/sydom.admin.v1.AdminService/GrantPermission"
-	AdminService_RevokePermission_FullMethodName        = "/sydom.admin.v1.AdminService/RevokePermission"
-	AdminService_AddRoleInheritance_FullMethodName      = "/sydom.admin.v1.AdminService/AddRoleInheritance"
-	AdminService_RemoveRoleInheritance_FullMethodName   = "/sydom.admin.v1.AdminService/RemoveRoleInheritance"
-	AdminService_BindUserRole_FullMethodName            = "/sydom.admin.v1.AdminService/BindUserRole"
-	AdminService_UnbindUserRole_FullMethodName          = "/sydom.admin.v1.AdminService/UnbindUserRole"
-	AdminService_UpsertDataPolicy_FullMethodName        = "/sydom.admin.v1.AdminService/UpsertDataPolicy"
-	AdminService_DeleteDataPolicy_FullMethodName        = "/sydom.admin.v1.AdminService/DeleteDataPolicy"
-	AdminService_CreateApplication_FullMethodName       = "/sydom.admin.v1.AdminService/CreateApplication"
-	AdminService_SetApplicationStatus_FullMethodName    = "/sydom.admin.v1.AdminService/SetApplicationStatus"
-	AdminService_ListApplications_FullMethodName        = "/sydom.admin.v1.AdminService/ListApplications"
-	AdminService_CreateOperator_FullMethodName          = "/sydom.admin.v1.AdminService/CreateOperator"
-	AdminService_SetOperatorStatus_FullMethodName       = "/sydom.admin.v1.AdminService/SetOperatorStatus"
-	AdminService_CreateAdminRole_FullMethodName         = "/sydom.admin.v1.AdminService/CreateAdminRole"
-	AdminService_GrantAdminRole_FullMethodName          = "/sydom.admin.v1.AdminService/GrantAdminRole"
-	AdminService_BindOperatorRole_FullMethodName        = "/sydom.admin.v1.AdminService/BindOperatorRole"
-	AdminService_RevokeAdminGrant_FullMethodName        = "/sydom.admin.v1.AdminService/RevokeAdminGrant"
-	AdminService_UnbindOperatorRole_FullMethodName      = "/sydom.admin.v1.AdminService/UnbindOperatorRole"
-	AdminService_RotateApplicationSecret_FullMethodName = "/sydom.admin.v1.AdminService/RotateApplicationSecret"
-	AdminService_ResetOperatorSecret_FullMethodName     = "/sydom.admin.v1.AdminService/ResetOperatorSecret"
-	AdminService_CreateBusinessRole_FullMethodName      = "/sydom.admin.v1.AdminService/CreateBusinessRole"
-	AdminService_ListRoles_FullMethodName               = "/sydom.admin.v1.AdminService/ListRoles"
-	AdminService_ListPermissions_FullMethodName         = "/sydom.admin.v1.AdminService/ListPermissions"
-	AdminService_ListGrants_FullMethodName              = "/sydom.admin.v1.AdminService/ListGrants"
-	AdminService_ListRoleInheritances_FullMethodName    = "/sydom.admin.v1.AdminService/ListRoleInheritances"
-	AdminService_ListUserBindings_FullMethodName        = "/sydom.admin.v1.AdminService/ListUserBindings"
-	AdminService_ListDataPolicies_FullMethodName        = "/sydom.admin.v1.AdminService/ListDataPolicies"
-	AdminService_ListOperators_FullMethodName           = "/sydom.admin.v1.AdminService/ListOperators"
-	AdminService_ListAdminRoles_FullMethodName          = "/sydom.admin.v1.AdminService/ListAdminRoles"
-	AdminService_GetEffectivePermissions_FullMethodName = "/sydom.admin.v1.AdminService/GetEffectivePermissions"
-	AdminService_ExplainDecision_FullMethodName         = "/sydom.admin.v1.AdminService/ExplainDecision"
-	AdminService_GetRoleGraph_FullMethodName            = "/sydom.admin.v1.AdminService/GetRoleGraph"
-	AdminService_SimulateRoleChange_FullMethodName      = "/sydom.admin.v1.AdminService/SimulateRoleChange"
-	AdminService_RegisterTenant_FullMethodName          = "/sydom.admin.v1.AdminService/RegisterTenant"
-	AdminService_ListMyTenants_FullMethodName           = "/sydom.admin.v1.AdminService/ListMyTenants"
-	AdminService_InviteMember_FullMethodName            = "/sydom.admin.v1.AdminService/InviteMember"
-	AdminService_ListMembers_FullMethodName             = "/sydom.admin.v1.AdminService/ListMembers"
-	AdminService_QueryAuditLog_FullMethodName           = "/sydom.admin.v1.AdminService/QueryAuditLog"
-	AdminService_QueryAdminAuditLog_FullMethodName      = "/sydom.admin.v1.AdminService/QueryAdminAuditLog"
-	AdminService_ListTemplates_FullMethodName           = "/sydom.admin.v1.AdminService/ListTemplates"
-	AdminService_ApplyTemplate_FullMethodName           = "/sydom.admin.v1.AdminService/ApplyTemplate"
-	AdminService_SaveAppAsTemplate_FullMethodName       = "/sydom.admin.v1.AdminService/SaveAppAsTemplate"
-	AdminService_ListTenantTemplates_FullMethodName     = "/sydom.admin.v1.AdminService/ListTenantTemplates"
-	AdminService_GetTenantTemplate_FullMethodName       = "/sydom.admin.v1.AdminService/GetTenantTemplate"
-	AdminService_ApplyTenantTemplate_FullMethodName     = "/sydom.admin.v1.AdminService/ApplyTenantTemplate"
-	AdminService_DeleteTenantTemplate_FullMethodName    = "/sydom.admin.v1.AdminService/DeleteTenantTemplate"
-	AdminService_ExportAppPolicy_FullMethodName         = "/sydom.admin.v1.AdminService/ExportAppPolicy"
-	AdminService_ImportAppPolicy_FullMethodName         = "/sydom.admin.v1.AdminService/ImportAppPolicy"
+	AdminService_CreateRole_FullMethodName                 = "/sydom.admin.v1.AdminService/CreateRole"
+	AdminService_DeleteRole_FullMethodName                 = "/sydom.admin.v1.AdminService/DeleteRole"
+	AdminService_UpsertPermission_FullMethodName           = "/sydom.admin.v1.AdminService/UpsertPermission"
+	AdminService_GrantPermission_FullMethodName            = "/sydom.admin.v1.AdminService/GrantPermission"
+	AdminService_RevokePermission_FullMethodName           = "/sydom.admin.v1.AdminService/RevokePermission"
+	AdminService_AddRoleInheritance_FullMethodName         = "/sydom.admin.v1.AdminService/AddRoleInheritance"
+	AdminService_RemoveRoleInheritance_FullMethodName      = "/sydom.admin.v1.AdminService/RemoveRoleInheritance"
+	AdminService_BindUserRole_FullMethodName               = "/sydom.admin.v1.AdminService/BindUserRole"
+	AdminService_UnbindUserRole_FullMethodName             = "/sydom.admin.v1.AdminService/UnbindUserRole"
+	AdminService_UpsertDataPolicy_FullMethodName           = "/sydom.admin.v1.AdminService/UpsertDataPolicy"
+	AdminService_DeleteDataPolicy_FullMethodName           = "/sydom.admin.v1.AdminService/DeleteDataPolicy"
+	AdminService_CreateApplication_FullMethodName          = "/sydom.admin.v1.AdminService/CreateApplication"
+	AdminService_SetApplicationStatus_FullMethodName       = "/sydom.admin.v1.AdminService/SetApplicationStatus"
+	AdminService_ListApplications_FullMethodName           = "/sydom.admin.v1.AdminService/ListApplications"
+	AdminService_CreateOperator_FullMethodName             = "/sydom.admin.v1.AdminService/CreateOperator"
+	AdminService_SetOperatorStatus_FullMethodName          = "/sydom.admin.v1.AdminService/SetOperatorStatus"
+	AdminService_CreateAdminRole_FullMethodName            = "/sydom.admin.v1.AdminService/CreateAdminRole"
+	AdminService_GrantAdminRole_FullMethodName             = "/sydom.admin.v1.AdminService/GrantAdminRole"
+	AdminService_BindOperatorRole_FullMethodName           = "/sydom.admin.v1.AdminService/BindOperatorRole"
+	AdminService_RevokeAdminGrant_FullMethodName           = "/sydom.admin.v1.AdminService/RevokeAdminGrant"
+	AdminService_UnbindOperatorRole_FullMethodName         = "/sydom.admin.v1.AdminService/UnbindOperatorRole"
+	AdminService_RotateApplicationSecret_FullMethodName    = "/sydom.admin.v1.AdminService/RotateApplicationSecret"
+	AdminService_ResetOperatorSecret_FullMethodName        = "/sydom.admin.v1.AdminService/ResetOperatorSecret"
+	AdminService_CreateBusinessRole_FullMethodName         = "/sydom.admin.v1.AdminService/CreateBusinessRole"
+	AdminService_ListRoles_FullMethodName                  = "/sydom.admin.v1.AdminService/ListRoles"
+	AdminService_ListPermissions_FullMethodName            = "/sydom.admin.v1.AdminService/ListPermissions"
+	AdminService_ListGrants_FullMethodName                 = "/sydom.admin.v1.AdminService/ListGrants"
+	AdminService_ListRoleInheritances_FullMethodName       = "/sydom.admin.v1.AdminService/ListRoleInheritances"
+	AdminService_ListUserBindings_FullMethodName           = "/sydom.admin.v1.AdminService/ListUserBindings"
+	AdminService_ListDataPolicies_FullMethodName           = "/sydom.admin.v1.AdminService/ListDataPolicies"
+	AdminService_ListOperators_FullMethodName              = "/sydom.admin.v1.AdminService/ListOperators"
+	AdminService_ListAdminRoles_FullMethodName             = "/sydom.admin.v1.AdminService/ListAdminRoles"
+	AdminService_GetEffectivePermissions_FullMethodName    = "/sydom.admin.v1.AdminService/GetEffectivePermissions"
+	AdminService_ExplainDecision_FullMethodName            = "/sydom.admin.v1.AdminService/ExplainDecision"
+	AdminService_GetRoleGraph_FullMethodName               = "/sydom.admin.v1.AdminService/GetRoleGraph"
+	AdminService_SimulateRoleChange_FullMethodName         = "/sydom.admin.v1.AdminService/SimulateRoleChange"
+	AdminService_RegisterTenant_FullMethodName             = "/sydom.admin.v1.AdminService/RegisterTenant"
+	AdminService_ListMyTenants_FullMethodName              = "/sydom.admin.v1.AdminService/ListMyTenants"
+	AdminService_InviteMember_FullMethodName               = "/sydom.admin.v1.AdminService/InviteMember"
+	AdminService_ListMembers_FullMethodName                = "/sydom.admin.v1.AdminService/ListMembers"
+	AdminService_QueryAuditLog_FullMethodName              = "/sydom.admin.v1.AdminService/QueryAuditLog"
+	AdminService_QueryAdminAuditLog_FullMethodName         = "/sydom.admin.v1.AdminService/QueryAdminAuditLog"
+	AdminService_ListTemplates_FullMethodName              = "/sydom.admin.v1.AdminService/ListTemplates"
+	AdminService_ApplyTemplate_FullMethodName              = "/sydom.admin.v1.AdminService/ApplyTemplate"
+	AdminService_SaveAppAsTemplate_FullMethodName          = "/sydom.admin.v1.AdminService/SaveAppAsTemplate"
+	AdminService_ListTenantTemplates_FullMethodName        = "/sydom.admin.v1.AdminService/ListTenantTemplates"
+	AdminService_GetTenantTemplate_FullMethodName          = "/sydom.admin.v1.AdminService/GetTenantTemplate"
+	AdminService_ApplyTenantTemplate_FullMethodName        = "/sydom.admin.v1.AdminService/ApplyTenantTemplate"
+	AdminService_DeleteTenantTemplate_FullMethodName       = "/sydom.admin.v1.AdminService/DeleteTenantTemplate"
+	AdminService_ExportAppPolicy_FullMethodName            = "/sydom.admin.v1.AdminService/ExportAppPolicy"
+	AdminService_ImportAppPolicy_FullMethodName            = "/sydom.admin.v1.AdminService/ImportAppPolicy"
+	AdminService_BatchUnbindUserRole_FullMethodName        = "/sydom.admin.v1.AdminService/BatchUnbindUserRole"
+	AdminService_BatchRevokePermission_FullMethodName      = "/sydom.admin.v1.AdminService/BatchRevokePermission"
+	AdminService_BatchRemoveRoleInheritance_FullMethodName = "/sydom.admin.v1.AdminService/BatchRemoveRoleInheritance"
+	AdminService_BatchDeleteRole_FullMethodName            = "/sydom.admin.v1.AdminService/BatchDeleteRole"
+	AdminService_BatchDeleteDataPolicy_FullMethodName      = "/sydom.admin.v1.AdminService/BatchDeleteDataPolicy"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -141,6 +146,12 @@ type AdminServiceClient interface {
 	// —— M4.1 策略即代码（导出/导入）——
 	ExportAppPolicy(ctx context.Context, in *ExportAppPolicyRequest, opts ...grpc.CallOption) (*ExportAppPolicyResponse, error)
 	ImportAppPolicy(ctx context.Context, in *ImportAppPolicyRequest, opts ...grpc.CallOption) (*ImportAppPolicyResponse, error)
+	// ---- M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）----
+	BatchUnbindUserRole(ctx context.Context, in *BatchUnbindUserRoleRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
+	BatchRevokePermission(ctx context.Context, in *BatchRevokePermissionRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
+	BatchRemoveRoleInheritance(ctx context.Context, in *BatchRemoveRoleInheritanceRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
+	BatchDeleteRole(ctx context.Context, in *BatchDeleteRoleRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
+	BatchDeleteDataPolicy(ctx context.Context, in *BatchDeleteDataPolicyRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error)
 }
 
 type adminServiceClient struct {
@@ -610,6 +621,51 @@ func (c *adminServiceClient) ImportAppPolicy(ctx context.Context, in *ImportAppP
 	return out, nil
 }
 
+func (c *adminServiceClient) BatchUnbindUserRole(ctx context.Context, in *BatchUnbindUserRoleRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error) {
+	out := new(BatchWriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_BatchUnbindUserRole_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) BatchRevokePermission(ctx context.Context, in *BatchRevokePermissionRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error) {
+	out := new(BatchWriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_BatchRevokePermission_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) BatchRemoveRoleInheritance(ctx context.Context, in *BatchRemoveRoleInheritanceRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error) {
+	out := new(BatchWriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_BatchRemoveRoleInheritance_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) BatchDeleteRole(ctx context.Context, in *BatchDeleteRoleRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error) {
+	out := new(BatchWriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_BatchDeleteRole_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) BatchDeleteDataPolicy(ctx context.Context, in *BatchDeleteDataPolicyRequest, opts ...grpc.CallOption) (*BatchWriteResponse, error) {
+	out := new(BatchWriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_BatchDeleteDataPolicy_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility
@@ -679,6 +735,12 @@ type AdminServiceServer interface {
 	// —— M4.1 策略即代码（导出/导入）——
 	ExportAppPolicy(context.Context, *ExportAppPolicyRequest) (*ExportAppPolicyResponse, error)
 	ImportAppPolicy(context.Context, *ImportAppPolicyRequest) (*ImportAppPolicyResponse, error)
+	// ---- M4.2 批量操作（app 域移除族，全原子+幂等即 no-op，勾选即操作 source-agnostic）----
+	BatchUnbindUserRole(context.Context, *BatchUnbindUserRoleRequest) (*BatchWriteResponse, error)
+	BatchRevokePermission(context.Context, *BatchRevokePermissionRequest) (*BatchWriteResponse, error)
+	BatchRemoveRoleInheritance(context.Context, *BatchRemoveRoleInheritanceRequest) (*BatchWriteResponse, error)
+	BatchDeleteRole(context.Context, *BatchDeleteRoleRequest) (*BatchWriteResponse, error)
+	BatchDeleteDataPolicy(context.Context, *BatchDeleteDataPolicyRequest) (*BatchWriteResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -838,6 +900,21 @@ func (UnimplementedAdminServiceServer) ExportAppPolicy(context.Context, *ExportA
 }
 func (UnimplementedAdminServiceServer) ImportAppPolicy(context.Context, *ImportAppPolicyRequest) (*ImportAppPolicyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportAppPolicy not implemented")
+}
+func (UnimplementedAdminServiceServer) BatchUnbindUserRole(context.Context, *BatchUnbindUserRoleRequest) (*BatchWriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchUnbindUserRole not implemented")
+}
+func (UnimplementedAdminServiceServer) BatchRevokePermission(context.Context, *BatchRevokePermissionRequest) (*BatchWriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchRevokePermission not implemented")
+}
+func (UnimplementedAdminServiceServer) BatchRemoveRoleInheritance(context.Context, *BatchRemoveRoleInheritanceRequest) (*BatchWriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchRemoveRoleInheritance not implemented")
+}
+func (UnimplementedAdminServiceServer) BatchDeleteRole(context.Context, *BatchDeleteRoleRequest) (*BatchWriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchDeleteRole not implemented")
+}
+func (UnimplementedAdminServiceServer) BatchDeleteDataPolicy(context.Context, *BatchDeleteDataPolicyRequest) (*BatchWriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchDeleteDataPolicy not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 
@@ -1770,6 +1847,96 @@ func _AdminService_ImportAppPolicy_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_BatchUnbindUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchUnbindUserRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).BatchUnbindUserRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_BatchUnbindUserRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).BatchUnbindUserRole(ctx, req.(*BatchUnbindUserRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_BatchRevokePermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchRevokePermissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).BatchRevokePermission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_BatchRevokePermission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).BatchRevokePermission(ctx, req.(*BatchRevokePermissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_BatchRemoveRoleInheritance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchRemoveRoleInheritanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).BatchRemoveRoleInheritance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_BatchRemoveRoleInheritance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).BatchRemoveRoleInheritance(ctx, req.(*BatchRemoveRoleInheritanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_BatchDeleteRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchDeleteRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).BatchDeleteRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_BatchDeleteRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).BatchDeleteRole(ctx, req.(*BatchDeleteRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_BatchDeleteDataPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchDeleteDataPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).BatchDeleteDataPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_BatchDeleteDataPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).BatchDeleteDataPolicy(ctx, req.(*BatchDeleteDataPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1980,6 +2147,26 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportAppPolicy",
 			Handler:    _AdminService_ImportAppPolicy_Handler,
+		},
+		{
+			MethodName: "BatchUnbindUserRole",
+			Handler:    _AdminService_BatchUnbindUserRole_Handler,
+		},
+		{
+			MethodName: "BatchRevokePermission",
+			Handler:    _AdminService_BatchRevokePermission_Handler,
+		},
+		{
+			MethodName: "BatchRemoveRoleInheritance",
+			Handler:    _AdminService_BatchRemoveRoleInheritance_Handler,
+		},
+		{
+			MethodName: "BatchDeleteRole",
+			Handler:    _AdminService_BatchDeleteRole_Handler,
+		},
+		{
+			MethodName: "BatchDeleteDataPolicy",
+			Handler:    _AdminService_BatchDeleteDataPolicy_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
