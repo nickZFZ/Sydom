@@ -8,7 +8,6 @@ import (
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 	"github.com/nickZFZ/Sydom/internal/sidecar/dataperm"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -124,26 +123,38 @@ func (h *Handler) batchDeleteDataPolicy(w http.ResponseWriter, r *http.Request) 
 		appListRedirect("data-policies"))
 }
 
+// conditionPreviewResp 是预览端点的 JSON 契约：成功填 Predicate，任何失败（鉴权/校验）填 Error。
+// 具名类型固化契约，供任务5 前端 fetch → resp.json() 消费（omitempty 保证互斥字段只出现一个）。
+type conditionPreviewResp struct {
+	Predicate string `json:"predicate,omitempty"`
+	Error     string `json:"error,omitempty"`
+}
+
 // previewCondition 服务端渲染条件的符号谓词预览（幂等只读，单一真相源：复用 dataperm 校验 +
 // conditionPredicate 渲染）。只解析请求体提交的条件 JSON，不读任何 app 数据、不泄露 app
 // 存在性，故会话+CSRF 鉴权足够（无对应 RPC 方法，不施加 AuthorizeRule）。
-// 始终 200：校验错误是业务结果内联展示（JSON.error），不是服务器错误；不落库/不 bump/不写审计。
+// 本端点被前端 JS fetch → resp.json() 消费，故所有分支必须返回 JSON（Content-Type 顶部设一次）：
+// 鉴权失败 401/403 JSON，校验成功/失败恒 200（校验错误是业务结果内联展示，非服务器错误）；
+// 不落库/不 bump/不写审计。绝不用 requireSession/renderError（会重定向/回 HTML，破坏 JSON 契约）。
 func (h *Handler) previewCondition(w http.ResponseWriter, r *http.Request) {
-	_, sess, ok := h.requireSession(w, r)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	sess, ok := h.lookupSession(r)
 	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(conditionPreviewResp{Error: "会话已过期，请刷新页面后重试"})
 		return
 	}
 	if !h.checkCSRF(r, sess) {
-		h.renderError(w, r, codes.PermissionDenied, "CSRF 校验失败", nil)
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(conditionPreviewResp{Error: "CSRF 校验失败，请刷新页面后重试"})
 		return
 	}
 	cond := r.FormValue("condition")
-	resp := map[string]string{}
+	var resp conditionPreviewResp
 	if err := dataperm.ValidateCondition(cond); err != nil {
-		resp["error"] = err.Error()
+		resp.Error = err.Error()
 	} else {
-		resp["predicate"] = conditionPredicate(cond)
+		resp.Predicate = conditionPredicate(cond)
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(resp)
 }

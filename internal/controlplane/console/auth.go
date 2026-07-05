@@ -77,14 +77,22 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
-func (h *Handler) requireSession(w http.ResponseWriter, r *http.Request) (string, Session, bool) {
+// lookupSession 查会话但不写任何响应（供 JSON 端点自行决定失败响应格式）。
+func (h *Handler) lookupSession(r *http.Request) (Session, bool) {
 	c, err := r.Cookie(sessionCookieName)
 	if err != nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return "", Session{}, false
+		return Session{}, false
 	}
 	sess, err := h.sessions.Get(r.Context(), c.Value)
 	if err != nil {
+		return Session{}, false
+	}
+	return sess, true
+}
+
+func (h *Handler) requireSession(w http.ResponseWriter, r *http.Request) (string, Session, bool) {
+	sess, ok := h.lookupSession(r)
+	if !ok {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return "", Session{}, false
 	}
