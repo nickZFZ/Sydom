@@ -12,7 +12,8 @@
 <select name="effect" aria-label="效果（allow/deny）"><option value="allow">allow</option><option value="deny">deny</option></select>
 <button type="button" id="builder-toggle" style="display:none">专业模式（原始 JSON）</button>
 <div id="builder" style="display:none"></div>
-<textarea name="condition" id="cond-json" rows="4" placeholder='condition（原始 JSON），如 {"op":"and","children":[]}' required></textarea>
+<div id="cond-preview" class="cond-preview" role="status" aria-live="polite"></div>
+<textarea name="condition" id="cond-json" rows="4" placeholder='condition（原始 JSON），如 {"op":"AND","children":[]}' required></textarea>
 <input name="description" placeholder="业务说明（运营台显示，如：仅限本人区域的订单）">
 <button class="btn btn-primary">+ 保存策略</button></form>
 {{template "searchbox" .Pager}}

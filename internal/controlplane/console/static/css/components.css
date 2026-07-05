@@ -95,4 +95,31 @@ dialog.dialog::backdrop { background:rgba(0,0,0,.4); }
 /* 运营台模板库版式（替代行内 style） */
 .ops-subsection { margin-top: var(--space-6); }
 .card-spaced { margin-bottom: var(--space-4); }
+
+/* —— 数据策略条件构建器 v2（M4.3，嵌套盒 AND/OR/NOT + 自适应叶子行；全 token 化）—— */
+/* 组盒：边框 + 内距 + 圆角；嵌套时因父盒内距自然缩进 */
+.cond-group { border:1px solid var(--color-border); border-radius:var(--radius-md);
+  background:var(--color-surface); padding:var(--space-3); margin-top:var(--space-2);
+  display:flex; flex-direction:column; gap:var(--space-2); width:100%; }
+/* NOT 组：虚线边框区分（视觉标识「恰 1 子项 + 取反」） */
+.cond-group--not { border-style:dashed; border-color:var(--color-warning); }
+.cond-group-head { display:flex; gap:var(--space-2); align-items:center; }
+.cond-group-children { display:flex; flex-direction:column; gap:var(--space-2); }
+.cond-group-actions { display:flex; gap:var(--space-2); flex-wrap:wrap; }
+/* 叶子行：field / op / value / 删除 横向流式 */
+.cond-leaf { display:flex; gap:var(--space-2); align-items:center; flex-wrap:wrap; }
+.cond-value { display:inline-flex; gap:var(--space-2); align-items:center; }
+.cond-field { min-width:9em; }
+.cond-val,.cond-val-array { min-width:12em; }
+.cond-val-lo,.cond-val-hi { min-width:6em; }
+/* field 非法标红（^[A-Za-z_]\w*$ 校验失败） */
+.cond-field-invalid { border-color:var(--color-danger); }
+.cond-field-invalid:focus { border-color:var(--color-danger); }
+/* 小按钮着色（+条件 / +子组 / 删除×） */
+.cond-del { color:var(--color-danger); }
+/* 服务端谓词预览容器（等宽 + 弱化） */
+.cond-preview { font-family:var(--font-mono); font-size:var(--text-sm); color:var(--color-text-muted);
+  padding:var(--space-2) var(--space-3); border:1px solid var(--color-border); border-radius:var(--radius-sm);
+  background:var(--color-bg); min-height:var(--space-5); word-break:break-word; width:100%; }
+.cond-preview--error { color:var(--color-danger); border-color:var(--color-danger); }
 .card-spaced-top { margin-top: var(--space-4); }
