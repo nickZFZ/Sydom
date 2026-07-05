@@ -285,7 +285,7 @@ func TestDataPolicy_UpsertRawJSON_ThenList(t *testing.T) {
 	appID := dbtest.SeedApp(t, db)
 	c, csrf := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
 
-	cond := `{"op":"and","children":[{"field":"dept","op":"eq","value":"$user.dept"}]}`
+	cond := `{"op":"AND","children":[{"field":"dept","op":"EQ","value":"$user.dept"}]}`
 	form := url.Values{
 		"csrf_token":   {csrf},
 		"id":           {"0"},
@@ -306,12 +306,13 @@ func TestDataPolicy_UpsertRawJSON_ThenList(t *testing.T) {
 	require.Contains(t, body, "$user.dept")
 }
 
-// TestDataPolicy_InvalidCondition_FailClose：condition 列为 JSONB NOT NULL，store 以 $5::jsonb
-// 插入。非法 JSON 在 INSERT 处 cast 失败，AdminServer.UpsertDataPolicy 把该错误一律包成
-// codes.Internal（server.go:107；仅 effect 字段在 server.go:101 特判为 InvalidArgument；
-// server.go:35-38 的 TODO 已声明此错误码映射偏粗）。Console 忠实透传 gRPC code，故返回
-// HTTP 500——不是 plan 假设的 400。Console 按红线绝不预解析 condition，因此无法也不应强行
-// 凑出 400。本用例真正担保的是「fail-close」：非法策略绝不落库（事务回滚）。
+// TestDataPolicy_InvalidCondition_FailClose：M4.3 任务3 起，AdminServer.UpsertDataPolicy 在
+// 落库前调用 dataperm.ValidateCondition（server.go；三面单点），非法 JSON 在 handler 处即被
+// 拒为 codes.InvalidArgument，压根不再触达 store 的 $5::jsonb cast。Console 忠实透传 gRPC
+// code，故返回 HTTP 400（不再是校验补上之前的 500，那时是 JSONB cast 失败兜底到
+// codes.Internal；见 M4.3 任务3 commit）。Console 按红线绝不预解析 condition——400 完全来自
+// 后端 fail-close 校验，不是 Console 自己解析。本用例真正担保的是「fail-close」：非法策略
+// 绝不落库（写时被拒，无需事务回滚）。
 func TestDataPolicy_InvalidCondition_FailClose(t *testing.T) {
 	ts, store, db := newConsole(t)
 	appID := dbtest.SeedApp(t, db)
@@ -323,12 +324,12 @@ func TestDataPolicy_InvalidCondition_FailClose(t *testing.T) {
 		"subject_type": {"role"},
 		"subject_id":   {"clerk"},
 		"resource":     {"order_badcond"}, // 唯一标识，便于后续 NotContains 断言
-		"condition":    {"{not valid"},    // 非法 JSON → JSONB cast 失败
+		"condition":    {"{not valid"},    // 非法 JSON → dataperm.ValidateCondition 拒
 		"effect":       {"allow"},
 	}
 	resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/data-policies", appID), form)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusInternalServerError, resp.StatusCode) // jsonb cast → codes.Internal → 500
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode) // ValidateCondition → codes.InvalidArgument → 400
 
 	// fail-close：该行绝不应落库（事务回滚），列表里查不到。
 	page, err := c.Get(ts.URL + fmt.Sprintf("/apps/%d/data-policies", appID))

@@ -230,7 +230,7 @@ func TestConsole_BatchDeleteDataPolicy_Confirmed(t *testing.T) {
 			"csrf_token": {csrf}, "id": {"0"},
 			"subject_type": {"role"}, "subject_id": {"clerk"},
 			"resource":  {resource},
-			"condition": {`{"op":"and","children":[]}`},
+			"condition": {`{"field":"dept","op":"EQ","value":"$user.dept"}`},
 			"effect":    {"allow"},
 		}
 		resp, err := c.PostForm(ts.URL+fmt.Sprintf("/apps/%d/data-policies", appID), form)

@@ -22,13 +22,13 @@ func TestAdminService_UpsertDataPolicy_Effect(t *testing.T) {
 
 	// effect="deny" 落库为 deny
 	_, err := cli.UpsertDataPolicy(ctx, &adminv1.UpsertDataPolicyRequest{
-		AppId: uint64(appID), SubjectType: "role", SubjectId: "manager", Resource: "order", Condition: "{}", Effect: "deny",
+		AppId: uint64(appID), SubjectType: "role", SubjectId: "manager", Resource: "order", Condition: `{"field":"dept","op":"EQ","value":"$user.dept"}`, Effect: "deny",
 	})
 	require.NoError(t, err)
 
 	// effect="" 归一为 allow
 	_, err = cli.UpsertDataPolicy(ctx, &adminv1.UpsertDataPolicyRequest{
-		AppId: uint64(appID), SubjectType: "user", SubjectId: "alice", Resource: "invoice", Condition: "{}", Effect: "",
+		AppId: uint64(appID), SubjectType: "user", SubjectId: "alice", Resource: "invoice", Condition: `{"field":"dept","op":"EQ","value":"$user.dept"}`, Effect: "",
 	})
 	require.NoError(t, err)
 

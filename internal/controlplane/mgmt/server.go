@@ -12,6 +12,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
+	"github.com/nickZFZ/Sydom/internal/sidecar/dataperm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -105,6 +106,9 @@ func (s *AdminServer) UpsertDataPolicy(ctx context.Context, r *adminv1.UpsertDat
 	}
 	if eff != cp.EffectAllow && eff != cp.EffectDeny {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid effect %q (want allow|deny)", r.Effect)
+	}
+	if err := dataperm.ValidateCondition(r.Condition); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid condition: %v", err)
 	}
 	d, err := s.mgr.UpsertDataPolicy(ctx, int64(r.AppId), cp.DataPolicy{
 		ID: r.Id, SubjectType: r.SubjectType, SubjectID: r.SubjectId, Resource: r.Resource, Condition: r.Condition, Effect: eff, Description: r.Description,
