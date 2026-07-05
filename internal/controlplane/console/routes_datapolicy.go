@@ -2,10 +2,13 @@ package console
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
+	"github.com/nickZFZ/Sydom/internal/sidecar/dataperm"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -16,6 +19,7 @@ func (h *Handler) registerDataPolicy(mux *http.ServeMux) {
 	mux.HandleFunc("POST /apps/{app_id}/data-policies", h.upsertDataPolicy)
 	mux.HandleFunc("POST /apps/{app_id}/data-policies/{id}/delete", h.deleteDataPolicy)
 	mux.HandleFunc("POST /apps/{app_id}/data-policies/batch-delete", h.batchDeleteDataPolicy) // 任务5：多选批量删除数据策略
+	mux.HandleFunc("POST /apps/{app_id}/data-policies/preview-condition", h.previewCondition) // 任务4：条件构建器服务端谓词预览
 }
 
 // listDataPolicies：读页内联范式。可选 ?resource= 过滤（""→全部）。
@@ -118,4 +122,28 @@ func (h *Handler) batchDeleteDataPolicy(w http.ResponseWriter, r *http.Request) 
 			return s.BatchDeleteDataPolicy(ctx, m.(*adminv1.BatchDeleteDataPolicyRequest))
 		},
 		appListRedirect("data-policies"))
+}
+
+// previewCondition 服务端渲染条件的符号谓词预览（幂等只读，单一真相源：复用 dataperm 校验 +
+// conditionPredicate 渲染）。只解析请求体提交的条件 JSON，不读任何 app 数据、不泄露 app
+// 存在性，故会话+CSRF 鉴权足够（无对应 RPC 方法，不施加 AuthorizeRule）。
+// 始终 200：校验错误是业务结果内联展示（JSON.error），不是服务器错误；不落库/不 bump/不写审计。
+func (h *Handler) previewCondition(w http.ResponseWriter, r *http.Request) {
+	_, sess, ok := h.requireSession(w, r)
+	if !ok {
+		return
+	}
+	if !h.checkCSRF(r, sess) {
+		h.renderError(w, r, codes.PermissionDenied, "CSRF 校验失败", nil)
+		return
+	}
+	cond := r.FormValue("condition")
+	resp := map[string]string{}
+	if err := dataperm.ValidateCondition(cond); err != nil {
+		resp["error"] = err.Error()
+	} else {
+		resp["predicate"] = conditionPredicate(cond)
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_ = json.NewEncoder(w).Encode(resp)
 }
