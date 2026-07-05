@@ -36,15 +36,18 @@
 
 ### 3a. `sidecar/dataperm`（仅 +1 导出）
 ```go
-// ValidateCondition 校验不透明条件 JSON 是否符合 canonical 文法（fail-close）；
-// 空串视为「无条件」合法（与既有语义一致，见 conditionPredicate 空串处理）。
-func ValidateCondition(raw string) error { ... 复用 parseCondition ... }
+// ValidateCondition 校验不透明条件 JSON 是否符合 canonical 文法（fail-close）。
+// 纯委托 parseCondition：与数据面 eval（table.go toStored → parseCondition，失败即「中毒」
+// parseErr、评估时 fail-close）完全同源——空串/非法一律拒（数据策略必须有合法非空条件，
+// 表单 condition 本就 required；空串 parseCondition 报错即中毒，故非空是既有事实约束）。
+func ValidateCondition(raw string) error { _, err := parseCondition(raw); return err }
 ```
 求值逻辑（`parseCondition`/`validate`/leaf 校验/字段白名单）**一字不改**——diff 证明。
 
-### 3b. 写入路径 fail-close 校验
-`UpsertDataPolicy`（`policy` manager 或 mgmt handler，覆盖 gRPC/REST/Console 三面唯一写入口）在落库前 `dataperm.ValidateCondition(condition)`：非法 → 返回 `InvalidArgument`（错误信息含具体原因，如「未知算子」「非法字段名」「IN 需非空数组」），**不落库**。空条件放行。
-> 效果：从源头堵死「构建器产出引擎拒绝的条件」这一类 bug；错误在**写时**回给用户，而非评估时静默 deny。既有可能已存的非法条件不追溯（评估时仍如旧 fail-close），新写受校验。
+### 3b. 写入路径 fail-close 校验（放 mgmt handler，三面单点）
+在 **`mgmt.AdminServer.UpsertDataPolicy`（`server.go:101`，紧接现有 effect 校验后）** 落库前 `dataperm.ValidateCondition(r.Condition)`：非法 → 返回 `codes.InvalidArgument`（错误信息含具体原因，如「未知算子」「非法字段名」「IN 需非空数组」），**不落库**。
+> **为何放 mgmt handler 而非 manager**：mgmt handler 是 gRPC/REST/Console 三面唯一外部写入口，单点施加即三面覆盖，且**不破坏**大量直接调 `mgr.UpsertDataPolicy`/`store` 的测试（它们绕过 handler；全仓 16 处 `{"op":"ALL"}` 占位条件均为此类，当前 eval 时本就中毒 fail-close，与本任务无关）。**连带改动**：仅经 handler 的测试（如 `mgmt/data_policy_effect_test.go`、经 handler 播种数据策略的用例）若用非法条件需改为合法代表（如 `{"field":"dept","op":"EQ","value":"$user.dept"}`）——任务 3 逐一核查更新。
+> **效果**：从源头堵死「构建器产出引擎拒绝的条件」这一类 bug；错误在**写时**回给用户，而非评估时静默 deny。既有已存非法条件不追溯（评估时仍如旧 fail-close）。
 
 ### 3c. 预览端点
 `POST /apps/{app_id}/data-policies/preview-condition`（Console；鉴权/CSRF 沿用既有写入面机制或只读会话——预览是幂等只读，用会话鉴权即可，不改授权真相）：
@@ -108,4 +111,4 @@ func ValidateCondition(raw string) error { ... 复用 parseCondition ... }
 - 占位符：无「待定/TODO」；每节含具体机制。
 - 一致性：写时校验与 eval 用同一 `dataperm` 校验器（CB-1/7）；构建器序列化大写 ⟺ 引擎大写（CB-3）；预览复用谓词渲染器不复制（CB-6）——内部一致。
 - 范围：聚焦条件子系统，单个实现计划可覆盖（7 任务，规模近 M4.2）。
-- 模糊性：预览端点鉴权明确为会话只读；写时校验空条件放行明确；field 保持自由文本（非目录）明确。
+- 模糊性：预览端点鉴权明确为会话只读；写时校验空/非法一律拒（纯委托 parseCondition，与 eval 同源）、放 mgmt handler（三面单点、最小连带）明确；field 保持自由文本（非目录）明确。
