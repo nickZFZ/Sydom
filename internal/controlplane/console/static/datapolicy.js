@@ -462,9 +462,17 @@
       if (raw) {
         builder.style.display = "none";
         textarea.style.display = "";
+        // 专业/原始模式：textarea 可见，恢复原生 required 校验。
+        textarea.setAttribute("required", "");
         toggle.textContent = "可视化模式";
       } else {
         builder.style.display = "";
+        textarea.style.display = "none";
+        // 构建器模式：textarea 以 display:none 隐藏——但 CSS display:none【不豁免】约束校验
+        // （willValidate 仍为 true），空 required 会让浏览器在 submit 事件前拦截提交、序列化监听器
+        // 永不执行、条件永远存不进去。故此处移除 required；构建器 + 提交前序列化 + 服务端
+        // ValidateCondition（task3 fail-close）才是真正的校验闸。无 JS 基线不受影响（模板原样 required）。
+        textarea.removeAttribute("required");
         textarea.style.display = "none";
         toggle.textContent = "专业模式（原始 JSON）";
         scheduleUpdate(); // 回到构建器时刷新一次预览
