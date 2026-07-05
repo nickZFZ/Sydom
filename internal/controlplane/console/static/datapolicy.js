@@ -23,6 +23,7 @@
   var LOGICAL_OPS = ["AND", "OR", "NOT"];
   var LEAF_OPS = ["EQ", "NE", "GT", "GE", "LT", "LE", "IN", "NOT_IN", "LIKE", "NOT_LIKE", "IS_NULL", "IS_NOT_NULL", "BETWEEN"];
   var FIELD_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+  var PREVIEW_DEBOUNCE_MS = 300; // 构建器变动 → 预览端点的防抖窗口
 
   document.addEventListener("DOMContentLoaded", function () {
     var form = document.getElementById("dp-form");
@@ -41,15 +42,18 @@
 
     // ————— 值解析（构建器输入 → canonical JSON 值）—————
 
-    // parseScalar：单框文本 → 标量值。$user.xxx 原样字符串；纯数字尽力 Number()；否则字符串。
-    // 空串保持字符串（绝不强转成 0）。
-    function parseScalar(text) {
-      text = (text === undefined || text === null) ? "" : String(text);
-      if (text.charAt(0) === "$") return text;
-      var t = text.trim();
-      if (t === "") return text;
-      if (isFinite(Number(t))) return Number(t);
-      return text;
+    // parseScalar：单框文本 → 标量值（保真优先，绝不静默腐化权限条件值）。先 trim；空串→字符串；
+    // $user.xxx 变量原样（已 trim，前后空白鲁棒）；true/false→布尔（保真 round-trip，不腐化成字符串）；
+    // 仅【严格且可逆】的数字才转 Number（雪花 ID / hex / 前导 0 / 科学计数一律留原字符串，防静默改值）；
+    // 其余保留原字符串。
+    function parseScalar(raw) {
+      var t = String(raw === undefined || raw === null ? "" : raw).trim();
+      if (t === "") return ""; // 空串保持字符串，绝不强转成 0
+      if (t.charAt(0) === "$") return t; // $user.xxx 变量原样
+      if (t === "true") return true; // 布尔保真（关键1/次要2）
+      if (t === "false") return false;
+      if (/^-?\d+(\.\d+)?$/.test(t) && String(Number(t)) === t) return Number(t); // 仅严格可逆才转数字
+      return t; // 其余（含大整数/hex/前导0/科学计数）保留原字符串
     }
 
     // parseArray：逗号分隔文本 → 数组（trim、丢空 token，每 token 走 parseScalar）。
@@ -100,6 +104,14 @@
       inp.setAttribute("aria-label", ariaLabel);
       inp.addEventListener("input", scheduleUpdate);
       return inp;
+    }
+
+    // valueShape：算子决定的 value 输入形状；切换算子时形状不变则保留已填值（次要4）。
+    function valueShape(op) {
+      if (op === "IS_NULL" || op === "IS_NOT_NULL") return "none";
+      if (op === "IN" || op === "NOT_IN") return "array";
+      if (op === "BETWEEN") return "between";
+      return "scalar";
     }
 
     // buildValue：按算子自适应重建叶子的 value 区（无/单框/数组框/两框），可选 preset 回填。
@@ -169,12 +181,18 @@
       });
       var op = LEAF_OPS.indexOf(node.op) >= 0 ? node.op : "EQ";
       opSel.value = op;
+      var prevOp = op;
 
       var valWrap = document.createElement("span");
       valWrap.className = "cond-value";
 
       opSel.addEventListener("change", function () {
-        buildValue(valWrap, opSel.value, undefined); // 切换算子 → 自适应重建 value 区
+        var newOp = opSel.value;
+        // 形状变了才重建（清空）；同属单框标量 / 数组形状互切则保留已填值（次要4）。
+        if (valueShape(newOp) !== valueShape(prevOp)) {
+          buildValue(valWrap, newOp, undefined);
+        }
+        prevOp = newOp;
         scheduleUpdate();
       });
 
@@ -392,7 +410,7 @@
     function scheduleUpdate() {
       if (rawMode) return;
       if (previewTimer) clearTimeout(previewTimer);
-      previewTimer = setTimeout(runPreview, 300);
+      previewTimer = setTimeout(runPreview, PREVIEW_DEBOUNCE_MS);
     }
 
     function previewURL() {
