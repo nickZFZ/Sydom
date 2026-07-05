@@ -13,6 +13,14 @@ func TestConditionPredicate(t *testing.T) {
 		`{"op":"NOT","children":[{"field":"a","op":"EQ","value":"1"}]}`: "NOT a = 1",
 		// 深层嵌套递归（OR 内含叶子，外层 AND 含 IN 叶子）。
 		`{"op":"AND","children":[{"op":"OR","children":[{"field":"a","op":"EQ","value":"1"},{"field":"b","op":"GT","value":2}]},{"field":"c","op":"IN","value":["x","y"]}]}`: "((a = 1 OR b > 2) AND c IN [x, y])",
+		// 13 叶子算子全覆盖：IS_NULL/IS_NOT_NULL 无 value；LIKE/NOT_LIKE/NOT_IN/BETWEEN 与引擎大写对齐。
+		`{"field":"note","op":"IS_NULL"}`:                                       "note IS NULL",
+		`{"field":"note","op":"IS_NOT_NULL"}`:                                   "note IS NOT NULL",
+		`{"field":"name","op":"LIKE","value":"%abc%"}`:                          "name LIKE %abc%",
+		`{"field":"name","op":"NOT_LIKE","value":"%x%"}`:                        "name NOT LIKE %x%",
+		`{"field":"s","op":"NOT_IN","value":["a","b"]}`:                         "s NOT IN [a, b]",
+		`{"field":"amount","op":"BETWEEN","value":[1,100]}`:                     "amount BETWEEN [1, 100]",
+		`{"op":"NOT","children":[{"field":"archived","op":"EQ","value":true}]}`: "NOT archived = true",
 	}
 	for cond, want := range cases {
 		if got := conditionPredicate(cond); got != want {

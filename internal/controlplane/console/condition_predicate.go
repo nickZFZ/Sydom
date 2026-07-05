@@ -58,6 +58,12 @@ func renderNode(n condNode) string {
 		if op == "" {
 			op = "EQ"
 		}
+		switch op {
+		case "IS_NULL":
+			return n.Field + " IS NULL"
+		case "IS_NOT_NULL":
+			return n.Field + " IS NOT NULL"
+		}
 		return n.Field + " " + symbol(op) + " " + renderValue(n.Value)
 	}
 }
@@ -76,6 +82,12 @@ func symbol(op string) string {
 		return "<"
 	case "LE":
 		return "<="
+	case "NOT_IN":
+		return "NOT IN"
+	case "LIKE":
+		return "LIKE"
+	case "NOT_LIKE":
+		return "NOT LIKE"
 	default:
 		return op // IN/BETWEEN 等保留原 token
 	}
