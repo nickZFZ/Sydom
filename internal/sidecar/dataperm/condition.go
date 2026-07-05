@@ -89,6 +89,15 @@ func validate(c *Condition) error {
 	}
 }
 
+// ValidateCondition 校验不透明条件 JSON 是否符合 canonical 文法（fail-close）。
+// 纯委托 parseCondition：与数据面 eval（table.go toStored → parseCondition，失败即中毒
+// fail-close）完全同源——空串/非法一律拒（数据策略必须有合法非空条件）。
+// 是全系统唯一的条件校验入口（控制面写入/预览与数据面 eval 同一文法定义）。
+func ValidateCondition(raw string) error {
+	_, err := parseCondition(raw)
+	return err
+}
+
 func validateLeaf(c *Condition) error {
 	if !fieldNameRe.MatchString(c.Field) {
 		return fmt.Errorf("%w: 非法字段名 %q", ErrInvalidPolicy, c.Field)
