@@ -31,6 +31,9 @@ func TestConsole_DeveloperPage(t *testing.T) {
 	require.Contains(t, body, ".Check(")
 	// 管理面参考含已知 RPC。
 	require.Contains(t, body, "UpsertDataPolicy")
+	// REST 列确实渲染出真实 method+path（钉死模板 {{if .RESTPath}} 分支，
+	// 抓 if/else 写反：UpsertDataPolicy join 到稳定排序首条 POST /v1/apps/{app_id}/data-policies）。
+	require.Contains(t, body, "/v1/apps/{app_id}/data-policies")
 	// DP-4：不泄露 secret（种子 app 无真实 secret 展示；断言无 secret 字面）。
 	require.NotContains(t, body, "app_secret")
 }

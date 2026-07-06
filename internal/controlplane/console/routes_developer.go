@@ -1,10 +1,6 @@
 package console
 
-import (
-	"net/http"
-
-	"google.golang.org/grpc/codes"
-)
+import "net/http"
 
 // registerDeveloper 注册开发者文档区（建模台只读 tab）。
 func (h *Handler) registerDeveloper(mux *http.ServeMux) {
@@ -20,7 +16,7 @@ func (h *Handler) developer(w http.ResponseWriter, r *http.Request) {
 	}
 	appID, err := pathUint64(r, "app_id")
 	if err != nil {
-		h.renderError(w, r, codes.InvalidArgument, "非法 app_id", err)
+		h.renderGRPCError(w, r, "console/developer", err) // 纯渲染页，无 RPC：标签忠实反映 handler
 		return
 	}
 	h.renderPage(w, r, "developer.html", http.StatusOK, map[string]any{
