@@ -12,6 +12,7 @@ type RPCDoc struct {
 	IsWrite    bool
 }
 
+// scopeName 把内部 ruleScope 枚举映射为文档展示用的可读域名字符串。
 func scopeName(s ruleScope) string {
 	switch s {
 	case scopeSystem:
