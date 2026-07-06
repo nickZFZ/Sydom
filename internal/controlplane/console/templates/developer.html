@@ -51,7 +51,7 @@ if !allowed { http.Error(w, "forbidden", 403); return }
 <section id="api-reference" aria-labelledby="h-apiref">
 <h2 id="h-apiref">管理面 API 参考</h2>
 <p>以下端点由授权真相源自动派生，与实际鉴权面一致。字段级请求/响应见 <code>api/proto/sydom/admin/v1/admin.proto</code>。</p>
-<div class="table-scroll">
+<div class="table-scroll" tabindex="0" role="region" aria-label="管理面 API 参考端点表">
 <table class="table"><thead><tr><th>gRPC 方法</th><th>REST</th><th>资源</th><th>动作</th><th>域</th><th>写</th></tr></thead><tbody>
 {{range .APIRef}}<tr><td><code>{{.FullMethod}}</code></td><td>{{if .RESTPath}}<code>{{.RESTMethod}} {{.RESTPath}}</code>{{else}}<span class="hint">仅 gRPC</span>{{end}}</td><td>{{.Resource}}</td><td>{{.Action}}</td><td>{{.Scope}}</td><td>{{if .IsWrite}}✓{{end}}</td></tr>{{end}}
 </tbody></table>

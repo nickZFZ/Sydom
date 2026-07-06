@@ -34,6 +34,9 @@ func TestConsole_DeveloperPage(t *testing.T) {
 	// REST 列确实渲染出真实 method+path（钉死模板 {{if .RESTPath}} 分支，
 	// 抓 if/else 写反：UpsertDataPolicy join 到稳定排序首条 POST /v1/apps/{app_id}/data-policies）。
 	require.Contains(t, body, "/v1/apps/{app_id}/data-policies")
+	// 宽端点表横向滚动容器须键盘可达（axe scrollable-region-focusable，真实浏览器走查捕获）：
+	// tabindex+role+aria-label 缺一即回归——此断言无需浏览器即可挡住。
+	require.Contains(t, body, `class="table-scroll" tabindex="0" role="region"`)
 	// DP-4：不泄露 secret（种子 app 无真实 secret 展示；断言无 secret 字面）。
 	require.NotContains(t, body, "app_secret")
 }
