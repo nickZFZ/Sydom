@@ -22,8 +22,12 @@ func TestBuildAPIReference_CoversEveryAdminRPC(t *testing.T) {
 		require.Equal(t, r.Scope, e.Scope)
 		require.Equal(t, r.IsWrite, e.IsWrite)
 	}
-	// 有 REST 路由的条目应带 method+path（抽查一条已知有 REST 的写 RPC）。
+	// join 逻辑有齿：抽查一条已知多路由的写 RPC，锁死 REST 字段的具体取值——
+	// 既抓 RESTMethod/RESTPath 错位，也钉死"多路由取稳定排序首条"的 tie-break
+	// （UpsertDataPolicy 有 POST /data-policies 与 PUT /data-policies/{id} 两条，
+	// 按 pattern 升序首条是 POST；若取末条则会变成 PUT/.../{id}，断言即失败）。
 	upsertDP, ok := byFM["/sydom.admin.v1.AdminService/UpsertDataPolicy"]
 	require.True(t, ok)
-	require.NotEmpty(t, upsertDP.RESTPath, "UpsertDataPolicy 应有 REST 路由信息")
+	require.Equal(t, "POST", upsertDP.RESTMethod, "UpsertDataPolicy 应 join 到稳定排序首条 REST 路由的动词")
+	require.Equal(t, "/v1/apps/{app_id}/data-policies", upsertDP.RESTPath, "UpsertDataPolicy 应 join 到稳定排序首条 REST 路由的路径")
 }
