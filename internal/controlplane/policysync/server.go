@@ -11,6 +11,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/controlplane/translate"
+	"github.com/nickZFZ/Sydom/internal/obs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -157,12 +158,13 @@ func (s *Server) Subscribe(req *syncv1.SubscribeRequest, stream syncv1.PolicySyn
 }
 
 // NewGRPCServer 组装带认证拦截器与 64MB 消息上限的 grpc.Server 并注册 PolicySync。
-// opts 供注入额外 ServerOption（如 grpc.Creds）。
-func NewGRPCServer(srv *Server, res auth.SecretResolver, opts ...grpc.ServerOption) *grpc.Server {
+// opts 供注入额外 ServerOption（如 grpc.Creds）。m 记 RED 指标 + 访问日志，挂在 unary 链最外层
+// （计入被认证拒绝的请求）；policysync 无 logger，传 nil → 拦截器内部用 slog.Default()。m==nil 时退化为纯访问日志。
+func NewGRPCServer(srv *Server, res auth.SecretResolver, m *obs.Metrics, opts ...grpc.ServerOption) *grpc.Server {
 	base := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(maxMsgSize),
 		grpc.MaxSendMsgSize(maxMsgSize),
-		grpc.UnaryInterceptor(auth.UnaryServerInterceptor(res)),
+		grpc.ChainUnaryInterceptor(m.UnaryServerInterceptor(nil), auth.UnaryServerInterceptor(res)),
 		grpc.StreamInterceptor(auth.StreamServerInterceptor(res)),
 	}
 	g := grpc.NewServer(append(base, opts...)...)

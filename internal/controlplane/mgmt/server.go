@@ -12,6 +12,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
+	"github.com/nickZFZ/Sydom/internal/obs"
 	"github.com/nickZFZ/Sydom/internal/sidecar/dataperm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -232,14 +233,16 @@ func (s *AdminServer) BatchDeleteDataPolicy(ctx context.Context, r *adminv1.Batc
 	return batchResp(d, len(r.DataPolicyIds), applied, err)
 }
 
-// NewGRPCServer 装配脱敏→认证→鉴权→status 四拦截器（按序）并注册 AdminService。
+// NewGRPCServer 装配观测→脱敏→认证→鉴权→status 五拦截器（按序）并注册 AdminService。
 // opts 供调用方注入额外 ServerOption（如 grpc.Creds 启用 TLS）。logger 供错误脱敏边界记录原始细节。
-func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB, logger *slog.Logger, opts ...grpc.ServerOption) *grpc.Server {
+// m 记 RED 指标 + 访问日志，挂在链最外层（计入被 auth/authz 拒绝的请求）；m==nil 时退化为纯访问日志。
+func NewGRPCServer(srv *AdminServer, resolver auth.SecretResolver, enf *adminauthz.Enforcer, db *sql.DB, logger *slog.Logger, m *obs.Metrics, opts ...grpc.ServerOption) *grpc.Server {
 	chain := grpc.ChainUnaryInterceptor(
-		SanitizeErrorUnaryInterceptor(logger),                               // 0. 最外层：Internal/Unknown 错误脱敏边界（细节仅日志）
-		auth.UnaryServerInterceptorExempt(resolver, UnauthenticatedMethods), // 1. HMAC 认证（RegisterTenant 免鉴权）→ 注入 principal
-		AuthzUnaryInterceptor(enf),                                          // 2. 元-RBAC 鉴权 → 注入 cp.WithOperator
-		StatusWriteUnaryInterceptor(db),                                     // 3. status 写拦截
+		m.UnaryServerInterceptor(logger),                                    // 0. 最外层：RED 指标 + 访问日志（含被拒请求）
+		SanitizeErrorUnaryInterceptor(logger),                               // 1. Internal/Unknown 错误脱敏边界（细节仅日志）
+		auth.UnaryServerInterceptorExempt(resolver, UnauthenticatedMethods), // 2. HMAC 认证（RegisterTenant 免鉴权）→ 注入 principal
+		AuthzUnaryInterceptor(enf),                                          // 3. 元-RBAC 鉴权 → 注入 cp.WithOperator
+		StatusWriteUnaryInterceptor(db),                                     // 4. status 写拦截
 	)
 	base := []grpc.ServerOption{grpc.MaxRecvMsgSize(maxMsgSize), grpc.MaxSendMsgSize(maxMsgSize), chain}
 	g := grpc.NewServer(append(base, opts...)...)

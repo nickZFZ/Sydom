@@ -40,7 +40,7 @@ func dialMgmt(t *testing.T, db *sql.DB, principal string, secret []byte) adminv1
 	enf, err := adminauthz.NewEnforcer(db)
 	require.NoError(t, err)
 	mgr := policy.NewPolicyManager(db, outbox.NewSink())
-	g := mgmt.NewGRPCServer(mgmt.NewAdminServer(db, mgr, mk()), resolver, enf, db, slog.Default())
+	g := mgmt.NewGRPCServer(mgmt.NewAdminServer(db, mgr, mk()), resolver, enf, db, slog.Default(), nil)
 	lis := bufconn.Listen(1 << 20)
 	go func() { _ = g.Serve(lis) }()
 	t.Cleanup(g.Stop)

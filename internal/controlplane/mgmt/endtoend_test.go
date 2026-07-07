@@ -51,7 +51,7 @@ func TestEndToEnd_AdminWriteReachesSidecarStream(t *testing.T) {
 	defer dispCancel()
 	go func() { _ = ps.RunDispatchLoop(dispCtx, sub) }()
 
-	psSrv := policysync.NewGRPCServer(ps, res)
+	psSrv := policysync.NewGRPCServer(ps, res, nil)
 	lis := bufconn.Listen(1 << 20)
 	go func() { _ = psSrv.Serve(lis) }()
 	t.Cleanup(psSrv.Stop)

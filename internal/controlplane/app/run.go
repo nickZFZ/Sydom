@@ -27,6 +27,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/restgw"
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
 	"github.com/nickZFZ/Sydom/internal/health"
+	"github.com/nickZFZ/Sydom/internal/obs"
 	"github.com/nickZFZ/Sydom/internal/tlsconfig"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -78,11 +79,13 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 		logger.Info("control plane TLS enabled")
 	}
 
+	m := obs.New() // 可观测性基座：RED 指标 + 访问日志 + /metrics（fail-open，绝不阻断主路径）
+
 	mgr := policy.NewPolicyManager(db, outbox.NewSink())
 	adminSrv := mgmt.NewAdminServer(db, mgr, cfg.MasterKey)
-	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db, logger, grpcOpts...)
+	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db, logger, m, grpcOpts...)
 	syncCore := policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval}, mgr)
-	syncSrv := policysync.NewGRPCServer(syncCore, appResolver, grpcOpts...)
+	syncSrv := policysync.NewGRPCServer(syncCore, appResolver, m, grpcOpts...)
 	pub := broadcast.NewRedisPublisher(rdb)
 	sub := broadcast.NewRedisSubscriber(rdb)
 
@@ -114,7 +117,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 		if srvTLS != nil {
 			restLis = tls.NewListener(restLis, srvTLS)
 		}
-		restSrv = &http.Server{Handler: restgw.NewHandler(adminSrv, operatorResolver, enforcer, db, logger)}
+		restSrv = &http.Server{Handler: m.HTTPMiddleware(logger, restgw.NewHandler(adminSrv, operatorResolver, enforcer, db, logger))}
 		logger.Info("control plane REST enabled", "rest_addr", restLis.Addr().String())
 		launch("rest-serve", func() error {
 			if e := restSrv.Serve(restLis); e != nil && !errors.Is(e, http.ErrServerClosed) {
@@ -130,8 +133,8 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 			consoleLis = tls.NewListener(consoleLis, srvTLS)
 		}
 		store := console.NewRedisStore(rdb, cfg.ConsoleSessionTTL)
-		consoleSrv = &http.Server{Handler: console.NewHandler(
-			adminSrv, operatorResolver, enforcer, db, store, logger, !cfg.ConsoleCookieInsecure)}
+		consoleSrv = &http.Server{Handler: m.HTTPMiddleware(logger, console.NewHandler(
+			adminSrv, operatorResolver, enforcer, db, store, logger, !cfg.ConsoleCookieInsecure))}
 		logger.Info("control plane Console enabled", "console_addr", consoleLis.Addr().String())
 		launch("console-serve", func() error {
 			if e := consoleSrv.Serve(consoleLis); e != nil && !errors.Is(e, http.ErrServerClosed) {
@@ -147,7 +150,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 		if lerr != nil {
 			return fmt.Errorf("listen health: %w", lerr)
 		}
-		healthSrv = &http.Server{Handler: health.Handler(cpReadiness(db, rdb))}
+		healthSrv = &http.Server{Handler: obs.OpsHandler(m, cpReadiness(db, rdb))} // /metrics + /healthz + /readyz
 		logger.Info("control plane health enabled", "health_addr", cfg.HealthAddr)
 		launch("health-serve", func() error {
 			if e := healthSrv.Serve(healthLis); e != nil && !errors.Is(e, http.ErrServerClosed) {

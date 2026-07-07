@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/nickZFZ/Sydom/internal/health"
+	"github.com/nickZFZ/Sydom/internal/obs"
 	"github.com/nickZFZ/Sydom/internal/sidecar/authz"
 	"github.com/nickZFZ/Sydom/internal/sidecar/dataperm"
 	"github.com/nickZFZ/Sydom/internal/sidecar/kernel"
@@ -27,8 +27,11 @@ import (
 
 // Run 装配并运行 Sidecar，阻塞至 ctx 取消后优雅关闭。authLis 由调用方注入（测试用 :0）。
 func Run(ctx context.Context, cfg Config, authLis net.Listener, logger *slog.Logger) error {
+	m := obs.New() // 可观测性基座：RED 指标 + 判定计数 + 缓存命中率 + /metrics（fail-open，绝不阻断主路径）
+
 	table := dataperm.NewTable()
-	engine, err := kernel.New(cfg.Domain, nil, table) // table 作 DataPolicyApplier；nil→内建 1024 LRU
+	// 注入指标 cache 装饰器（内建 1024 LRU 之外仅计命中/未命中，决策逻辑零改）。
+	engine, err := kernel.New(cfg.Domain, obs.NewMetricsCache(kernel.NewBoundedCache(1024), m), table)
 	if err != nil {
 		return fmt.Errorf("new engine: %w", err)
 	}
@@ -52,6 +55,8 @@ func Run(ctx context.Context, cfg Config, authLis net.Listener, logger *slog.Log
 		grpcOpts = append(grpcOpts, grpc.Creds(credentials.NewTLS(srvTLS)))
 		logger.Info("sidecar TLS enabled")
 	}
+	// 数据面 gRPC 无鉴权链，obs 拦截器经 opts 即最外层；decisionInterceptor 只读响应记判定计数（不改判定分发）。
+	grpcOpts = append(grpcOpts, grpc.ChainUnaryInterceptor(m.UnaryServerInterceptor(logger), decisionInterceptor(m)))
 	authSrv := authz.NewGRPCServer(authzr, syncCli, grpcOpts...)
 
 	logger.Info("sidecar starting",
@@ -76,6 +81,22 @@ func Run(ctx context.Context, cfg Config, authLis net.Listener, logger *slog.Log
 	}
 	launch("auth-serve", func() error { return authSrv.Serve(authLis) })
 	launch("sync", func() error { return syncCli.Run(runCtx) }) // ctx 取消返回 nil
+	// connected gauge：轮询 syncCli 连接态刷 sydom_sidecar_connected（app 层非侵入，syncclient 内部零改；fail-open 不返 error）。
+	launch("connected-gauge", func() error {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		m.SetConnected(syncCli.Connected()) // 立即采一次，不等首个 tick
+		for {
+			select {
+			case <-runCtx.Done():
+				return nil
+			case <-ticker.C:
+				m.SetConnected(syncCli.Connected())
+			}
+		}
+	})
+	// TODO(M5.x): sydom_sidecar_snapshot_applied_total 待 syncclient 暴露快照事件 hook 后接入
+	// （快照 apply 在 syncclient.Run 内部，无干净的 app 层 hook；不改 syncclient 内部逻辑）。
 
 	var healthSrv *http.Server
 	if cfg.HealthAddr != "" {
@@ -83,7 +104,7 @@ func Run(ctx context.Context, cfg Config, authLis net.Listener, logger *slog.Log
 		if lerr != nil {
 			return fmt.Errorf("listen health: %w", lerr)
 		}
-		healthSrv = &http.Server{Handler: health.Handler(func(ctx context.Context) error { return authzr.Ready() })}
+		healthSrv = &http.Server{Handler: obs.OpsHandler(m, func(ctx context.Context) error { return authzr.Ready() })} // /metrics + /healthz + /readyz
 		logger.Info("sidecar health enabled", "health_addr", cfg.HealthAddr)
 		launch("health-serve", func() error {
 			if e := healthSrv.Serve(healthLis); e != nil && !errors.Is(e, http.ErrServerClosed) {

@@ -49,7 +49,7 @@ func startServer(t *testing.T, db *sql.DB) (*grpc.ClientConn, []byte) {
 	srv := policysync.NewGRPCServer(policysync.NewServer(db, policysync.Config{
 		HeartbeatInterval: 50 * time.Millisecond,
 		BufSize:           8,
-	}, &stubReporter{}), res)
+	}, &stubReporter{}), res, nil)
 
 	lis := bufconn.Listen(1024 * 1024)
 	go func() { _ = srv.Serve(lis) }()
@@ -81,7 +81,7 @@ func startServerNoAuth(t *testing.T, db *sql.DB) *grpc.ClientConn {
 	srv := policysync.NewGRPCServer(policysync.NewServer(db, policysync.Config{
 		HeartbeatInterval: 50 * time.Millisecond,
 		BufSize:           8,
-	}, &stubReporter{}), res)
+	}, &stubReporter{}), res, nil)
 
 	lis := bufconn.Listen(1024 * 1024)
 	go func() { _ = srv.Serve(lis) }()
@@ -269,7 +269,7 @@ func startServerCapture(t *testing.T, db *sql.DB, holder chan *policysync.Server
 
 	srv := policysync.NewServer(db, policysync.Config{HeartbeatInterval: 50 * time.Millisecond, BufSize: 8}, &stubReporter{})
 	holder <- srv
-	g := policysync.NewGRPCServer(srv, res)
+	g := policysync.NewGRPCServer(srv, res, nil)
 	lis := bufconn.Listen(1024 * 1024)
 	go func() { _ = g.Serve(lis) }()
 	t.Cleanup(g.Stop)

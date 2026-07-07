@@ -46,7 +46,7 @@ func TestReportPermissions_EndToEnd(t *testing.T) {
 
 	// CP：真 PolicyManager + 带 HMAC 拦截器的 PolicySync，跑在 bufconn
 	mgr := policy.NewPolicyManager(db, nil)
-	cpSrv := policysync.NewGRPCServer(policysync.NewServer(db, policysync.Config{}, mgr), res)
+	cpSrv := policysync.NewGRPCServer(policysync.NewServer(db, policysync.Config{}, mgr), res, nil)
 	cpLis := bufconn.Listen(1 << 20)
 	go func() { _ = cpSrv.Serve(cpLis) }()
 	t.Cleanup(cpSrv.Stop)
