@@ -1,0 +1,29 @@
+{{define "title"}}数据权限沙箱 · App {{.AppID}}{{end}}
+{{define "content"}}<div class="workspace">{{template "appnav" .}}
+<section class="developer-doc">
+<nav class="breadcrumb" aria-label="面包屑">建模台 · 数据权限沙箱</nav>
+<h1>数据权限沙箱</h1>
+<p class="hint">输入主体、资源与属性，预览数据面 <code>FilterSQL</code> 会渲染出的参数化 WHERE 片段（与 SDK 接入所得一致）。功能权限「试一试」见 <a href="/apps/{{.AppID}}/decision">决策解释</a>。</p>
+<form method="get" action="/apps/{{.AppID}}/data-sandbox">
+<div class="form-field"><label for="subject">主体（user）</label>
+<input id="subject" name="subject" value="{{.Subject}}" required></div>
+<div class="form-field"><label for="resource">资源（resource）</label>
+<input id="resource" name="resource" value="{{.Resource}}" required></div>
+<div class="form-field"><label for="attrs">属性（每行 key=value）</label>
+<textarea id="attrs" name="attrs" rows="4" placeholder="dept=shanghai">{{.AttrsRaw}}</textarea></div>
+<button class="btn btn-primary">预览</button>
+</form>
+{{if .Queried}}
+<section aria-labelledby="h-result">
+<h2 id="h-result">渲染结果</h2>
+{{if .SQL}}
+<p>WHERE 片段（参数化）：</p>
+<pre><code>{{.SQL}}</code></pre>
+<p>参数（args，按序绑定，值绝不进 SQL 文本）：</p>
+<ul>{{range .Args}}<li><code>{{.}}</code></li>{{end}}</ul>
+{{else}}
+<p role="status">无行级限制：该主体对该资源全部可见。</p>
+{{end}}
+</section>
+{{end}}
+</section></div>{{end}}
