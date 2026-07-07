@@ -53,6 +53,27 @@ func TestConsole_DataSandbox_PreviewsSQL(t *testing.T) {
 	require.Contains(t, body, "shanghai") // 值进 args
 }
 
+// subject+resource 齐备但缺策略引用的 attrs（dept）→ ErrMissingVar → InvalidArgument →
+// 400 报错页（报错而非误导性 SQL，SD-4 fail-close 在 Console 层的对齐）。
+func TestConsole_DataSandbox_MissingVarRendersError(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	dom := dbtest.SeedDomain
+	insertCasbinRuleC(t, db, appID, "g", "alice", "viewer", dom)
+	_, err := db.Exec(
+		`INSERT INTO data_policy (app_id,subject_type,subject_id,resource,condition,effect,version)
+		 VALUES ($1,'role','viewer','order',$2::jsonb,'allow',1)`,
+		appID, `{"op":"EQ","field":"dept","value":"$user.dept"}`)
+	require.NoError(t, err)
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	resp, err := c.Get(ts.URL + "/apps/" + strconv.FormatInt(appID, 10) + "/data-sandbox?subject=alice&resource=order")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	body := readBody(t, resp)
+	require.Contains(t, body, "未提供的属性") // 缺变量报错，绝不给出误导性空/部分 SQL
+}
+
 // 无会话 → 303 去登录。
 func TestConsole_DataSandbox_RequiresSession(t *testing.T) {
 	ts, _, db := newConsole(t)
