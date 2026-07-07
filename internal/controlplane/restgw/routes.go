@@ -627,6 +627,23 @@ func appRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.BatchDeleteDataPolicy(ctx, m.(*adminv1.BatchDeleteDataPolicyRequest))
 			}},
+		// M4.5 开发者 sandbox：数据权限过滤器预览（只读，复用 effperm.PreviewFilter，与数据面同源）。
+		{"POST", "/v1/apps/{app_id}/data-filter/preview", pfx + "PreviewDataFilter",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.PreviewDataFilterRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				m.AppId = id // path 权威覆写
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.PreviewDataFilter(ctx, m.(*adminv1.PreviewDataFilterRequest))
+			}},
 	}
 }
 
@@ -690,6 +707,18 @@ func applicationRoutes() []route {
 			},
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.RotateApplicationSecret(ctx, m.(*adminv1.RotateApplicationSecretRequest))
+			}},
+		// M4.5 开发者 sandbox：单个应用非敏感元数据只读（无 secret 字段）。
+		{"GET", "/v1/applications/{app_id}", pfx + "GetApplication",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "app_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.GetApplicationRequest{AppId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.GetApplication(ctx, m.(*adminv1.GetApplicationRequest))
 			}},
 	}
 }
@@ -865,7 +894,7 @@ func systemRoutes() []route {
 	}
 }
 
-// allRoutes 汇总全部 57 路由（app 域 31 + 应用管理 4 + system 域 11 + 账户层 4 + 租户自有模板 5 + 角色全景 2）。
+// allRoutes 汇总全部 59 路由（app 域 32 + 应用管理 5 + system 域 11 + 账户层 4 + 租户自有模板 5 + 角色全景 2）。
 func allRoutes() []route {
 	var rs []route
 	rs = append(rs, appRoutes()...)
