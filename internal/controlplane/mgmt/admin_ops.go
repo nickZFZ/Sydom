@@ -178,10 +178,13 @@ func (s *AdminServer) GetApplication(ctx context.Context, r *adminv1.GetApplicat
 	var id, ver int64
 	var st int16
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, domain, name, app_key, status, current_version FROM application WHERE id = $1`,
+		`SELECT id, domain, name, app_key, status, current_version FROM application WHERE id=$1`,
 		int64(r.AppId),
 	).Scan(&id, &out.Domain, &out.Name, &out.AppKey, &st, &ver)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
+		// 该 NotFound 分支仅在绕过标准拦截器链时可达（如直调 handler 的单测）；
+		// 生产路径经 gRPC 拦截器时，scopeApp 的 AuthorizeRule 对不存在 app_id 先行
+		// fail-close 成 PermissionDenied（刻意不借状态码差异泄露 app 存在性）。
 		return nil, status.Errorf(codes.NotFound, "application %d not found", r.AppId)
 	}
 	if err != nil {
