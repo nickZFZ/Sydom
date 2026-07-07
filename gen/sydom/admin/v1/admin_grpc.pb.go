@@ -54,6 +54,7 @@ const (
 	AdminService_ListAdminRoles_FullMethodName             = "/sydom.admin.v1.AdminService/ListAdminRoles"
 	AdminService_GetEffectivePermissions_FullMethodName    = "/sydom.admin.v1.AdminService/GetEffectivePermissions"
 	AdminService_ExplainDecision_FullMethodName            = "/sydom.admin.v1.AdminService/ExplainDecision"
+	AdminService_PreviewDataFilter_FullMethodName          = "/sydom.admin.v1.AdminService/PreviewDataFilter"
 	AdminService_GetRoleGraph_FullMethodName               = "/sydom.admin.v1.AdminService/GetRoleGraph"
 	AdminService_SimulateRoleChange_FullMethodName         = "/sydom.admin.v1.AdminService/SimulateRoleChange"
 	AdminService_RegisterTenant_FullMethodName             = "/sydom.admin.v1.AdminService/RegisterTenant"
@@ -125,6 +126,8 @@ type AdminServiceClient interface {
 	GetEffectivePermissions(ctx context.Context, in *GetEffectivePermissionsRequest, opts ...grpc.CallOption) (*GetEffectivePermissionsResponse, error)
 	// —— M2.2 决策可解释性 ——
 	ExplainDecision(ctx context.Context, in *ExplainDecisionRequest, opts ...grpc.CallOption) (*ExplainDecisionResponse, error)
+	// —— M4.5 开发者数据权限沙箱 ——
+	PreviewDataFilter(ctx context.Context, in *PreviewDataFilterRequest, opts ...grpc.CallOption) (*PreviewDataFilterResponse, error)
 	// —— M3.3 角色全景 + 决策模拟器 ——
 	GetRoleGraph(ctx context.Context, in *GetRoleGraphRequest, opts ...grpc.CallOption) (*GetRoleGraphResponse, error)
 	SimulateRoleChange(ctx context.Context, in *SimulateRoleChangeRequest, opts ...grpc.CallOption) (*SimulateRoleChangeResponse, error)
@@ -479,6 +482,15 @@ func (c *adminServiceClient) ExplainDecision(ctx context.Context, in *ExplainDec
 	return out, nil
 }
 
+func (c *adminServiceClient) PreviewDataFilter(ctx context.Context, in *PreviewDataFilterRequest, opts ...grpc.CallOption) (*PreviewDataFilterResponse, error) {
+	out := new(PreviewDataFilterResponse)
+	err := c.cc.Invoke(ctx, AdminService_PreviewDataFilter_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) GetRoleGraph(ctx context.Context, in *GetRoleGraphRequest, opts ...grpc.CallOption) (*GetRoleGraphResponse, error) {
 	out := new(GetRoleGraphResponse)
 	err := c.cc.Invoke(ctx, AdminService_GetRoleGraph_FullMethodName, in, out, opts...)
@@ -724,6 +736,8 @@ type AdminServiceServer interface {
 	GetEffectivePermissions(context.Context, *GetEffectivePermissionsRequest) (*GetEffectivePermissionsResponse, error)
 	// —— M2.2 决策可解释性 ——
 	ExplainDecision(context.Context, *ExplainDecisionRequest) (*ExplainDecisionResponse, error)
+	// —— M4.5 开发者数据权限沙箱 ——
+	PreviewDataFilter(context.Context, *PreviewDataFilterRequest) (*PreviewDataFilterResponse, error)
 	// —— M3.3 角色全景 + 决策模拟器 ——
 	GetRoleGraph(context.Context, *GetRoleGraphRequest) (*GetRoleGraphResponse, error)
 	SimulateRoleChange(context.Context, *SimulateRoleChangeRequest) (*SimulateRoleChangeResponse, error)
@@ -864,6 +878,9 @@ func (UnimplementedAdminServiceServer) GetEffectivePermissions(context.Context, 
 }
 func (UnimplementedAdminServiceServer) ExplainDecision(context.Context, *ExplainDecisionRequest) (*ExplainDecisionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExplainDecision not implemented")
+}
+func (UnimplementedAdminServiceServer) PreviewDataFilter(context.Context, *PreviewDataFilterRequest) (*PreviewDataFilterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PreviewDataFilter not implemented")
 }
 func (UnimplementedAdminServiceServer) GetRoleGraph(context.Context, *GetRoleGraphRequest) (*GetRoleGraphResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRoleGraph not implemented")
@@ -1574,6 +1591,24 @@ func _AdminService_ExplainDecision_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_PreviewDataFilter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PreviewDataFilterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).PreviewDataFilter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_PreviewDataFilter_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).PreviewDataFilter(ctx, req.(*PreviewDataFilterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_GetRoleGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRoleGraphRequest)
 	if err := dec(in); err != nil {
@@ -2116,6 +2151,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExplainDecision",
 			Handler:    _AdminService_ExplainDecision_Handler,
+		},
+		{
+			MethodName: "PreviewDataFilter",
+			Handler:    _AdminService_PreviewDataFilter_Handler,
 		},
 		{
 			MethodName: "GetRoleGraph",

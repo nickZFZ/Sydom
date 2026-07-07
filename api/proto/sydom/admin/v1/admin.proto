@@ -59,6 +59,9 @@ service AdminService {
   // —— M2.2 决策可解释性 ——
   rpc ExplainDecision(ExplainDecisionRequest) returns (ExplainDecisionResponse);
 
+  // —— M4.5 开发者数据权限沙箱 ——
+  rpc PreviewDataFilter(PreviewDataFilterRequest) returns (PreviewDataFilterResponse);
+
   // —— M3.3 角色全景 + 决策模拟器 ——
   rpc GetRoleGraph(GetRoleGraphRequest) returns (GetRoleGraphResponse);
   rpc SimulateRoleChange(SimulateRoleChangeRequest) returns (SimulateRoleChangeResponse);
@@ -398,6 +401,18 @@ message ExplainDecisionResponse {
   string deciding_role          = 4;
   repeated string roles         = 5;   // 用户有效角色(含继承, casbin 角色码)
   DecisionDataScope data_scope  = 6;
+}
+
+// —— M4.5 开发者数据权限沙箱：预览数据策略渲染出的参数化 SQL 片段（与 Sidecar 数据面同源渲染）——
+message PreviewDataFilterRequest {
+  uint64 app_id = 1;
+  string subject = 2;
+  string resource = 3;
+  map<string, string> attrs = 4;
+}
+message PreviewDataFilterResponse {
+  string sql = 1;
+  repeated string args = 2;
 }
 
 // CreateBusinessRole：业务语言建角色（命名 + 勾能力），后端原子建角色+批量授权。code 系统生成。
