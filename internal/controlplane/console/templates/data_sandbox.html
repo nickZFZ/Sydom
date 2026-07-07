@@ -3,7 +3,8 @@
 <section class="developer-doc">
 <nav class="breadcrumb" aria-label="面包屑">建模台 · 数据权限沙箱</nav>
 <h1>数据权限沙箱</h1>
-<p class="hint">输入主体、资源与属性，预览数据面 <code>FilterSQL</code> 会渲染出的参数化 WHERE 片段（与 SDK 接入所得一致）。功能权限「试一试」见 <a href="/apps/{{.AppID}}/decision">决策解释</a>。</p>
+<p class="hint">输入主体、资源与属性，预览数据面 <code>FilterSQL</code> 会渲染出的参数化 WHERE 片段（与 SDK 接入所得一致）。</p>
+<p><a href="/apps/{{.AppID}}/decision">功能权限「试一试」→ 决策解释</a></p>
 <form method="get" action="/apps/{{.AppID}}/data-sandbox">
 <div class="form-field"><label for="subject">主体（user）</label>
 <input id="subject" name="subject" value="{{.Subject}}" required></div>

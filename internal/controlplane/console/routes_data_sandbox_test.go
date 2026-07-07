@@ -26,6 +26,9 @@ func TestConsole_DataSandbox_RendersForm(t *testing.T) {
 	require.Contains(t, body, `name="subject"`)
 	require.Contains(t, body, `name="resource"`)
 	require.Contains(t, body, `name="attrs"`)
+	// a11y 回归（真实浏览器 axe 走查捕获 link-in-text-block，serious）：决策解释链接须独立成段，
+	// 不内嵌于说明文字块内——内嵌时链接仅靠颜色区分，WCAG 不达标。此断言无需浏览器即可挡住回归。
+	require.Contains(t, body, `<p><a href="/apps/`+strconv.FormatInt(appID, 10)+`/decision">`)
 }
 
 // 有会话 + 三参齐备 → 200 渲染数据面同一渲染器产出的参数化 WHERE + args。
