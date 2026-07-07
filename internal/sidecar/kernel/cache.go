@@ -84,3 +84,7 @@ func (c *boundedCache) Clear() error {
 }
 
 var _ cache.Cache = (*boundedCache)(nil)
+
+// NewBoundedCache 导出有界 LRU 构造器（容量<=0 视为 1），返回 casbin cache.Cache。
+// 供 obs 指标装饰器包裹复用（不改缓存/判定逻辑）。
+func NewBoundedCache(capacity int) cache.Cache { return newBoundedCache(capacity) }
