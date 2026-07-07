@@ -65,6 +65,7 @@ var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/CreateApplication":          {"application", "create", false, scopeTenant},
 	"/sydom.admin.v1.AdminService/SetApplicationStatus":       {"application", "update", false, scopeApp}, // 在目标 app 自身域校验（本域管理员可停/启自身应用，跨 app 需 * 域超管）
 	"/sydom.admin.v1.AdminService/ListApplications":           {"application", "read", false, scopeTenant},
+	"/sydom.admin.v1.AdminService/GetApplication":             {"application", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/CreateOperator":             {"admin", "create", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/SetOperatorStatus":          {"admin", "update", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/CreateAdminRole":            {"admin", "create", false, scopeSystem},

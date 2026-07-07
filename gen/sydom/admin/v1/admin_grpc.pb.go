@@ -33,6 +33,7 @@ const (
 	AdminService_CreateApplication_FullMethodName          = "/sydom.admin.v1.AdminService/CreateApplication"
 	AdminService_SetApplicationStatus_FullMethodName       = "/sydom.admin.v1.AdminService/SetApplicationStatus"
 	AdminService_ListApplications_FullMethodName           = "/sydom.admin.v1.AdminService/ListApplications"
+	AdminService_GetApplication_FullMethodName             = "/sydom.admin.v1.AdminService/GetApplication"
 	AdminService_CreateOperator_FullMethodName             = "/sydom.admin.v1.AdminService/CreateOperator"
 	AdminService_SetOperatorStatus_FullMethodName          = "/sydom.admin.v1.AdminService/SetOperatorStatus"
 	AdminService_CreateAdminRole_FullMethodName            = "/sydom.admin.v1.AdminService/CreateAdminRole"
@@ -97,6 +98,7 @@ type AdminServiceClient interface {
 	CreateApplication(ctx context.Context, in *CreateApplicationRequest, opts ...grpc.CallOption) (*CreateApplicationResponse, error)
 	SetApplicationStatus(ctx context.Context, in *SetApplicationStatusRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	ListApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error)
+	GetApplication(ctx context.Context, in *GetApplicationRequest, opts ...grpc.CallOption) (*GetApplicationResponse, error)
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(ctx context.Context, in *CreateOperatorRequest, opts ...grpc.CallOption) (*CreateOperatorResponse, error)
 	SetOperatorStatus(ctx context.Context, in *SetOperatorStatusRequest, opts ...grpc.CallOption) (*WriteResponse, error)
@@ -282,6 +284,15 @@ func (c *adminServiceClient) SetApplicationStatus(ctx context.Context, in *SetAp
 func (c *adminServiceClient) ListApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error) {
 	out := new(ListApplicationsResponse)
 	err := c.cc.Invoke(ctx, AdminService_ListApplications_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) GetApplication(ctx context.Context, in *GetApplicationRequest, opts ...grpc.CallOption) (*GetApplicationResponse, error) {
+	out := new(GetApplicationResponse)
+	err := c.cc.Invoke(ctx, AdminService_GetApplication_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -686,6 +697,7 @@ type AdminServiceServer interface {
 	CreateApplication(context.Context, *CreateApplicationRequest) (*CreateApplicationResponse, error)
 	SetApplicationStatus(context.Context, *SetApplicationStatusRequest) (*WriteResponse, error)
 	ListApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error)
+	GetApplication(context.Context, *GetApplicationRequest) (*GetApplicationResponse, error)
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(context.Context, *CreateOperatorRequest) (*CreateOperatorResponse, error)
 	SetOperatorStatus(context.Context, *SetOperatorStatusRequest) (*WriteResponse, error)
@@ -789,6 +801,9 @@ func (UnimplementedAdminServiceServer) SetApplicationStatus(context.Context, *Se
 }
 func (UnimplementedAdminServiceServer) ListApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListApplications not implemented")
+}
+func (UnimplementedAdminServiceServer) GetApplication(context.Context, *GetApplicationRequest) (*GetApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetApplication not implemented")
 }
 func (UnimplementedAdminServiceServer) CreateOperator(context.Context, *CreateOperatorRequest) (*CreateOperatorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOperator not implemented")
@@ -1177,6 +1192,24 @@ func _AdminService_ListApplications_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).ListApplications(ctx, req.(*ListApplicationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_GetApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).GetApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_GetApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).GetApplication(ctx, req.(*GetApplicationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1999,6 +2032,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListApplications",
 			Handler:    _AdminService_ListApplications_Handler,
+		},
+		{
+			MethodName: "GetApplication",
+			Handler:    _AdminService_GetApplication_Handler,
 		},
 		{
 			MethodName: "CreateOperator",

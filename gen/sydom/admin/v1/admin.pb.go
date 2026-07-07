@@ -1323,6 +1323,100 @@ func (x *ListApplicationsResponse) GetTotal() uint32 {
 	return 0
 }
 
+type GetApplicationRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	AppId uint64 `protobuf:"varint,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+}
+
+func (x *GetApplicationRequest) Reset() {
+	*x = GetApplicationRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetApplicationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetApplicationRequest) ProtoMessage() {}
+
+func (x *GetApplicationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetApplicationRequest.ProtoReflect.Descriptor instead.
+func (*GetApplicationRequest) Descriptor() ([]byte, []int) {
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetApplicationRequest) GetAppId() uint64 {
+	if x != nil {
+		return x.AppId
+	}
+	return 0
+}
+
+type GetApplicationResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Application *ApplicationSummary `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
+}
+
+func (x *GetApplicationResponse) Reset() {
+	*x = GetApplicationResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetApplicationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetApplicationResponse) ProtoMessage() {}
+
+func (x *GetApplicationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetApplicationResponse.ProtoReflect.Descriptor instead.
+func (*GetApplicationResponse) Descriptor() ([]byte, []int) {
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetApplicationResponse) GetApplication() *ApplicationSummary {
+	if x != nil {
+		return x.Application
+	}
+	return nil
+}
+
 type CreateOperatorRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1334,7 +1428,7 @@ type CreateOperatorRequest struct {
 func (x *CreateOperatorRequest) Reset() {
 	*x = CreateOperatorRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[19]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1347,7 +1441,7 @@ func (x *CreateOperatorRequest) String() string {
 func (*CreateOperatorRequest) ProtoMessage() {}
 
 func (x *CreateOperatorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[19]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1360,7 +1454,7 @@ func (x *CreateOperatorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateOperatorRequest.ProtoReflect.Descriptor instead.
 func (*CreateOperatorRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{19}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CreateOperatorRequest) GetPrincipal() string {
@@ -1382,7 +1476,7 @@ type CreateOperatorResponse struct {
 func (x *CreateOperatorResponse) Reset() {
 	*x = CreateOperatorResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[20]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1395,7 +1489,7 @@ func (x *CreateOperatorResponse) String() string {
 func (*CreateOperatorResponse) ProtoMessage() {}
 
 func (x *CreateOperatorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[20]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1408,7 +1502,7 @@ func (x *CreateOperatorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateOperatorResponse.ProtoReflect.Descriptor instead.
 func (*CreateOperatorResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{20}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateOperatorResponse) GetOperatorId() int64 {
@@ -1437,7 +1531,7 @@ type SetOperatorStatusRequest struct {
 func (x *SetOperatorStatusRequest) Reset() {
 	*x = SetOperatorStatusRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[21]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1450,7 +1544,7 @@ func (x *SetOperatorStatusRequest) String() string {
 func (*SetOperatorStatusRequest) ProtoMessage() {}
 
 func (x *SetOperatorStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[21]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1463,7 +1557,7 @@ func (x *SetOperatorStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetOperatorStatusRequest.ProtoReflect.Descriptor instead.
 func (*SetOperatorStatusRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{21}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *SetOperatorStatusRequest) GetOperatorId() int64 {
@@ -1492,7 +1586,7 @@ type CreateAdminRoleRequest struct {
 func (x *CreateAdminRoleRequest) Reset() {
 	*x = CreateAdminRoleRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[22]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1505,7 +1599,7 @@ func (x *CreateAdminRoleRequest) String() string {
 func (*CreateAdminRoleRequest) ProtoMessage() {}
 
 func (x *CreateAdminRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[22]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1518,7 +1612,7 @@ func (x *CreateAdminRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAdminRoleRequest.ProtoReflect.Descriptor instead.
 func (*CreateAdminRoleRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{22}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CreateAdminRoleRequest) GetCode() string {
@@ -1546,7 +1640,7 @@ type CreateAdminRoleResponse struct {
 func (x *CreateAdminRoleResponse) Reset() {
 	*x = CreateAdminRoleResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[23]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1559,7 +1653,7 @@ func (x *CreateAdminRoleResponse) String() string {
 func (*CreateAdminRoleResponse) ProtoMessage() {}
 
 func (x *CreateAdminRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[23]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1572,7 +1666,7 @@ func (x *CreateAdminRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAdminRoleResponse.ProtoReflect.Descriptor instead.
 func (*CreateAdminRoleResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{23}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *CreateAdminRoleResponse) GetRoleId() int64 {
@@ -1596,7 +1690,7 @@ type GrantAdminRoleRequest struct {
 func (x *GrantAdminRoleRequest) Reset() {
 	*x = GrantAdminRoleRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[24]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1609,7 +1703,7 @@ func (x *GrantAdminRoleRequest) String() string {
 func (*GrantAdminRoleRequest) ProtoMessage() {}
 
 func (x *GrantAdminRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[24]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1622,7 +1716,7 @@ func (x *GrantAdminRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GrantAdminRoleRequest.ProtoReflect.Descriptor instead.
 func (*GrantAdminRoleRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{24}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GrantAdminRoleRequest) GetRoleId() int64 {
@@ -1666,7 +1760,7 @@ type BindOperatorRoleRequest struct {
 func (x *BindOperatorRoleRequest) Reset() {
 	*x = BindOperatorRoleRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[25]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1679,7 +1773,7 @@ func (x *BindOperatorRoleRequest) String() string {
 func (*BindOperatorRoleRequest) ProtoMessage() {}
 
 func (x *BindOperatorRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[25]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1692,7 +1786,7 @@ func (x *BindOperatorRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BindOperatorRoleRequest.ProtoReflect.Descriptor instead.
 func (*BindOperatorRoleRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{25}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *BindOperatorRoleRequest) GetOperatorId() int64 {
@@ -1731,7 +1825,7 @@ type RevokeAdminGrantRequest struct {
 func (x *RevokeAdminGrantRequest) Reset() {
 	*x = RevokeAdminGrantRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[26]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1744,7 +1838,7 @@ func (x *RevokeAdminGrantRequest) String() string {
 func (*RevokeAdminGrantRequest) ProtoMessage() {}
 
 func (x *RevokeAdminGrantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[26]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1757,7 +1851,7 @@ func (x *RevokeAdminGrantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeAdminGrantRequest.ProtoReflect.Descriptor instead.
 func (*RevokeAdminGrantRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{26}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *RevokeAdminGrantRequest) GetRoleId() int64 {
@@ -1801,7 +1895,7 @@ type UnbindOperatorRoleRequest struct {
 func (x *UnbindOperatorRoleRequest) Reset() {
 	*x = UnbindOperatorRoleRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[27]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1814,7 +1908,7 @@ func (x *UnbindOperatorRoleRequest) String() string {
 func (*UnbindOperatorRoleRequest) ProtoMessage() {}
 
 func (x *UnbindOperatorRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[27]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1827,7 +1921,7 @@ func (x *UnbindOperatorRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnbindOperatorRoleRequest.ProtoReflect.Descriptor instead.
 func (*UnbindOperatorRoleRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{27}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *UnbindOperatorRoleRequest) GetOperatorId() int64 {
@@ -1862,7 +1956,7 @@ type RotateApplicationSecretRequest struct {
 func (x *RotateApplicationSecretRequest) Reset() {
 	*x = RotateApplicationSecretRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[28]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1875,7 +1969,7 @@ func (x *RotateApplicationSecretRequest) String() string {
 func (*RotateApplicationSecretRequest) ProtoMessage() {}
 
 func (x *RotateApplicationSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[28]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1888,7 +1982,7 @@ func (x *RotateApplicationSecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RotateApplicationSecretRequest.ProtoReflect.Descriptor instead.
 func (*RotateApplicationSecretRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{28}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *RotateApplicationSecretRequest) GetAppId() uint64 {
@@ -1909,7 +2003,7 @@ type RotateApplicationSecretResponse struct {
 func (x *RotateApplicationSecretResponse) Reset() {
 	*x = RotateApplicationSecretResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[29]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1922,7 +2016,7 @@ func (x *RotateApplicationSecretResponse) String() string {
 func (*RotateApplicationSecretResponse) ProtoMessage() {}
 
 func (x *RotateApplicationSecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[29]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1935,7 +2029,7 @@ func (x *RotateApplicationSecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RotateApplicationSecretResponse.ProtoReflect.Descriptor instead.
 func (*RotateApplicationSecretResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{29}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *RotateApplicationSecretResponse) GetAppSecret() string {
@@ -1956,7 +2050,7 @@ type ResetOperatorSecretRequest struct {
 func (x *ResetOperatorSecretRequest) Reset() {
 	*x = ResetOperatorSecretRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[30]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1969,7 +2063,7 @@ func (x *ResetOperatorSecretRequest) String() string {
 func (*ResetOperatorSecretRequest) ProtoMessage() {}
 
 func (x *ResetOperatorSecretRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[30]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1982,7 +2076,7 @@ func (x *ResetOperatorSecretRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetOperatorSecretRequest.ProtoReflect.Descriptor instead.
 func (*ResetOperatorSecretRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{30}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ResetOperatorSecretRequest) GetOperatorId() int64 {
@@ -2003,7 +2097,7 @@ type ResetOperatorSecretResponse struct {
 func (x *ResetOperatorSecretResponse) Reset() {
 	*x = ResetOperatorSecretResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[31]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2016,7 +2110,7 @@ func (x *ResetOperatorSecretResponse) String() string {
 func (*ResetOperatorSecretResponse) ProtoMessage() {}
 
 func (x *ResetOperatorSecretResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[31]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2029,7 +2123,7 @@ func (x *ResetOperatorSecretResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetOperatorSecretResponse.ProtoReflect.Descriptor instead.
 func (*ResetOperatorSecretResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{31}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ResetOperatorSecretResponse) GetSecret() string {
@@ -2054,7 +2148,7 @@ type RoleSummary struct {
 func (x *RoleSummary) Reset() {
 	*x = RoleSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[32]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2067,7 +2161,7 @@ func (x *RoleSummary) String() string {
 func (*RoleSummary) ProtoMessage() {}
 
 func (x *RoleSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[32]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2080,7 +2174,7 @@ func (x *RoleSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleSummary.ProtoReflect.Descriptor instead.
 func (*RoleSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{32}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *RoleSummary) GetRoleId() int64 {
@@ -2123,7 +2217,7 @@ type ListRolesRequest struct {
 func (x *ListRolesRequest) Reset() {
 	*x = ListRolesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[33]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2136,7 +2230,7 @@ func (x *ListRolesRequest) String() string {
 func (*ListRolesRequest) ProtoMessage() {}
 
 func (x *ListRolesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[33]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2149,7 +2243,7 @@ func (x *ListRolesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRolesRequest.ProtoReflect.Descriptor instead.
 func (*ListRolesRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{33}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ListRolesRequest) GetAppId() uint64 {
@@ -2178,7 +2272,7 @@ type ListRolesResponse struct {
 func (x *ListRolesResponse) Reset() {
 	*x = ListRolesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[34]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[36]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2191,7 +2285,7 @@ func (x *ListRolesResponse) String() string {
 func (*ListRolesResponse) ProtoMessage() {}
 
 func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[34]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[36]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2204,7 +2298,7 @@ func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRolesResponse.ProtoReflect.Descriptor instead.
 func (*ListRolesResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{34}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ListRolesResponse) GetRoles() []*RoleSummary {
@@ -2238,7 +2332,7 @@ type PermissionSummary struct {
 func (x *PermissionSummary) Reset() {
 	*x = PermissionSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[35]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[37]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2251,7 +2345,7 @@ func (x *PermissionSummary) String() string {
 func (*PermissionSummary) ProtoMessage() {}
 
 func (x *PermissionSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[35]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[37]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2264,7 +2358,7 @@ func (x *PermissionSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PermissionSummary.ProtoReflect.Descriptor instead.
 func (*PermissionSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{35}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *PermissionSummary) GetPermissionId() int64 {
@@ -2329,7 +2423,7 @@ type ListPermissionsRequest struct {
 func (x *ListPermissionsRequest) Reset() {
 	*x = ListPermissionsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[36]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[38]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2342,7 +2436,7 @@ func (x *ListPermissionsRequest) String() string {
 func (*ListPermissionsRequest) ProtoMessage() {}
 
 func (x *ListPermissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[36]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[38]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2355,7 +2449,7 @@ func (x *ListPermissionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPermissionsRequest.ProtoReflect.Descriptor instead.
 func (*ListPermissionsRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{36}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ListPermissionsRequest) GetAppId() uint64 {
@@ -2391,7 +2485,7 @@ type ListPermissionsResponse struct {
 func (x *ListPermissionsResponse) Reset() {
 	*x = ListPermissionsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[37]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[39]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2404,7 +2498,7 @@ func (x *ListPermissionsResponse) String() string {
 func (*ListPermissionsResponse) ProtoMessage() {}
 
 func (x *ListPermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[37]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[39]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2417,7 +2511,7 @@ func (x *ListPermissionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPermissionsResponse.ProtoReflect.Descriptor instead.
 func (*ListPermissionsResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{37}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ListPermissionsResponse) GetPermissions() []*PermissionSummary {
@@ -2448,7 +2542,7 @@ type GrantSummary struct {
 func (x *GrantSummary) Reset() {
 	*x = GrantSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[38]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[40]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2461,7 +2555,7 @@ func (x *GrantSummary) String() string {
 func (*GrantSummary) ProtoMessage() {}
 
 func (x *GrantSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[38]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[40]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2474,7 +2568,7 @@ func (x *GrantSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GrantSummary.ProtoReflect.Descriptor instead.
 func (*GrantSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{38}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *GrantSummary) GetGrantId() int64 {
@@ -2518,7 +2612,7 @@ type ListGrantsRequest struct {
 func (x *ListGrantsRequest) Reset() {
 	*x = ListGrantsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[39]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[41]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2531,7 +2625,7 @@ func (x *ListGrantsRequest) String() string {
 func (*ListGrantsRequest) ProtoMessage() {}
 
 func (x *ListGrantsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[39]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[41]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2544,7 +2638,7 @@ func (x *ListGrantsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGrantsRequest.ProtoReflect.Descriptor instead.
 func (*ListGrantsRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{39}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ListGrantsRequest) GetAppId() uint64 {
@@ -2580,7 +2674,7 @@ type ListGrantsResponse struct {
 func (x *ListGrantsResponse) Reset() {
 	*x = ListGrantsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[40]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[42]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2593,7 +2687,7 @@ func (x *ListGrantsResponse) String() string {
 func (*ListGrantsResponse) ProtoMessage() {}
 
 func (x *ListGrantsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[40]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[42]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2606,7 +2700,7 @@ func (x *ListGrantsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGrantsResponse.ProtoReflect.Descriptor instead.
 func (*ListGrantsResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{40}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ListGrantsResponse) GetGrants() []*GrantSummary {
@@ -2636,7 +2730,7 @@ type RoleInheritanceSummary struct {
 func (x *RoleInheritanceSummary) Reset() {
 	*x = RoleInheritanceSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[41]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[43]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2649,7 +2743,7 @@ func (x *RoleInheritanceSummary) String() string {
 func (*RoleInheritanceSummary) ProtoMessage() {}
 
 func (x *RoleInheritanceSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[41]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[43]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2662,7 +2756,7 @@ func (x *RoleInheritanceSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleInheritanceSummary.ProtoReflect.Descriptor instead.
 func (*RoleInheritanceSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{41}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *RoleInheritanceSummary) GetInheritanceId() int64 {
@@ -2698,7 +2792,7 @@ type ListRoleInheritancesRequest struct {
 func (x *ListRoleInheritancesRequest) Reset() {
 	*x = ListRoleInheritancesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[42]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[44]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2711,7 +2805,7 @@ func (x *ListRoleInheritancesRequest) String() string {
 func (*ListRoleInheritancesRequest) ProtoMessage() {}
 
 func (x *ListRoleInheritancesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[42]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[44]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2724,7 +2818,7 @@ func (x *ListRoleInheritancesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoleInheritancesRequest.ProtoReflect.Descriptor instead.
 func (*ListRoleInheritancesRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{42}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ListRoleInheritancesRequest) GetAppId() uint64 {
@@ -2753,7 +2847,7 @@ type ListRoleInheritancesResponse struct {
 func (x *ListRoleInheritancesResponse) Reset() {
 	*x = ListRoleInheritancesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[43]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[45]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2766,7 +2860,7 @@ func (x *ListRoleInheritancesResponse) String() string {
 func (*ListRoleInheritancesResponse) ProtoMessage() {}
 
 func (x *ListRoleInheritancesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[43]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[45]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2779,7 +2873,7 @@ func (x *ListRoleInheritancesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRoleInheritancesResponse.ProtoReflect.Descriptor instead.
 func (*ListRoleInheritancesResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{43}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ListRoleInheritancesResponse) GetInheritances() []*RoleInheritanceSummary {
@@ -2809,7 +2903,7 @@ type UserBindingSummary struct {
 func (x *UserBindingSummary) Reset() {
 	*x = UserBindingSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[44]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[46]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2822,7 +2916,7 @@ func (x *UserBindingSummary) String() string {
 func (*UserBindingSummary) ProtoMessage() {}
 
 func (x *UserBindingSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[44]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[46]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2835,7 +2929,7 @@ func (x *UserBindingSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserBindingSummary.ProtoReflect.Descriptor instead.
 func (*UserBindingSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{44}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *UserBindingSummary) GetBindingId() int64 {
@@ -2872,7 +2966,7 @@ type ListUserBindingsRequest struct {
 func (x *ListUserBindingsRequest) Reset() {
 	*x = ListUserBindingsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[45]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[47]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2885,7 +2979,7 @@ func (x *ListUserBindingsRequest) String() string {
 func (*ListUserBindingsRequest) ProtoMessage() {}
 
 func (x *ListUserBindingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[45]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[47]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2898,7 +2992,7 @@ func (x *ListUserBindingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUserBindingsRequest.ProtoReflect.Descriptor instead.
 func (*ListUserBindingsRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{45}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ListUserBindingsRequest) GetAppId() uint64 {
@@ -2934,7 +3028,7 @@ type ListUserBindingsResponse struct {
 func (x *ListUserBindingsResponse) Reset() {
 	*x = ListUserBindingsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[46]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[48]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2947,7 +3041,7 @@ func (x *ListUserBindingsResponse) String() string {
 func (*ListUserBindingsResponse) ProtoMessage() {}
 
 func (x *ListUserBindingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[46]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[48]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2960,7 +3054,7 @@ func (x *ListUserBindingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUserBindingsResponse.ProtoReflect.Descriptor instead.
 func (*ListUserBindingsResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{46}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *ListUserBindingsResponse) GetBindings() []*UserBindingSummary {
@@ -2995,7 +3089,7 @@ type DataPolicySummary struct {
 func (x *DataPolicySummary) Reset() {
 	*x = DataPolicySummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[47]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3008,7 +3102,7 @@ func (x *DataPolicySummary) String() string {
 func (*DataPolicySummary) ProtoMessage() {}
 
 func (x *DataPolicySummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[47]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3021,7 +3115,7 @@ func (x *DataPolicySummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DataPolicySummary.ProtoReflect.Descriptor instead.
 func (*DataPolicySummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{47}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *DataPolicySummary) GetDataPolicyId() int64 {
@@ -3094,7 +3188,7 @@ type ListDataPoliciesRequest struct {
 func (x *ListDataPoliciesRequest) Reset() {
 	*x = ListDataPoliciesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[48]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[50]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3107,7 +3201,7 @@ func (x *ListDataPoliciesRequest) String() string {
 func (*ListDataPoliciesRequest) ProtoMessage() {}
 
 func (x *ListDataPoliciesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[48]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[50]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3120,7 +3214,7 @@ func (x *ListDataPoliciesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDataPoliciesRequest.ProtoReflect.Descriptor instead.
 func (*ListDataPoliciesRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{48}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *ListDataPoliciesRequest) GetAppId() uint64 {
@@ -3163,7 +3257,7 @@ type ListDataPoliciesResponse struct {
 func (x *ListDataPoliciesResponse) Reset() {
 	*x = ListDataPoliciesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[49]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[51]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3176,7 +3270,7 @@ func (x *ListDataPoliciesResponse) String() string {
 func (*ListDataPoliciesResponse) ProtoMessage() {}
 
 func (x *ListDataPoliciesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[49]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[51]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3189,7 +3283,7 @@ func (x *ListDataPoliciesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDataPoliciesResponse.ProtoReflect.Descriptor instead.
 func (*ListDataPoliciesResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{49}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ListDataPoliciesResponse) GetDataPolicies() []*DataPolicySummary {
@@ -3220,7 +3314,7 @@ type OperatorSummary struct {
 func (x *OperatorSummary) Reset() {
 	*x = OperatorSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[50]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[52]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3233,7 +3327,7 @@ func (x *OperatorSummary) String() string {
 func (*OperatorSummary) ProtoMessage() {}
 
 func (x *OperatorSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[50]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[52]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3246,7 +3340,7 @@ func (x *OperatorSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OperatorSummary.ProtoReflect.Descriptor instead.
 func (*OperatorSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{50}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *OperatorSummary) GetOperatorId() int64 {
@@ -3282,7 +3376,7 @@ type ListOperatorsRequest struct {
 func (x *ListOperatorsRequest) Reset() {
 	*x = ListOperatorsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[51]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[53]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3295,7 +3389,7 @@ func (x *ListOperatorsRequest) String() string {
 func (*ListOperatorsRequest) ProtoMessage() {}
 
 func (x *ListOperatorsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[51]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[53]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3308,7 +3402,7 @@ func (x *ListOperatorsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOperatorsRequest.ProtoReflect.Descriptor instead.
 func (*ListOperatorsRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{51}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ListOperatorsRequest) GetPage() *ListPage {
@@ -3337,7 +3431,7 @@ type ListOperatorsResponse struct {
 func (x *ListOperatorsResponse) Reset() {
 	*x = ListOperatorsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[52]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[54]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3350,7 +3444,7 @@ func (x *ListOperatorsResponse) String() string {
 func (*ListOperatorsResponse) ProtoMessage() {}
 
 func (x *ListOperatorsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[52]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[54]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3363,7 +3457,7 @@ func (x *ListOperatorsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOperatorsResponse.ProtoReflect.Descriptor instead.
 func (*ListOperatorsResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{52}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *ListOperatorsResponse) GetOperators() []*OperatorSummary {
@@ -3393,7 +3487,7 @@ type AdminRoleSummary struct {
 func (x *AdminRoleSummary) Reset() {
 	*x = AdminRoleSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[53]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[55]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3406,7 +3500,7 @@ func (x *AdminRoleSummary) String() string {
 func (*AdminRoleSummary) ProtoMessage() {}
 
 func (x *AdminRoleSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[53]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[55]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3419,7 +3513,7 @@ func (x *AdminRoleSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminRoleSummary.ProtoReflect.Descriptor instead.
 func (*AdminRoleSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{53}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *AdminRoleSummary) GetRoleId() int64 {
@@ -3454,7 +3548,7 @@ type ListAdminRolesRequest struct {
 func (x *ListAdminRolesRequest) Reset() {
 	*x = ListAdminRolesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[54]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[56]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3467,7 +3561,7 @@ func (x *ListAdminRolesRequest) String() string {
 func (*ListAdminRolesRequest) ProtoMessage() {}
 
 func (x *ListAdminRolesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[54]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[56]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3480,7 +3574,7 @@ func (x *ListAdminRolesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAdminRolesRequest.ProtoReflect.Descriptor instead.
 func (*ListAdminRolesRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{54}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ListAdminRolesRequest) GetPage() *ListPage {
@@ -3502,7 +3596,7 @@ type ListAdminRolesResponse struct {
 func (x *ListAdminRolesResponse) Reset() {
 	*x = ListAdminRolesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[55]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[57]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3515,7 +3609,7 @@ func (x *ListAdminRolesResponse) String() string {
 func (*ListAdminRolesResponse) ProtoMessage() {}
 
 func (x *ListAdminRolesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[55]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[57]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3528,7 +3622,7 @@ func (x *ListAdminRolesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAdminRolesResponse.ProtoReflect.Descriptor instead.
 func (*ListAdminRolesResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{55}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ListAdminRolesResponse) GetRoles() []*AdminRoleSummary {
@@ -3558,7 +3652,7 @@ type RegisterTenantRequest struct {
 func (x *RegisterTenantRequest) Reset() {
 	*x = RegisterTenantRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[56]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[58]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3571,7 +3665,7 @@ func (x *RegisterTenantRequest) String() string {
 func (*RegisterTenantRequest) ProtoMessage() {}
 
 func (x *RegisterTenantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[56]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[58]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3584,7 +3678,7 @@ func (x *RegisterTenantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterTenantRequest.ProtoReflect.Descriptor instead.
 func (*RegisterTenantRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{56}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *RegisterTenantRequest) GetTenantName() string {
@@ -3614,7 +3708,7 @@ type RegisterTenantResponse struct {
 func (x *RegisterTenantResponse) Reset() {
 	*x = RegisterTenantResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[57]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[59]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3627,7 +3721,7 @@ func (x *RegisterTenantResponse) String() string {
 func (*RegisterTenantResponse) ProtoMessage() {}
 
 func (x *RegisterTenantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[57]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[59]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3640,7 +3734,7 @@ func (x *RegisterTenantResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterTenantResponse.ProtoReflect.Descriptor instead.
 func (*RegisterTenantResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{57}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *RegisterTenantResponse) GetTenantId() uint64 {
@@ -3675,7 +3769,7 @@ type ListMyTenantsRequest struct {
 func (x *ListMyTenantsRequest) Reset() {
 	*x = ListMyTenantsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[58]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[60]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3688,7 +3782,7 @@ func (x *ListMyTenantsRequest) String() string {
 func (*ListMyTenantsRequest) ProtoMessage() {}
 
 func (x *ListMyTenantsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[58]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[60]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3701,7 +3795,7 @@ func (x *ListMyTenantsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMyTenantsRequest.ProtoReflect.Descriptor instead.
 func (*ListMyTenantsRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{58}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *ListMyTenantsRequest) GetPage() *ListPage {
@@ -3724,7 +3818,7 @@ type TenantMembershipSummary struct {
 func (x *TenantMembershipSummary) Reset() {
 	*x = TenantMembershipSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[59]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[61]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3737,7 +3831,7 @@ func (x *TenantMembershipSummary) String() string {
 func (*TenantMembershipSummary) ProtoMessage() {}
 
 func (x *TenantMembershipSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[59]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[61]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3750,7 +3844,7 @@ func (x *TenantMembershipSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TenantMembershipSummary.ProtoReflect.Descriptor instead.
 func (*TenantMembershipSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{59}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *TenantMembershipSummary) GetTenantId() uint64 {
@@ -3787,7 +3881,7 @@ type ListMyTenantsResponse struct {
 func (x *ListMyTenantsResponse) Reset() {
 	*x = ListMyTenantsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[60]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[62]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3800,7 +3894,7 @@ func (x *ListMyTenantsResponse) String() string {
 func (*ListMyTenantsResponse) ProtoMessage() {}
 
 func (x *ListMyTenantsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[60]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[62]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3813,7 +3907,7 @@ func (x *ListMyTenantsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMyTenantsResponse.ProtoReflect.Descriptor instead.
 func (*ListMyTenantsResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{60}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *ListMyTenantsResponse) GetMemberships() []*TenantMembershipSummary {
@@ -3849,7 +3943,7 @@ type InviteMemberRequest struct {
 func (x *InviteMemberRequest) Reset() {
 	*x = InviteMemberRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[61]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[63]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3862,7 +3956,7 @@ func (x *InviteMemberRequest) String() string {
 func (*InviteMemberRequest) ProtoMessage() {}
 
 func (x *InviteMemberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[61]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[63]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3875,7 +3969,7 @@ func (x *InviteMemberRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InviteMemberRequest.ProtoReflect.Descriptor instead.
 func (*InviteMemberRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{61}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *InviteMemberRequest) GetTenantId() uint64 {
@@ -3905,7 +3999,7 @@ type InviteMemberResponse struct {
 func (x *InviteMemberResponse) Reset() {
 	*x = InviteMemberResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[62]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[64]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3918,7 +4012,7 @@ func (x *InviteMemberResponse) String() string {
 func (*InviteMemberResponse) ProtoMessage() {}
 
 func (x *InviteMemberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[62]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[64]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3931,7 +4025,7 @@ func (x *InviteMemberResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InviteMemberResponse.ProtoReflect.Descriptor instead.
 func (*InviteMemberResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{62}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *InviteMemberResponse) GetOperatorId() uint64 {
@@ -3968,7 +4062,7 @@ type ListMembersRequest struct {
 func (x *ListMembersRequest) Reset() {
 	*x = ListMembersRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[63]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[65]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3981,7 +4075,7 @@ func (x *ListMembersRequest) String() string {
 func (*ListMembersRequest) ProtoMessage() {}
 
 func (x *ListMembersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[63]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[65]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3994,7 +4088,7 @@ func (x *ListMembersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMembersRequest.ProtoReflect.Descriptor instead.
 func (*ListMembersRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{63}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ListMembersRequest) GetTenantId() uint64 {
@@ -4032,7 +4126,7 @@ type MemberSummary struct {
 func (x *MemberSummary) Reset() {
 	*x = MemberSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[64]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[66]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4045,7 +4139,7 @@ func (x *MemberSummary) String() string {
 func (*MemberSummary) ProtoMessage() {}
 
 func (x *MemberSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[64]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[66]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4058,7 +4152,7 @@ func (x *MemberSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemberSummary.ProtoReflect.Descriptor instead.
 func (*MemberSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{64}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *MemberSummary) GetOperatorId() uint64 {
@@ -4101,7 +4195,7 @@ type ListMembersResponse struct {
 func (x *ListMembersResponse) Reset() {
 	*x = ListMembersResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[65]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[67]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4114,7 +4208,7 @@ func (x *ListMembersResponse) String() string {
 func (*ListMembersResponse) ProtoMessage() {}
 
 func (x *ListMembersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[65]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[67]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4127,7 +4221,7 @@ func (x *ListMembersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMembersResponse.ProtoReflect.Descriptor instead.
 func (*ListMembersResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{65}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ListMembersResponse) GetMembers() []*MemberSummary {
@@ -4157,7 +4251,7 @@ type GetEffectivePermissionsRequest struct {
 func (x *GetEffectivePermissionsRequest) Reset() {
 	*x = GetEffectivePermissionsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[66]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[68]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4170,7 +4264,7 @@ func (x *GetEffectivePermissionsRequest) String() string {
 func (*GetEffectivePermissionsRequest) ProtoMessage() {}
 
 func (x *GetEffectivePermissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[66]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[68]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4183,7 +4277,7 @@ func (x *GetEffectivePermissionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEffectivePermissionsRequest.ProtoReflect.Descriptor instead.
 func (*GetEffectivePermissionsRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{66}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *GetEffectivePermissionsRequest) GetAppId() uint64 {
@@ -4213,7 +4307,7 @@ type GetEffectivePermissionsResponse struct {
 func (x *GetEffectivePermissionsResponse) Reset() {
 	*x = GetEffectivePermissionsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[67]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[69]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4226,7 +4320,7 @@ func (x *GetEffectivePermissionsResponse) String() string {
 func (*GetEffectivePermissionsResponse) ProtoMessage() {}
 
 func (x *GetEffectivePermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[67]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[69]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4239,7 +4333,7 @@ func (x *GetEffectivePermissionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEffectivePermissionsResponse.ProtoReflect.Descriptor instead.
 func (*GetEffectivePermissionsResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{67}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *GetEffectivePermissionsResponse) GetRoles() []string {
@@ -4275,7 +4369,7 @@ type EffectivePermission struct {
 func (x *EffectivePermission) Reset() {
 	*x = EffectivePermission{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[68]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[70]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4288,7 +4382,7 @@ func (x *EffectivePermission) String() string {
 func (*EffectivePermission) ProtoMessage() {}
 
 func (x *EffectivePermission) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[68]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[70]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4301,7 +4395,7 @@ func (x *EffectivePermission) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EffectivePermission.ProtoReflect.Descriptor instead.
 func (*EffectivePermission) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{68}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *EffectivePermission) GetResource() string {
@@ -4331,7 +4425,7 @@ type DataPolicyPreview struct {
 func (x *DataPolicyPreview) Reset() {
 	*x = DataPolicyPreview{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[69]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[71]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4344,7 +4438,7 @@ func (x *DataPolicyPreview) String() string {
 func (*DataPolicyPreview) ProtoMessage() {}
 
 func (x *DataPolicyPreview) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[69]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[71]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4357,7 +4451,7 @@ func (x *DataPolicyPreview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DataPolicyPreview.ProtoReflect.Descriptor instead.
 func (*DataPolicyPreview) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{69}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *DataPolicyPreview) GetResource() string {
@@ -4396,7 +4490,7 @@ type ExplainDecisionRequest struct {
 func (x *ExplainDecisionRequest) Reset() {
 	*x = ExplainDecisionRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[70]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[72]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4409,7 +4503,7 @@ func (x *ExplainDecisionRequest) String() string {
 func (*ExplainDecisionRequest) ProtoMessage() {}
 
 func (x *ExplainDecisionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[70]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[72]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4422,7 +4516,7 @@ func (x *ExplainDecisionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExplainDecisionRequest.ProtoReflect.Descriptor instead.
 func (*ExplainDecisionRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{70}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *ExplainDecisionRequest) GetAppId() uint64 {
@@ -4467,7 +4561,7 @@ type DecidingRule struct {
 func (x *DecidingRule) Reset() {
 	*x = DecidingRule{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[71]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[73]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4480,7 +4574,7 @@ func (x *DecidingRule) String() string {
 func (*DecidingRule) ProtoMessage() {}
 
 func (x *DecidingRule) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[71]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[73]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4493,7 +4587,7 @@ func (x *DecidingRule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecidingRule.ProtoReflect.Descriptor instead.
 func (*DecidingRule) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{71}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *DecidingRule) GetSubject() string {
@@ -4536,7 +4630,7 @@ type DecisionDataScope struct {
 func (x *DecisionDataScope) Reset() {
 	*x = DecisionDataScope{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[72]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[74]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4549,7 +4643,7 @@ func (x *DecisionDataScope) String() string {
 func (*DecisionDataScope) ProtoMessage() {}
 
 func (x *DecisionDataScope) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[72]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[74]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4562,7 +4656,7 @@ func (x *DecisionDataScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DecisionDataScope.ProtoReflect.Descriptor instead.
 func (*DecisionDataScope) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{72}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *DecisionDataScope) GetMatch() string {
@@ -4595,7 +4689,7 @@ type ExplainDecisionResponse struct {
 func (x *ExplainDecisionResponse) Reset() {
 	*x = ExplainDecisionResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[73]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[75]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4608,7 +4702,7 @@ func (x *ExplainDecisionResponse) String() string {
 func (*ExplainDecisionResponse) ProtoMessage() {}
 
 func (x *ExplainDecisionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[73]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[75]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4621,7 +4715,7 @@ func (x *ExplainDecisionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExplainDecisionResponse.ProtoReflect.Descriptor instead.
 func (*ExplainDecisionResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{73}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *ExplainDecisionResponse) GetAllowed() bool {
@@ -4680,7 +4774,7 @@ type CreateBusinessRoleRequest struct {
 func (x *CreateBusinessRoleRequest) Reset() {
 	*x = CreateBusinessRoleRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[74]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[76]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4693,7 +4787,7 @@ func (x *CreateBusinessRoleRequest) String() string {
 func (*CreateBusinessRoleRequest) ProtoMessage() {}
 
 func (x *CreateBusinessRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[74]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[76]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4706,7 +4800,7 @@ func (x *CreateBusinessRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBusinessRoleRequest.ProtoReflect.Descriptor instead.
 func (*CreateBusinessRoleRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{74}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *CreateBusinessRoleRequest) GetAppId() uint64 {
@@ -4743,7 +4837,7 @@ type CreateBusinessRoleResponse struct {
 func (x *CreateBusinessRoleResponse) Reset() {
 	*x = CreateBusinessRoleResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[75]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[77]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4756,7 +4850,7 @@ func (x *CreateBusinessRoleResponse) String() string {
 func (*CreateBusinessRoleResponse) ProtoMessage() {}
 
 func (x *CreateBusinessRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[75]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[77]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4769,7 +4863,7 @@ func (x *CreateBusinessRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBusinessRoleResponse.ProtoReflect.Descriptor instead.
 func (*CreateBusinessRoleResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{75}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *CreateBusinessRoleResponse) GetRoleId() int64 {
@@ -4814,7 +4908,7 @@ type QueryAuditLogRequest struct {
 func (x *QueryAuditLogRequest) Reset() {
 	*x = QueryAuditLogRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[76]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[78]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4827,7 +4921,7 @@ func (x *QueryAuditLogRequest) String() string {
 func (*QueryAuditLogRequest) ProtoMessage() {}
 
 func (x *QueryAuditLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[76]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[78]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4840,7 +4934,7 @@ func (x *QueryAuditLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryAuditLogRequest.ProtoReflect.Descriptor instead.
 func (*QueryAuditLogRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{76}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *QueryAuditLogRequest) GetAppId() uint64 {
@@ -4924,7 +5018,7 @@ type AuditEntry struct {
 func (x *AuditEntry) Reset() {
 	*x = AuditEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[77]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[79]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4937,7 +5031,7 @@ func (x *AuditEntry) String() string {
 func (*AuditEntry) ProtoMessage() {}
 
 func (x *AuditEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[77]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[79]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4950,7 +5044,7 @@ func (x *AuditEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditEntry.ProtoReflect.Descriptor instead.
 func (*AuditEntry) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{77}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *AuditEntry) GetId() uint64 {
@@ -5021,7 +5115,7 @@ type QueryAuditLogResponse struct {
 func (x *QueryAuditLogResponse) Reset() {
 	*x = QueryAuditLogResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[78]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[80]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5034,7 +5128,7 @@ func (x *QueryAuditLogResponse) String() string {
 func (*QueryAuditLogResponse) ProtoMessage() {}
 
 func (x *QueryAuditLogResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[78]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[80]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5047,7 +5141,7 @@ func (x *QueryAuditLogResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryAuditLogResponse.ProtoReflect.Descriptor instead.
 func (*QueryAuditLogResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{78}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *QueryAuditLogResponse) GetEntries() []*AuditEntry {
@@ -5083,7 +5177,7 @@ type QueryAdminAuditLogRequest struct {
 func (x *QueryAdminAuditLogRequest) Reset() {
 	*x = QueryAdminAuditLogRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[79]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[81]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5096,7 +5190,7 @@ func (x *QueryAdminAuditLogRequest) String() string {
 func (*QueryAdminAuditLogRequest) ProtoMessage() {}
 
 func (x *QueryAdminAuditLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[79]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[81]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5109,7 +5203,7 @@ func (x *QueryAdminAuditLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryAdminAuditLogRequest.ProtoReflect.Descriptor instead.
 func (*QueryAdminAuditLogRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{79}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *QueryAdminAuditLogRequest) GetTenantId() uint64 {
@@ -5194,7 +5288,7 @@ type AdminAuditEntry struct {
 func (x *AdminAuditEntry) Reset() {
 	*x = AdminAuditEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[80]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[82]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5207,7 +5301,7 @@ func (x *AdminAuditEntry) String() string {
 func (*AdminAuditEntry) ProtoMessage() {}
 
 func (x *AdminAuditEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[80]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[82]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5220,7 +5314,7 @@ func (x *AdminAuditEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminAuditEntry.ProtoReflect.Descriptor instead.
 func (*AdminAuditEntry) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{80}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *AdminAuditEntry) GetId() uint64 {
@@ -5298,7 +5392,7 @@ type QueryAdminAuditLogResponse struct {
 func (x *QueryAdminAuditLogResponse) Reset() {
 	*x = QueryAdminAuditLogResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[81]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[83]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5311,7 +5405,7 @@ func (x *QueryAdminAuditLogResponse) String() string {
 func (*QueryAdminAuditLogResponse) ProtoMessage() {}
 
 func (x *QueryAdminAuditLogResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[81]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[83]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5324,7 +5418,7 @@ func (x *QueryAdminAuditLogResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryAdminAuditLogResponse.ProtoReflect.Descriptor instead.
 func (*QueryAdminAuditLogResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{81}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *QueryAdminAuditLogResponse) GetEntries() []*AdminAuditEntry {
@@ -5357,7 +5451,7 @@ type ListPage struct {
 func (x *ListPage) Reset() {
 	*x = ListPage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[82]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[84]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5370,7 +5464,7 @@ func (x *ListPage) String() string {
 func (*ListPage) ProtoMessage() {}
 
 func (x *ListPage) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[82]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[84]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5383,7 +5477,7 @@ func (x *ListPage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPage.ProtoReflect.Descriptor instead.
 func (*ListPage) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{82}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *ListPage) GetLimit() uint32 {
@@ -5438,7 +5532,7 @@ type TemplatePermission struct {
 func (x *TemplatePermission) Reset() {
 	*x = TemplatePermission{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[83]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[85]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5451,7 +5545,7 @@ func (x *TemplatePermission) String() string {
 func (*TemplatePermission) ProtoMessage() {}
 
 func (x *TemplatePermission) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[83]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[85]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5464,7 +5558,7 @@ func (x *TemplatePermission) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TemplatePermission.ProtoReflect.Descriptor instead.
 func (*TemplatePermission) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{83}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *TemplatePermission) GetCode() string {
@@ -5524,7 +5618,7 @@ type TemplateRole struct {
 func (x *TemplateRole) Reset() {
 	*x = TemplateRole{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[84]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[86]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5537,7 +5631,7 @@ func (x *TemplateRole) String() string {
 func (*TemplateRole) ProtoMessage() {}
 
 func (x *TemplateRole) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[84]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[86]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5550,7 +5644,7 @@ func (x *TemplateRole) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TemplateRole.ProtoReflect.Descriptor instead.
 func (*TemplateRole) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{84}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *TemplateRole) GetKey() string {
@@ -5601,7 +5695,7 @@ type TemplateDataScope struct {
 func (x *TemplateDataScope) Reset() {
 	*x = TemplateDataScope{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[85]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[87]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5614,7 +5708,7 @@ func (x *TemplateDataScope) String() string {
 func (*TemplateDataScope) ProtoMessage() {}
 
 func (x *TemplateDataScope) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[85]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[87]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5627,7 +5721,7 @@ func (x *TemplateDataScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TemplateDataScope.ProtoReflect.Descriptor instead.
 func (*TemplateDataScope) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{85}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *TemplateDataScope) GetResource() string {
@@ -5667,7 +5761,7 @@ type Template struct {
 func (x *Template) Reset() {
 	*x = Template{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[86]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[88]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5680,7 +5774,7 @@ func (x *Template) String() string {
 func (*Template) ProtoMessage() {}
 
 func (x *Template) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[86]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[88]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5693,7 +5787,7 @@ func (x *Template) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Template.ProtoReflect.Descriptor instead.
 func (*Template) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{86}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *Template) GetId() string {
@@ -5749,7 +5843,7 @@ type ListTemplatesRequest struct {
 func (x *ListTemplatesRequest) Reset() {
 	*x = ListTemplatesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[87]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[89]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5762,7 +5856,7 @@ func (x *ListTemplatesRequest) String() string {
 func (*ListTemplatesRequest) ProtoMessage() {}
 
 func (x *ListTemplatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[87]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[89]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5775,7 +5869,7 @@ func (x *ListTemplatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTemplatesRequest.ProtoReflect.Descriptor instead.
 func (*ListTemplatesRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{87}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *ListTemplatesRequest) GetAppId() uint64 {
@@ -5796,7 +5890,7 @@ type ListTemplatesResponse struct {
 func (x *ListTemplatesResponse) Reset() {
 	*x = ListTemplatesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[88]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[90]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5809,7 +5903,7 @@ func (x *ListTemplatesResponse) String() string {
 func (*ListTemplatesResponse) ProtoMessage() {}
 
 func (x *ListTemplatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[88]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[90]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5822,7 +5916,7 @@ func (x *ListTemplatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTemplatesResponse.ProtoReflect.Descriptor instead.
 func (*ListTemplatesResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{88}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *ListTemplatesResponse) GetTemplates() []*Template {
@@ -5844,7 +5938,7 @@ type ApplyTemplateRequest struct {
 func (x *ApplyTemplateRequest) Reset() {
 	*x = ApplyTemplateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[89]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[91]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5857,7 +5951,7 @@ func (x *ApplyTemplateRequest) String() string {
 func (*ApplyTemplateRequest) ProtoMessage() {}
 
 func (x *ApplyTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[89]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[91]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5870,7 +5964,7 @@ func (x *ApplyTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyTemplateRequest.ProtoReflect.Descriptor instead.
 func (*ApplyTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{89}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *ApplyTemplateRequest) GetAppId() uint64 {
@@ -5902,7 +5996,7 @@ type ApplyTemplateResponse struct {
 func (x *ApplyTemplateResponse) Reset() {
 	*x = ApplyTemplateResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[90]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[92]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5915,7 +6009,7 @@ func (x *ApplyTemplateResponse) String() string {
 func (*ApplyTemplateResponse) ProtoMessage() {}
 
 func (x *ApplyTemplateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[90]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[92]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5928,7 +6022,7 @@ func (x *ApplyTemplateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyTemplateResponse.ProtoReflect.Descriptor instead.
 func (*ApplyTemplateResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{90}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *ApplyTemplateResponse) GetPermissionsUpserted() uint32 {
@@ -5980,7 +6074,7 @@ type SaveAppAsTemplateRequest struct {
 func (x *SaveAppAsTemplateRequest) Reset() {
 	*x = SaveAppAsTemplateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[91]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[93]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -5993,7 +6087,7 @@ func (x *SaveAppAsTemplateRequest) String() string {
 func (*SaveAppAsTemplateRequest) ProtoMessage() {}
 
 func (x *SaveAppAsTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[91]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[93]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6006,7 +6100,7 @@ func (x *SaveAppAsTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveAppAsTemplateRequest.ProtoReflect.Descriptor instead.
 func (*SaveAppAsTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{91}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *SaveAppAsTemplateRequest) GetAppId() uint64 {
@@ -6042,7 +6136,7 @@ type TenantTemplateRef struct {
 func (x *TenantTemplateRef) Reset() {
 	*x = TenantTemplateRef{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[92]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[94]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6055,7 +6149,7 @@ func (x *TenantTemplateRef) String() string {
 func (*TenantTemplateRef) ProtoMessage() {}
 
 func (x *TenantTemplateRef) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[92]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[94]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6068,7 +6162,7 @@ func (x *TenantTemplateRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TenantTemplateRef.ProtoReflect.Descriptor instead.
 func (*TenantTemplateRef) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{92}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *TenantTemplateRef) GetId() uint64 {
@@ -6097,7 +6191,7 @@ type ListTenantTemplatesRequest struct {
 func (x *ListTenantTemplatesRequest) Reset() {
 	*x = ListTenantTemplatesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[93]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[95]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6110,7 +6204,7 @@ func (x *ListTenantTemplatesRequest) String() string {
 func (*ListTenantTemplatesRequest) ProtoMessage() {}
 
 func (x *ListTenantTemplatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[93]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[95]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6123,7 +6217,7 @@ func (x *ListTenantTemplatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTenantTemplatesRequest.ProtoReflect.Descriptor instead.
 func (*ListTenantTemplatesRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{93}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *ListTenantTemplatesRequest) GetTenantId() uint64 {
@@ -6154,7 +6248,7 @@ type TenantTemplateSummary struct {
 func (x *TenantTemplateSummary) Reset() {
 	*x = TenantTemplateSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[94]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[96]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6167,7 +6261,7 @@ func (x *TenantTemplateSummary) String() string {
 func (*TenantTemplateSummary) ProtoMessage() {}
 
 func (x *TenantTemplateSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[94]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[96]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6180,7 +6274,7 @@ func (x *TenantTemplateSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TenantTemplateSummary.ProtoReflect.Descriptor instead.
 func (*TenantTemplateSummary) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{94}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *TenantTemplateSummary) GetId() uint64 {
@@ -6223,7 +6317,7 @@ type ListTenantTemplatesResponse struct {
 func (x *ListTenantTemplatesResponse) Reset() {
 	*x = ListTenantTemplatesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[95]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[97]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6236,7 +6330,7 @@ func (x *ListTenantTemplatesResponse) String() string {
 func (*ListTenantTemplatesResponse) ProtoMessage() {}
 
 func (x *ListTenantTemplatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[95]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[97]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6249,7 +6343,7 @@ func (x *ListTenantTemplatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTenantTemplatesResponse.ProtoReflect.Descriptor instead.
 func (*ListTenantTemplatesResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{95}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *ListTenantTemplatesResponse) GetTemplates() []*TenantTemplateSummary {
@@ -6278,7 +6372,7 @@ type GetTenantTemplateRequest struct {
 func (x *GetTenantTemplateRequest) Reset() {
 	*x = GetTenantTemplateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[96]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[98]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6291,7 +6385,7 @@ func (x *GetTenantTemplateRequest) String() string {
 func (*GetTenantTemplateRequest) ProtoMessage() {}
 
 func (x *GetTenantTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[96]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[98]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6304,7 +6398,7 @@ func (x *GetTenantTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTenantTemplateRequest.ProtoReflect.Descriptor instead.
 func (*GetTenantTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{96}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *GetTenantTemplateRequest) GetTenantId() uint64 {
@@ -6337,7 +6431,7 @@ type TenantTemplate struct {
 func (x *TenantTemplate) Reset() {
 	*x = TenantTemplate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[97]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[99]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6350,7 +6444,7 @@ func (x *TenantTemplate) String() string {
 func (*TenantTemplate) ProtoMessage() {}
 
 func (x *TenantTemplate) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[97]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[99]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6363,7 +6457,7 @@ func (x *TenantTemplate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TenantTemplate.ProtoReflect.Descriptor instead.
 func (*TenantTemplate) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{97}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *TenantTemplate) GetId() uint64 {
@@ -6420,7 +6514,7 @@ type ApplyTenantTemplateRequest struct {
 func (x *ApplyTenantTemplateRequest) Reset() {
 	*x = ApplyTenantTemplateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[98]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[100]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6433,7 +6527,7 @@ func (x *ApplyTenantTemplateRequest) String() string {
 func (*ApplyTenantTemplateRequest) ProtoMessage() {}
 
 func (x *ApplyTenantTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[98]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[100]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6446,7 +6540,7 @@ func (x *ApplyTenantTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyTenantTemplateRequest.ProtoReflect.Descriptor instead.
 func (*ApplyTenantTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{98}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *ApplyTenantTemplateRequest) GetAppId() uint64 {
@@ -6475,7 +6569,7 @@ type DeleteTenantTemplateRequest struct {
 func (x *DeleteTenantTemplateRequest) Reset() {
 	*x = DeleteTenantTemplateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[99]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[101]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6488,7 +6582,7 @@ func (x *DeleteTenantTemplateRequest) String() string {
 func (*DeleteTenantTemplateRequest) ProtoMessage() {}
 
 func (x *DeleteTenantTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[99]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[101]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6501,7 +6595,7 @@ func (x *DeleteTenantTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTenantTemplateRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTenantTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{99}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *DeleteTenantTemplateRequest) GetTenantId() uint64 {
@@ -6531,7 +6625,7 @@ type GetRoleGraphRequest struct {
 func (x *GetRoleGraphRequest) Reset() {
 	*x = GetRoleGraphRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[100]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[102]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6544,7 +6638,7 @@ func (x *GetRoleGraphRequest) String() string {
 func (*GetRoleGraphRequest) ProtoMessage() {}
 
 func (x *GetRoleGraphRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[100]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[102]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6557,7 +6651,7 @@ func (x *GetRoleGraphRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoleGraphRequest.ProtoReflect.Descriptor instead.
 func (*GetRoleGraphRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{100}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *GetRoleGraphRequest) GetAppId() uint64 {
@@ -6588,7 +6682,7 @@ type RoleGraphCapability struct {
 func (x *RoleGraphCapability) Reset() {
 	*x = RoleGraphCapability{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[101]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[103]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6601,7 +6695,7 @@ func (x *RoleGraphCapability) String() string {
 func (*RoleGraphCapability) ProtoMessage() {}
 
 func (x *RoleGraphCapability) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[101]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[103]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6614,7 +6708,7 @@ func (x *RoleGraphCapability) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleGraphCapability.ProtoReflect.Descriptor instead.
 func (*RoleGraphCapability) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{101}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *RoleGraphCapability) GetResource() string {
@@ -6658,7 +6752,7 @@ type RoleGraphParent struct {
 func (x *RoleGraphParent) Reset() {
 	*x = RoleGraphParent{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[102]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[104]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6671,7 +6765,7 @@ func (x *RoleGraphParent) String() string {
 func (*RoleGraphParent) ProtoMessage() {}
 
 func (x *RoleGraphParent) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[102]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[104]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6684,7 +6778,7 @@ func (x *RoleGraphParent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleGraphParent.ProtoReflect.Descriptor instead.
 func (*RoleGraphParent) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{102}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *RoleGraphParent) GetId() int64 {
@@ -6721,7 +6815,7 @@ type RoleGraphDataScope struct {
 func (x *RoleGraphDataScope) Reset() {
 	*x = RoleGraphDataScope{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[103]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[105]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6734,7 +6828,7 @@ func (x *RoleGraphDataScope) String() string {
 func (*RoleGraphDataScope) ProtoMessage() {}
 
 func (x *RoleGraphDataScope) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[103]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[105]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6747,7 +6841,7 @@ func (x *RoleGraphDataScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoleGraphDataScope.ProtoReflect.Descriptor instead.
 func (*RoleGraphDataScope) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{103}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *RoleGraphDataScope) GetResource() string {
@@ -6788,7 +6882,7 @@ type GetRoleGraphResponse struct {
 func (x *GetRoleGraphResponse) Reset() {
 	*x = GetRoleGraphResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[104]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[106]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6801,7 +6895,7 @@ func (x *GetRoleGraphResponse) String() string {
 func (*GetRoleGraphResponse) ProtoMessage() {}
 
 func (x *GetRoleGraphResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[104]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[106]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6814,7 +6908,7 @@ func (x *GetRoleGraphResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRoleGraphResponse.ProtoReflect.Descriptor instead.
 func (*GetRoleGraphResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{104}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *GetRoleGraphResponse) GetRoleId() int64 {
@@ -6882,7 +6976,7 @@ type SimulateRoleChangeRequest struct {
 func (x *SimulateRoleChangeRequest) Reset() {
 	*x = SimulateRoleChangeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[105]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[107]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6895,7 +6989,7 @@ func (x *SimulateRoleChangeRequest) String() string {
 func (*SimulateRoleChangeRequest) ProtoMessage() {}
 
 func (x *SimulateRoleChangeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[105]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[107]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6908,7 +7002,7 @@ func (x *SimulateRoleChangeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateRoleChangeRequest.ProtoReflect.Descriptor instead.
 func (*SimulateRoleChangeRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{105}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *SimulateRoleChangeRequest) GetAppId() uint64 {
@@ -6968,7 +7062,7 @@ type SubjectDiff struct {
 func (x *SubjectDiff) Reset() {
 	*x = SubjectDiff{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[106]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[108]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6981,7 +7075,7 @@ func (x *SubjectDiff) String() string {
 func (*SubjectDiff) ProtoMessage() {}
 
 func (x *SubjectDiff) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[106]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[108]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6994,7 +7088,7 @@ func (x *SubjectDiff) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubjectDiff.ProtoReflect.Descriptor instead.
 func (*SubjectDiff) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{106}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *SubjectDiff) GetUserId() string {
@@ -7043,7 +7137,7 @@ type SimulateRoleChangeResponse struct {
 func (x *SimulateRoleChangeResponse) Reset() {
 	*x = SimulateRoleChangeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[107]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[109]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7056,7 +7150,7 @@ func (x *SimulateRoleChangeResponse) String() string {
 func (*SimulateRoleChangeResponse) ProtoMessage() {}
 
 func (x *SimulateRoleChangeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[107]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[109]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7069,7 +7163,7 @@ func (x *SimulateRoleChangeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateRoleChangeResponse.ProtoReflect.Descriptor instead.
 func (*SimulateRoleChangeResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{107}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *SimulateRoleChangeResponse) GetSubjects() []*SubjectDiff {
@@ -7092,7 +7186,7 @@ type ExportAppPolicyRequest struct {
 func (x *ExportAppPolicyRequest) Reset() {
 	*x = ExportAppPolicyRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[108]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[110]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7105,7 +7199,7 @@ func (x *ExportAppPolicyRequest) String() string {
 func (*ExportAppPolicyRequest) ProtoMessage() {}
 
 func (x *ExportAppPolicyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[108]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[110]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7118,7 +7212,7 @@ func (x *ExportAppPolicyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportAppPolicyRequest.ProtoReflect.Descriptor instead.
 func (*ExportAppPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{108}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *ExportAppPolicyRequest) GetAppId() uint64 {
@@ -7146,7 +7240,7 @@ type ExportAppPolicyResponse struct {
 func (x *ExportAppPolicyResponse) Reset() {
 	*x = ExportAppPolicyResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[109]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[111]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7159,7 +7253,7 @@ func (x *ExportAppPolicyResponse) String() string {
 func (*ExportAppPolicyResponse) ProtoMessage() {}
 
 func (x *ExportAppPolicyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[109]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[111]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7172,7 +7266,7 @@ func (x *ExportAppPolicyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportAppPolicyResponse.ProtoReflect.Descriptor instead.
 func (*ExportAppPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{109}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *ExportAppPolicyResponse) GetContent() string {
@@ -7195,7 +7289,7 @@ type ImportAppPolicyRequest struct {
 func (x *ImportAppPolicyRequest) Reset() {
 	*x = ImportAppPolicyRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[110]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[112]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7208,7 +7302,7 @@ func (x *ImportAppPolicyRequest) String() string {
 func (*ImportAppPolicyRequest) ProtoMessage() {}
 
 func (x *ImportAppPolicyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[110]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[112]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7221,7 +7315,7 @@ func (x *ImportAppPolicyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportAppPolicyRequest.ProtoReflect.Descriptor instead.
 func (*ImportAppPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{110}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *ImportAppPolicyRequest) GetAppId() uint64 {
@@ -7259,7 +7353,7 @@ type PolicyDiffEntry struct {
 func (x *PolicyDiffEntry) Reset() {
 	*x = PolicyDiffEntry{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[111]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[113]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7272,7 +7366,7 @@ func (x *PolicyDiffEntry) String() string {
 func (*PolicyDiffEntry) ProtoMessage() {}
 
 func (x *PolicyDiffEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[111]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[113]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7285,7 +7379,7 @@ func (x *PolicyDiffEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PolicyDiffEntry.ProtoReflect.Descriptor instead.
 func (*PolicyDiffEntry) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{111}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *PolicyDiffEntry) GetKind() string {
@@ -7334,7 +7428,7 @@ type ImportAppPolicyResponse struct {
 func (x *ImportAppPolicyResponse) Reset() {
 	*x = ImportAppPolicyResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[112]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[114]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7347,7 +7441,7 @@ func (x *ImportAppPolicyResponse) String() string {
 func (*ImportAppPolicyResponse) ProtoMessage() {}
 
 func (x *ImportAppPolicyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[112]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[114]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7360,7 +7454,7 @@ func (x *ImportAppPolicyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportAppPolicyResponse.ProtoReflect.Descriptor instead.
 func (*ImportAppPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{112}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *ImportAppPolicyResponse) GetDiff() []*PolicyDiffEntry {
@@ -7432,7 +7526,7 @@ type UserRoleRef struct {
 func (x *UserRoleRef) Reset() {
 	*x = UserRoleRef{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[113]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[115]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7445,7 +7539,7 @@ func (x *UserRoleRef) String() string {
 func (*UserRoleRef) ProtoMessage() {}
 
 func (x *UserRoleRef) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[113]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[115]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7458,7 +7552,7 @@ func (x *UserRoleRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserRoleRef.ProtoReflect.Descriptor instead.
 func (*UserRoleRef) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{113}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *UserRoleRef) GetUserId() string {
@@ -7487,7 +7581,7 @@ type GrantRef struct {
 func (x *GrantRef) Reset() {
 	*x = GrantRef{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[114]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[116]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7500,7 +7594,7 @@ func (x *GrantRef) String() string {
 func (*GrantRef) ProtoMessage() {}
 
 func (x *GrantRef) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[114]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[116]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7513,7 +7607,7 @@ func (x *GrantRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GrantRef.ProtoReflect.Descriptor instead.
 func (*GrantRef) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{114}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{116}
 }
 
 func (x *GrantRef) GetRoleId() int64 {
@@ -7542,7 +7636,7 @@ type InheritanceRef struct {
 func (x *InheritanceRef) Reset() {
 	*x = InheritanceRef{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[115]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[117]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7555,7 +7649,7 @@ func (x *InheritanceRef) String() string {
 func (*InheritanceRef) ProtoMessage() {}
 
 func (x *InheritanceRef) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[115]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[117]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7568,7 +7662,7 @@ func (x *InheritanceRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InheritanceRef.ProtoReflect.Descriptor instead.
 func (*InheritanceRef) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{115}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{117}
 }
 
 func (x *InheritanceRef) GetChildRoleId() int64 {
@@ -7597,7 +7691,7 @@ type BatchUnbindUserRoleRequest struct {
 func (x *BatchUnbindUserRoleRequest) Reset() {
 	*x = BatchUnbindUserRoleRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[116]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[118]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7610,7 +7704,7 @@ func (x *BatchUnbindUserRoleRequest) String() string {
 func (*BatchUnbindUserRoleRequest) ProtoMessage() {}
 
 func (x *BatchUnbindUserRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[116]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[118]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7623,7 +7717,7 @@ func (x *BatchUnbindUserRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchUnbindUserRoleRequest.ProtoReflect.Descriptor instead.
 func (*BatchUnbindUserRoleRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{116}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *BatchUnbindUserRoleRequest) GetAppId() uint64 {
@@ -7652,7 +7746,7 @@ type BatchRevokePermissionRequest struct {
 func (x *BatchRevokePermissionRequest) Reset() {
 	*x = BatchRevokePermissionRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[117]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[119]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7665,7 +7759,7 @@ func (x *BatchRevokePermissionRequest) String() string {
 func (*BatchRevokePermissionRequest) ProtoMessage() {}
 
 func (x *BatchRevokePermissionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[117]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[119]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7678,7 +7772,7 @@ func (x *BatchRevokePermissionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchRevokePermissionRequest.ProtoReflect.Descriptor instead.
 func (*BatchRevokePermissionRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{117}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *BatchRevokePermissionRequest) GetAppId() uint64 {
@@ -7707,7 +7801,7 @@ type BatchRemoveRoleInheritanceRequest struct {
 func (x *BatchRemoveRoleInheritanceRequest) Reset() {
 	*x = BatchRemoveRoleInheritanceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[118]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[120]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7720,7 +7814,7 @@ func (x *BatchRemoveRoleInheritanceRequest) String() string {
 func (*BatchRemoveRoleInheritanceRequest) ProtoMessage() {}
 
 func (x *BatchRemoveRoleInheritanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[118]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[120]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7733,7 +7827,7 @@ func (x *BatchRemoveRoleInheritanceRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use BatchRemoveRoleInheritanceRequest.ProtoReflect.Descriptor instead.
 func (*BatchRemoveRoleInheritanceRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{118}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *BatchRemoveRoleInheritanceRequest) GetAppId() uint64 {
@@ -7762,7 +7856,7 @@ type BatchDeleteRoleRequest struct {
 func (x *BatchDeleteRoleRequest) Reset() {
 	*x = BatchDeleteRoleRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[119]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[121]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7775,7 +7869,7 @@ func (x *BatchDeleteRoleRequest) String() string {
 func (*BatchDeleteRoleRequest) ProtoMessage() {}
 
 func (x *BatchDeleteRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[119]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[121]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7788,7 +7882,7 @@ func (x *BatchDeleteRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchDeleteRoleRequest.ProtoReflect.Descriptor instead.
 func (*BatchDeleteRoleRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{119}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *BatchDeleteRoleRequest) GetAppId() uint64 {
@@ -7817,7 +7911,7 @@ type BatchDeleteDataPolicyRequest struct {
 func (x *BatchDeleteDataPolicyRequest) Reset() {
 	*x = BatchDeleteDataPolicyRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[120]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[122]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7830,7 +7924,7 @@ func (x *BatchDeleteDataPolicyRequest) String() string {
 func (*BatchDeleteDataPolicyRequest) ProtoMessage() {}
 
 func (x *BatchDeleteDataPolicyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[120]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[122]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7843,7 +7937,7 @@ func (x *BatchDeleteDataPolicyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchDeleteDataPolicyRequest.ProtoReflect.Descriptor instead.
 func (*BatchDeleteDataPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{120}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *BatchDeleteDataPolicyRequest) GetAppId() uint64 {
@@ -7874,7 +7968,7 @@ type BatchWriteResponse struct {
 func (x *BatchWriteResponse) Reset() {
 	*x = BatchWriteResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_sydom_admin_v1_admin_proto_msgTypes[121]
+		mi := &file_sydom_admin_v1_admin_proto_msgTypes[123]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7887,7 +7981,7 @@ func (x *BatchWriteResponse) String() string {
 func (*BatchWriteResponse) ProtoMessage() {}
 
 func (x *BatchWriteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sydom_admin_v1_admin_proto_msgTypes[121]
+	mi := &file_sydom_admin_v1_admin_proto_msgTypes[123]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7900,7 +7994,7 @@ func (x *BatchWriteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchWriteResponse.ProtoReflect.Descriptor instead.
 func (*BatchWriteResponse) Descriptor() ([]byte, []int) {
-	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{121}
+	return file_sydom_admin_v1_admin_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *BatchWriteResponse) GetVersion() uint64 {
@@ -8077,7 +8171,16 @@ var file_sydom_admin_v1_admin_proto_rawDesc = []byte{
 	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72,
 	0x79, 0x52, 0x0c, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
 	0x14, 0x0a, 0x05, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05,
-	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x22, 0x35, 0x0a, 0x15, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4f,
+	0x74, 0x6f, 0x74, 0x61, 0x6c, 0x22, 0x2e, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x41, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x15,
+	0x0a, 0x06, 0x61, 0x70, 0x70, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05,
+	0x61, 0x70, 0x70, 0x49, 0x64, 0x22, 0x5e, 0x0a, 0x16, 0x47, 0x65, 0x74, 0x41, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x44, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
+	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x53, 0x75, 0x6d, 0x6d, 0x61, 0x72, 0x79, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x35, 0x0a, 0x15, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4f,
 	0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c,
 	0x0a, 0x09, 0x70, 0x72, 0x69, 0x6e, 0x63, 0x69, 0x70, 0x61, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x09, 0x70, 0x72, 0x69, 0x6e, 0x63, 0x69, 0x70, 0x61, 0x6c, 0x22, 0x51, 0x0a, 0x16,
@@ -8878,7 +8981,7 @@ var file_sydom_admin_v1_admin_proto_rawDesc = []byte{
 	0x41, 0x4e, 0x47, 0x45, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44,
 	0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x42, 0x49, 0x4e, 0x44, 0x5f, 0x55, 0x53, 0x45, 0x52, 0x10,
 	0x01, 0x12, 0x12, 0x0a, 0x0e, 0x41, 0x44, 0x44, 0x5f, 0x43, 0x41, 0x50, 0x41, 0x42, 0x49, 0x4c,
-	0x49, 0x54, 0x59, 0x10, 0x02, 0x32, 0x97, 0x2b, 0x0a, 0x0c, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x53,
+	0x49, 0x54, 0x59, 0x10, 0x02, 0x32, 0xf8, 0x2b, 0x0a, 0x0c, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x53,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x53, 0x0a, 0x0a, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
 	0x52, 0x6f, 0x6c, 0x65, 0x12, 0x21, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
 	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65,
@@ -8961,273 +9064,279 @@ var file_sydom_admin_v1_admin_proto_rawDesc = []byte{
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
 	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69,
 	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x5f, 0x0a, 0x0e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f,
-	0x72, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f,
-	0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
-	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x5c, 0x0a, 0x11, 0x53, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x53,
-	0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x28, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
-	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74,
-	0x6f, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
-	0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62,
-	0x0a, 0x0f, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52, 0x6f, 0x6c,
-	0x65, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52, 0x6f,
-	0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f,
+	0x5f, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
+	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x5f, 0x0a, 0x0e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74,
+	0x6f, 0x72, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74,
+	0x6f, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f,
 	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74,
-	0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x56, 0x0a, 0x0e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x41, 0x64, 0x6d, 0x69, 0x6e,
-	0x52, 0x6f, 0x6c, 0x65, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
-	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x41, 0x64, 0x6d, 0x69, 0x6e,
-	0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79,
-	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69,
-	0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5a, 0x0a, 0x10, 0x42, 0x69,
-	0x6e, 0x64, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x27,
+	0x65, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x5c, 0x0a, 0x11, 0x53, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x28, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
+	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61,
+	0x74, 0x6f, 0x72, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x62, 0x0a, 0x0f, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52, 0x6f,
+	0x6c, 0x65, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52,
+	0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64,
+	0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x56, 0x0a, 0x0e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x41, 0x64, 0x6d, 0x69,
+	0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
+	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x41, 0x64, 0x6d, 0x69,
+	0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73,
+	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72,
+	0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5a, 0x0a, 0x10, 0x42,
+	0x69, 0x6e, 0x64, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x12,
+	0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x42, 0x69, 0x6e, 0x64, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5a, 0x0a, 0x10, 0x52, 0x65, 0x76, 0x6f, 0x6b,
+	0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x12, 0x27, 0x2e, 0x73, 0x79,
+	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x76,
+	0x6f, 0x6b, 0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
+	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x5e, 0x0a, 0x12, 0x55, 0x6e, 0x62, 0x69, 0x6e, 0x64, 0x4f, 0x70, 0x65,
+	0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f,
+	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x6e, 0x62, 0x69, 0x6e,
+	0x64, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
+	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x7a, 0x0a, 0x17, 0x52, 0x6f, 0x74, 0x61, 0x74, 0x65, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x2e,
 	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
-	0x42, 0x69, 0x6e, 0x64, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
-	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5a, 0x0a, 0x10, 0x52, 0x65, 0x76, 0x6f, 0x6b, 0x65,
-	0x41, 0x64, 0x6d, 0x69, 0x6e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x12, 0x27, 0x2e, 0x73, 0x79, 0x64,
-	0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x76, 0x6f,
-	0x6b, 0x65, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69,
-	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x5e, 0x0a, 0x12, 0x55, 0x6e, 0x62, 0x69, 0x6e, 0x64, 0x4f, 0x70, 0x65, 0x72,
-	0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
-	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x55, 0x6e, 0x62, 0x69, 0x6e, 0x64,
-	0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69,
-	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x7a, 0x0a, 0x17, 0x52, 0x6f, 0x74, 0x61, 0x74, 0x65, 0x41, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x2e, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52,
-	0x6f, 0x74, 0x61, 0x74, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52,
-	0x6f, 0x74, 0x61, 0x74, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6e,
-	0x0a, 0x13, 0x52, 0x65, 0x73, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x53,
-	0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
-	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72,
-	0x61, 0x74, 0x6f, 0x72, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x2b, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72,
-	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6b,
-	0x0a, 0x12, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x73, 0x69, 0x6e, 0x65, 0x73, 0x73,
-	0x52, 0x6f, 0x6c, 0x65, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
-	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x73, 0x69,
-	0x6e, 0x65, 0x73, 0x73, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
-	0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x73, 0x69, 0x6e, 0x65, 0x73, 0x73, 0x52,
-	0x6f, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x50, 0x0a, 0x09, 0x4c,
-	0x69, 0x73, 0x74, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x12, 0x20, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
-	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x6f,
-	0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x73, 0x79, 0x64,
-	0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x52, 0x6f, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a,
-	0x0f, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73,
-	0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
-	0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
-	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x65,
-	0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x53, 0x0a, 0x0a, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x12,
-	0x21, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
-	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
-	0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x71, 0x0a, 0x14, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x6f,
-	0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x12, 0x2b,
+	0x52, 0x6f, 0x74, 0x61, 0x74, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2f,
 	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
-	0x4c, 0x69, 0x73, 0x74, 0x52, 0x6f, 0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61,
-	0x6e, 0x63, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x73, 0x79,
+	0x52, 0x6f, 0x74, 0x61, 0x74, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x6e, 0x0a, 0x13, 0x52, 0x65, 0x73, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72,
+	0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
+	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x4f, 0x70, 0x65,
+	0x72, 0x61, 0x74, 0x6f, 0x72, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x73, 0x65, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f,
+	0x72, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x6b, 0x0a, 0x12, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x73, 0x69, 0x6e, 0x65, 0x73,
+	0x73, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
+	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x73,
+	0x69, 0x6e, 0x65, 0x73, 0x73, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x42, 0x75, 0x73, 0x69, 0x6e, 0x65, 0x73, 0x73,
+	0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x50, 0x0a, 0x09,
+	0x4c, 0x69, 0x73, 0x74, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x12, 0x20, 0x2e, 0x73, 0x79, 0x64, 0x6f,
+	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x52,
+	0x6f, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x73, 0x79,
 	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73,
-	0x74, 0x52, 0x6f, 0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63, 0x65,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x65, 0x0a, 0x10, 0x4c, 0x69, 0x73,
-	0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x27, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
-	0x69, 0x73, 0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
-	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x55, 0x73, 0x65, 0x72,
-	0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x65, 0x0a, 0x10, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x69, 0x65, 0x73, 0x12, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
-	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f,
-	0x6c, 0x69, 0x63, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
-	0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x69, 0x65, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5c, 0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74, 0x4f,
-	0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
-	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x70,
-	0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25,
-	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
-	0x4c, 0x69, 0x73, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f, 0x0a, 0x0e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x64, 0x6d,
-	0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
-	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x64, 0x6d,
-	0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26,
-	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
-	0x4c, 0x69, 0x73, 0x74, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x7a, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x45, 0x66, 0x66,
-	0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x73, 0x12, 0x2e, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x45, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x50,
-	0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x2f, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x45, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x50,
+	0x74, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62,
+	0x0a, 0x0f, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x73, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
+	0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f,
+	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x50,
 	0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x62, 0x0a, 0x0f, 0x45, 0x78, 0x70, 0x6c, 0x61, 0x69, 0x6e, 0x44, 0x65, 0x63,
-	0x69, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
-	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x70, 0x6c, 0x61, 0x69, 0x6e, 0x44, 0x65,
-	0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x45,
-	0x78, 0x70, 0x6c, 0x61, 0x69, 0x6e, 0x44, 0x65, 0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x59, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x6c,
-	0x65, 0x47, 0x72, 0x61, 0x70, 0x68, 0x12, 0x23, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
-	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x6c, 0x65, 0x47,
-	0x72, 0x61, 0x70, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x73, 0x79,
-	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74,
-	0x52, 0x6f, 0x6c, 0x65, 0x47, 0x72, 0x61, 0x70, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x6b, 0x0a, 0x12, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x6c,
-	0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
-	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61, 0x74,
-	0x65, 0x52, 0x6f, 0x6c, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
-	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65,
-	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f,
-	0x0a, 0x0e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74,
-	0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
-	0x31, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
-	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
-	0x72, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x5c, 0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x73,
-	0x12, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
-	0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x73, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
-	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x79, 0x54, 0x65,
-	0x6e, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x59, 0x0a,
-	0x0c, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x12, 0x23, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x49,
-	0x6e, 0x76, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
-	0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x56, 0x0a, 0x0b, 0x4c, 0x69, 0x73, 0x74,
-	0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
-	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x65, 0x6d,
-	0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x73, 0x79,
-	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73,
-	0x74, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x5c, 0x0a, 0x0d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x75, 0x64, 0x69, 0x74, 0x4c, 0x6f,
-	0x67, 0x12, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x75, 0x64, 0x69, 0x74, 0x4c, 0x6f, 0x67,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
-	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x75,
-	0x64, 0x69, 0x74, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6b,
-	0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x41, 0x75, 0x64, 0x69,
-	0x74, 0x4c, 0x6f, 0x67, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d,
-	0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x64, 0x6d, 0x69, 0x6e,
-	0x41, 0x75, 0x64, 0x69, 0x74, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x41, 0x75, 0x64, 0x69, 0x74,
-	0x4c, 0x6f, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5c, 0x0a, 0x0d, 0x4c,
-	0x69, 0x73, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x12, 0x24, 0x2e, 0x73,
+	0x73, 0x65, 0x12, 0x53, 0x0a, 0x0a, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73,
+	0x12, 0x21, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69,
+	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x71, 0x0a, 0x14, 0x4c, 0x69, 0x73, 0x74, 0x52,
+	0x6f, 0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x12,
+	0x2b, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x6f, 0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74,
+	0x61, 0x6e, 0x63, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x73,
 	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69,
-	0x73, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
-	0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5c, 0x0a, 0x0d, 0x41, 0x70, 0x70,
-	0x6c, 0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x24, 0x2e, 0x73, 0x79, 0x64,
-	0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x70, 0x70, 0x6c,
-	0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
-	0x31, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x60, 0x0a, 0x11, 0x53, 0x61, 0x76, 0x65, 0x41,
-	0x70, 0x70, 0x41, 0x73, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x28, 0x2e, 0x73,
-	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x61,
-	0x76, 0x65, 0x41, 0x70, 0x70, 0x41, 0x73, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
-	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65,
-	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x66, 0x12, 0x6e, 0x0a, 0x13, 0x4c, 0x69, 0x73,
-	0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73,
-	0x12, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
-	0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70,
-	0x6c, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x73,
-	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69,
-	0x73, 0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x11, 0x47, 0x65, 0x74,
-	0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x28,
+	0x73, 0x74, 0x52, 0x6f, 0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x65, 0x0a, 0x10, 0x4c, 0x69,
+	0x73, 0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x27,
 	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
-	0x47, 0x65, 0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74,
-	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
-	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74,
-	0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x68, 0x0a, 0x13, 0x41, 0x70, 0x70, 0x6c,
-	0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12,
-	0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
-	0x2e, 0x41, 0x70, 0x70, 0x6c, 0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70,
-	0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79,
+	0x4c, 0x69, 0x73, 0x74, 0x55, 0x73, 0x65, 0x72, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
+	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x55, 0x73, 0x65,
+	0x72, 0x42, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x65, 0x0a, 0x10, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x69, 0x65, 0x73, 0x12, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
+	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x50,
+	0x6f, 0x6c, 0x69, 0x63, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28,
+	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
+	0x4c, 0x69, 0x73, 0x74, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x69, 0x65, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5c, 0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74,
+	0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x12, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f,
+	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4f,
+	0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x70, 0x65, 0x72, 0x61, 0x74, 0x6f, 0x72, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f, 0x0a, 0x0e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x64,
+	0x6d, 0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x64,
+	0x6d, 0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x52, 0x6f, 0x6c, 0x65, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x7a, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x45, 0x66,
+	0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x73, 0x12, 0x2e, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x45, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65,
+	0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x45, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65,
+	0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a, 0x0f, 0x45, 0x78, 0x70, 0x6c, 0x61, 0x69, 0x6e, 0x44, 0x65,
+	0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
+	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x70, 0x6c, 0x61, 0x69, 0x6e, 0x44,
+	0x65, 0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27,
+	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
+	0x45, 0x78, 0x70, 0x6c, 0x61, 0x69, 0x6e, 0x44, 0x65, 0x63, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x59, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x52, 0x6f,
+	0x6c, 0x65, 0x47, 0x72, 0x61, 0x70, 0x68, 0x12, 0x23, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
+	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x6c, 0x65,
+	0x47, 0x72, 0x61, 0x70, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x73,
+	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65,
+	0x74, 0x52, 0x6f, 0x6c, 0x65, 0x47, 0x72, 0x61, 0x70, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x6b, 0x0a, 0x12, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x6f,
+	0x6c, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61,
+	0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69,
+	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x6c,
+	0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x5f, 0x0a, 0x0e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x54, 0x65, 0x6e, 0x61, 0x6e,
+	0x74, 0x12, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
+	0x76, 0x31, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x54, 0x65, 0x6e, 0x61, 0x6e,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
+	0x65, 0x72, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x5c, 0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74,
+	0x73, 0x12, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
+	0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
+	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x79, 0x54,
+	0x65, 0x6e, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x59,
+	0x0a, 0x0c, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x12, 0x23,
+	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
+	0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69,
+	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x76, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65,
+	0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x56, 0x0a, 0x0b, 0x4c, 0x69, 0x73,
+	0x74, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4d, 0x65,
+	0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x73,
+	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69,
+	0x73, 0x74, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x5c, 0x0a, 0x0d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x75, 0x64, 0x69, 0x74, 0x4c,
+	0x6f, 0x67, 0x12, 0x24, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x75, 0x64, 0x69, 0x74, 0x4c, 0x6f,
+	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41,
+	0x75, 0x64, 0x69, 0x74, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x6b, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x41, 0x75, 0x64,
+	0x69, 0x74, 0x4c, 0x6f, 0x67, 0x12, 0x29, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
+	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x64, 0x6d, 0x69,
+	0x6e, 0x41, 0x75, 0x64, 0x69, 0x74, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x64, 0x6d, 0x69, 0x6e, 0x41, 0x75, 0x64, 0x69,
+	0x74, 0x4c, 0x6f, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5c, 0x0a, 0x0d,
+	0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x12, 0x24, 0x2e,
+	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69,
+	0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5c, 0x0a, 0x0d, 0x41, 0x70,
+	0x70, 0x6c, 0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x24, 0x2e, 0x73, 0x79,
 	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x70, 0x70,
-	0x6c, 0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x62, 0x0a, 0x14, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x54, 0x65, 0x6e, 0x61,
-	0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x2b, 0x2e, 0x73, 0x79, 0x64,
-	0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c, 0x65,
-	0x74, 0x65, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
-	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a, 0x0f, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74,
-	0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f,
-	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x70, 0x6f, 0x72,
-	0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a, 0x0f, 0x49, 0x6d,
-	0x70, 0x6f, 0x72, 0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x26, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x49,
-	0x6d, 0x70, 0x6f, 0x72, 0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65,
-	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
-	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x41, 0x70, 0x70,
-	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x65,
-	0x0a, 0x13, 0x42, 0x61, 0x74, 0x63, 0x68, 0x55, 0x6e, 0x62, 0x69, 0x6e, 0x64, 0x55, 0x73, 0x65,
-	0x72, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64,
-	0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x55, 0x6e, 0x62, 0x69,
-	0x6e, 0x64, 0x55, 0x73, 0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x6c, 0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x25, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
+	0x76, 0x31, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x60, 0x0a, 0x11, 0x53, 0x61, 0x76, 0x65,
+	0x41, 0x70, 0x70, 0x41, 0x73, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x28, 0x2e,
+	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x53,
+	0x61, 0x76, 0x65, 0x41, 0x70, 0x70, 0x41, 0x73, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x21, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e,
+	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54,
+	0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x66, 0x12, 0x6e, 0x0a, 0x13, 0x4c, 0x69,
+	0x73, 0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
+	0x73, 0x12, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
+	0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d,
+	0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e,
+	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74,
+	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x11, 0x47, 0x65,
+	0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12,
+	0x28, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x47, 0x65, 0x74, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61,
+	0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x73, 0x79, 0x64, 0x6f,
+	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x6e, 0x61, 0x6e,
+	0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x68, 0x0a, 0x13, 0x41, 0x70, 0x70,
+	0x6c, 0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
+	0x12, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
+	0x31, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x79, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d,
+	0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x73,
+	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x70,
+	0x70, 0x6c, 0x79, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a, 0x14, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x54, 0x65, 0x6e,
+	0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x12, 0x2b, 0x2e, 0x73, 0x79,
+	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6c,
+	0x65, 0x74, 0x65, 0x54, 0x65, 0x6e, 0x61, 0x6e, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
+	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a, 0x0f, 0x45, 0x78, 0x70, 0x6f, 0x72,
+	0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64,
+	0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x70, 0x6f,
+	0x72, 0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a, 0x0f, 0x49,
+	0x6d, 0x70, 0x6f, 0x72, 0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x26,
+	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
+	0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x41, 0x70, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
+	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x41, 0x70,
+	0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x65, 0x0a, 0x13, 0x42, 0x61, 0x74, 0x63, 0x68, 0x55, 0x6e, 0x62, 0x69, 0x6e, 0x64, 0x55, 0x73,
+	0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x2a, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61,
+	0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x55, 0x6e, 0x62,
+	0x69, 0x6e, 0x64, 0x55, 0x73, 0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x69, 0x0a, 0x15, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52,
+	0x65, 0x76, 0x6f, 0x6b, 0x65, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x12,
+	0x2c, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x76, 0x6f, 0x6b, 0x65, 0x50, 0x65, 0x72, 0x6d,
+	0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e,
+	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42,
+	0x61, 0x74, 0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x73, 0x0a, 0x1a, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
+	0x52, 0x6f, 0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x12,
+	0x31, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31,
+	0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x6c, 0x65,
+	0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e,
+	0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x0f, 0x42, 0x61, 0x74, 0x63, 0x68, 0x44,
+	0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f,
+	0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68,
+	0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
 	0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
 	0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x69, 0x0a, 0x15, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65,
-	0x76, 0x6f, 0x6b, 0x65, 0x50, 0x65, 0x72, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x2c,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x69, 0x0a, 0x15, 0x42, 0x61, 0x74, 0x63, 0x68, 0x44, 0x65,
+	0x6c, 0x65, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x2c,
 	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
-	0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x76, 0x6f, 0x6b, 0x65, 0x50, 0x65, 0x72, 0x6d, 0x69,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73,
+	0x42, 0x61, 0x74, 0x63, 0x68, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x50,
+	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73,
 	0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61,
 	0x74, 0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x73, 0x0a, 0x1a, 0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52,
-	0x6f, 0x6c, 0x65, 0x49, 0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x31,
-	0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e,
-	0x42, 0x61, 0x74, 0x63, 0x68, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x49,
-	0x6e, 0x68, 0x65, 0x72, 0x69, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e,
-	0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x0f, 0x42, 0x61, 0x74, 0x63, 0x68, 0x44, 0x65,
-	0x6c, 0x65, 0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x26, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d,
-	0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x44,
-	0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x22, 0x2e, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76,
-	0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x69, 0x0a, 0x15, 0x42, 0x61, 0x74, 0x63, 0x68, 0x44, 0x65, 0x6c,
-	0x65, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x2c, 0x2e,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42,
-	0x61, 0x74, 0x63, 0x68, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x50, 0x6f,
-	0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79,
-	0x64, 0x6f, 0x6d, 0x2e, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74,
-	0x63, 0x68, 0x57, 0x72, 0x69, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x35, 0x5a, 0x33, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x69,
-	0x63, 0x6b, 0x5a, 0x46, 0x5a, 0x2f, 0x53, 0x79, 0x64, 0x6f, 0x6d, 0x2f, 0x67, 0x65, 0x6e, 0x2f,
-	0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2f, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2f, 0x76, 0x31, 0x3b, 0x61,
-	0x64, 0x6d, 0x69, 0x6e, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x42, 0x35, 0x5a, 0x33, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e,
+	0x69, 0x63, 0x6b, 0x5a, 0x46, 0x5a, 0x2f, 0x53, 0x79, 0x64, 0x6f, 0x6d, 0x2f, 0x67, 0x65, 0x6e,
+	0x2f, 0x73, 0x79, 0x64, 0x6f, 0x6d, 0x2f, 0x61, 0x64, 0x6d, 0x69, 0x6e, 0x2f, 0x76, 0x31, 0x3b,
+	0x61, 0x64, 0x6d, 0x69, 0x6e, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -9243,7 +9352,7 @@ func file_sydom_admin_v1_admin_proto_rawDescGZIP() []byte {
 }
 
 var file_sydom_admin_v1_admin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_sydom_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 122)
+var file_sydom_admin_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 124)
 var file_sydom_admin_v1_admin_proto_goTypes = []interface{}{
 	(RoleChangeType)(0),                       // 0: sydom.admin.v1.RoleChangeType
 	(*WriteResponse)(nil),                     // 1: sydom.admin.v1.WriteResponse
@@ -9265,277 +9374,282 @@ var file_sydom_admin_v1_admin_proto_goTypes = []interface{}{
 	(*ListApplicationsRequest)(nil),           // 17: sydom.admin.v1.ListApplicationsRequest
 	(*ApplicationSummary)(nil),                // 18: sydom.admin.v1.ApplicationSummary
 	(*ListApplicationsResponse)(nil),          // 19: sydom.admin.v1.ListApplicationsResponse
-	(*CreateOperatorRequest)(nil),             // 20: sydom.admin.v1.CreateOperatorRequest
-	(*CreateOperatorResponse)(nil),            // 21: sydom.admin.v1.CreateOperatorResponse
-	(*SetOperatorStatusRequest)(nil),          // 22: sydom.admin.v1.SetOperatorStatusRequest
-	(*CreateAdminRoleRequest)(nil),            // 23: sydom.admin.v1.CreateAdminRoleRequest
-	(*CreateAdminRoleResponse)(nil),           // 24: sydom.admin.v1.CreateAdminRoleResponse
-	(*GrantAdminRoleRequest)(nil),             // 25: sydom.admin.v1.GrantAdminRoleRequest
-	(*BindOperatorRoleRequest)(nil),           // 26: sydom.admin.v1.BindOperatorRoleRequest
-	(*RevokeAdminGrantRequest)(nil),           // 27: sydom.admin.v1.RevokeAdminGrantRequest
-	(*UnbindOperatorRoleRequest)(nil),         // 28: sydom.admin.v1.UnbindOperatorRoleRequest
-	(*RotateApplicationSecretRequest)(nil),    // 29: sydom.admin.v1.RotateApplicationSecretRequest
-	(*RotateApplicationSecretResponse)(nil),   // 30: sydom.admin.v1.RotateApplicationSecretResponse
-	(*ResetOperatorSecretRequest)(nil),        // 31: sydom.admin.v1.ResetOperatorSecretRequest
-	(*ResetOperatorSecretResponse)(nil),       // 32: sydom.admin.v1.ResetOperatorSecretResponse
-	(*RoleSummary)(nil),                       // 33: sydom.admin.v1.RoleSummary
-	(*ListRolesRequest)(nil),                  // 34: sydom.admin.v1.ListRolesRequest
-	(*ListRolesResponse)(nil),                 // 35: sydom.admin.v1.ListRolesResponse
-	(*PermissionSummary)(nil),                 // 36: sydom.admin.v1.PermissionSummary
-	(*ListPermissionsRequest)(nil),            // 37: sydom.admin.v1.ListPermissionsRequest
-	(*ListPermissionsResponse)(nil),           // 38: sydom.admin.v1.ListPermissionsResponse
-	(*GrantSummary)(nil),                      // 39: sydom.admin.v1.GrantSummary
-	(*ListGrantsRequest)(nil),                 // 40: sydom.admin.v1.ListGrantsRequest
-	(*ListGrantsResponse)(nil),                // 41: sydom.admin.v1.ListGrantsResponse
-	(*RoleInheritanceSummary)(nil),            // 42: sydom.admin.v1.RoleInheritanceSummary
-	(*ListRoleInheritancesRequest)(nil),       // 43: sydom.admin.v1.ListRoleInheritancesRequest
-	(*ListRoleInheritancesResponse)(nil),      // 44: sydom.admin.v1.ListRoleInheritancesResponse
-	(*UserBindingSummary)(nil),                // 45: sydom.admin.v1.UserBindingSummary
-	(*ListUserBindingsRequest)(nil),           // 46: sydom.admin.v1.ListUserBindingsRequest
-	(*ListUserBindingsResponse)(nil),          // 47: sydom.admin.v1.ListUserBindingsResponse
-	(*DataPolicySummary)(nil),                 // 48: sydom.admin.v1.DataPolicySummary
-	(*ListDataPoliciesRequest)(nil),           // 49: sydom.admin.v1.ListDataPoliciesRequest
-	(*ListDataPoliciesResponse)(nil),          // 50: sydom.admin.v1.ListDataPoliciesResponse
-	(*OperatorSummary)(nil),                   // 51: sydom.admin.v1.OperatorSummary
-	(*ListOperatorsRequest)(nil),              // 52: sydom.admin.v1.ListOperatorsRequest
-	(*ListOperatorsResponse)(nil),             // 53: sydom.admin.v1.ListOperatorsResponse
-	(*AdminRoleSummary)(nil),                  // 54: sydom.admin.v1.AdminRoleSummary
-	(*ListAdminRolesRequest)(nil),             // 55: sydom.admin.v1.ListAdminRolesRequest
-	(*ListAdminRolesResponse)(nil),            // 56: sydom.admin.v1.ListAdminRolesResponse
-	(*RegisterTenantRequest)(nil),             // 57: sydom.admin.v1.RegisterTenantRequest
-	(*RegisterTenantResponse)(nil),            // 58: sydom.admin.v1.RegisterTenantResponse
-	(*ListMyTenantsRequest)(nil),              // 59: sydom.admin.v1.ListMyTenantsRequest
-	(*TenantMembershipSummary)(nil),           // 60: sydom.admin.v1.TenantMembershipSummary
-	(*ListMyTenantsResponse)(nil),             // 61: sydom.admin.v1.ListMyTenantsResponse
-	(*InviteMemberRequest)(nil),               // 62: sydom.admin.v1.InviteMemberRequest
-	(*InviteMemberResponse)(nil),              // 63: sydom.admin.v1.InviteMemberResponse
-	(*ListMembersRequest)(nil),                // 64: sydom.admin.v1.ListMembersRequest
-	(*MemberSummary)(nil),                     // 65: sydom.admin.v1.MemberSummary
-	(*ListMembersResponse)(nil),               // 66: sydom.admin.v1.ListMembersResponse
-	(*GetEffectivePermissionsRequest)(nil),    // 67: sydom.admin.v1.GetEffectivePermissionsRequest
-	(*GetEffectivePermissionsResponse)(nil),   // 68: sydom.admin.v1.GetEffectivePermissionsResponse
-	(*EffectivePermission)(nil),               // 69: sydom.admin.v1.EffectivePermission
-	(*DataPolicyPreview)(nil),                 // 70: sydom.admin.v1.DataPolicyPreview
-	(*ExplainDecisionRequest)(nil),            // 71: sydom.admin.v1.ExplainDecisionRequest
-	(*DecidingRule)(nil),                      // 72: sydom.admin.v1.DecidingRule
-	(*DecisionDataScope)(nil),                 // 73: sydom.admin.v1.DecisionDataScope
-	(*ExplainDecisionResponse)(nil),           // 74: sydom.admin.v1.ExplainDecisionResponse
-	(*CreateBusinessRoleRequest)(nil),         // 75: sydom.admin.v1.CreateBusinessRoleRequest
-	(*CreateBusinessRoleResponse)(nil),        // 76: sydom.admin.v1.CreateBusinessRoleResponse
-	(*QueryAuditLogRequest)(nil),              // 77: sydom.admin.v1.QueryAuditLogRequest
-	(*AuditEntry)(nil),                        // 78: sydom.admin.v1.AuditEntry
-	(*QueryAuditLogResponse)(nil),             // 79: sydom.admin.v1.QueryAuditLogResponse
-	(*QueryAdminAuditLogRequest)(nil),         // 80: sydom.admin.v1.QueryAdminAuditLogRequest
-	(*AdminAuditEntry)(nil),                   // 81: sydom.admin.v1.AdminAuditEntry
-	(*QueryAdminAuditLogResponse)(nil),        // 82: sydom.admin.v1.QueryAdminAuditLogResponse
-	(*ListPage)(nil),                          // 83: sydom.admin.v1.ListPage
-	(*TemplatePermission)(nil),                // 84: sydom.admin.v1.TemplatePermission
-	(*TemplateRole)(nil),                      // 85: sydom.admin.v1.TemplateRole
-	(*TemplateDataScope)(nil),                 // 86: sydom.admin.v1.TemplateDataScope
-	(*Template)(nil),                          // 87: sydom.admin.v1.Template
-	(*ListTemplatesRequest)(nil),              // 88: sydom.admin.v1.ListTemplatesRequest
-	(*ListTemplatesResponse)(nil),             // 89: sydom.admin.v1.ListTemplatesResponse
-	(*ApplyTemplateRequest)(nil),              // 90: sydom.admin.v1.ApplyTemplateRequest
-	(*ApplyTemplateResponse)(nil),             // 91: sydom.admin.v1.ApplyTemplateResponse
-	(*SaveAppAsTemplateRequest)(nil),          // 92: sydom.admin.v1.SaveAppAsTemplateRequest
-	(*TenantTemplateRef)(nil),                 // 93: sydom.admin.v1.TenantTemplateRef
-	(*ListTenantTemplatesRequest)(nil),        // 94: sydom.admin.v1.ListTenantTemplatesRequest
-	(*TenantTemplateSummary)(nil),             // 95: sydom.admin.v1.TenantTemplateSummary
-	(*ListTenantTemplatesResponse)(nil),       // 96: sydom.admin.v1.ListTenantTemplatesResponse
-	(*GetTenantTemplateRequest)(nil),          // 97: sydom.admin.v1.GetTenantTemplateRequest
-	(*TenantTemplate)(nil),                    // 98: sydom.admin.v1.TenantTemplate
-	(*ApplyTenantTemplateRequest)(nil),        // 99: sydom.admin.v1.ApplyTenantTemplateRequest
-	(*DeleteTenantTemplateRequest)(nil),       // 100: sydom.admin.v1.DeleteTenantTemplateRequest
-	(*GetRoleGraphRequest)(nil),               // 101: sydom.admin.v1.GetRoleGraphRequest
-	(*RoleGraphCapability)(nil),               // 102: sydom.admin.v1.RoleGraphCapability
-	(*RoleGraphParent)(nil),                   // 103: sydom.admin.v1.RoleGraphParent
-	(*RoleGraphDataScope)(nil),                // 104: sydom.admin.v1.RoleGraphDataScope
-	(*GetRoleGraphResponse)(nil),              // 105: sydom.admin.v1.GetRoleGraphResponse
-	(*SimulateRoleChangeRequest)(nil),         // 106: sydom.admin.v1.SimulateRoleChangeRequest
-	(*SubjectDiff)(nil),                       // 107: sydom.admin.v1.SubjectDiff
-	(*SimulateRoleChangeResponse)(nil),        // 108: sydom.admin.v1.SimulateRoleChangeResponse
-	(*ExportAppPolicyRequest)(nil),            // 109: sydom.admin.v1.ExportAppPolicyRequest
-	(*ExportAppPolicyResponse)(nil),           // 110: sydom.admin.v1.ExportAppPolicyResponse
-	(*ImportAppPolicyRequest)(nil),            // 111: sydom.admin.v1.ImportAppPolicyRequest
-	(*PolicyDiffEntry)(nil),                   // 112: sydom.admin.v1.PolicyDiffEntry
-	(*ImportAppPolicyResponse)(nil),           // 113: sydom.admin.v1.ImportAppPolicyResponse
-	(*UserRoleRef)(nil),                       // 114: sydom.admin.v1.UserRoleRef
-	(*GrantRef)(nil),                          // 115: sydom.admin.v1.GrantRef
-	(*InheritanceRef)(nil),                    // 116: sydom.admin.v1.InheritanceRef
-	(*BatchUnbindUserRoleRequest)(nil),        // 117: sydom.admin.v1.BatchUnbindUserRoleRequest
-	(*BatchRevokePermissionRequest)(nil),      // 118: sydom.admin.v1.BatchRevokePermissionRequest
-	(*BatchRemoveRoleInheritanceRequest)(nil), // 119: sydom.admin.v1.BatchRemoveRoleInheritanceRequest
-	(*BatchDeleteRoleRequest)(nil),            // 120: sydom.admin.v1.BatchDeleteRoleRequest
-	(*BatchDeleteDataPolicyRequest)(nil),      // 121: sydom.admin.v1.BatchDeleteDataPolicyRequest
-	(*BatchWriteResponse)(nil),                // 122: sydom.admin.v1.BatchWriteResponse
+	(*GetApplicationRequest)(nil),             // 20: sydom.admin.v1.GetApplicationRequest
+	(*GetApplicationResponse)(nil),            // 21: sydom.admin.v1.GetApplicationResponse
+	(*CreateOperatorRequest)(nil),             // 22: sydom.admin.v1.CreateOperatorRequest
+	(*CreateOperatorResponse)(nil),            // 23: sydom.admin.v1.CreateOperatorResponse
+	(*SetOperatorStatusRequest)(nil),          // 24: sydom.admin.v1.SetOperatorStatusRequest
+	(*CreateAdminRoleRequest)(nil),            // 25: sydom.admin.v1.CreateAdminRoleRequest
+	(*CreateAdminRoleResponse)(nil),           // 26: sydom.admin.v1.CreateAdminRoleResponse
+	(*GrantAdminRoleRequest)(nil),             // 27: sydom.admin.v1.GrantAdminRoleRequest
+	(*BindOperatorRoleRequest)(nil),           // 28: sydom.admin.v1.BindOperatorRoleRequest
+	(*RevokeAdminGrantRequest)(nil),           // 29: sydom.admin.v1.RevokeAdminGrantRequest
+	(*UnbindOperatorRoleRequest)(nil),         // 30: sydom.admin.v1.UnbindOperatorRoleRequest
+	(*RotateApplicationSecretRequest)(nil),    // 31: sydom.admin.v1.RotateApplicationSecretRequest
+	(*RotateApplicationSecretResponse)(nil),   // 32: sydom.admin.v1.RotateApplicationSecretResponse
+	(*ResetOperatorSecretRequest)(nil),        // 33: sydom.admin.v1.ResetOperatorSecretRequest
+	(*ResetOperatorSecretResponse)(nil),       // 34: sydom.admin.v1.ResetOperatorSecretResponse
+	(*RoleSummary)(nil),                       // 35: sydom.admin.v1.RoleSummary
+	(*ListRolesRequest)(nil),                  // 36: sydom.admin.v1.ListRolesRequest
+	(*ListRolesResponse)(nil),                 // 37: sydom.admin.v1.ListRolesResponse
+	(*PermissionSummary)(nil),                 // 38: sydom.admin.v1.PermissionSummary
+	(*ListPermissionsRequest)(nil),            // 39: sydom.admin.v1.ListPermissionsRequest
+	(*ListPermissionsResponse)(nil),           // 40: sydom.admin.v1.ListPermissionsResponse
+	(*GrantSummary)(nil),                      // 41: sydom.admin.v1.GrantSummary
+	(*ListGrantsRequest)(nil),                 // 42: sydom.admin.v1.ListGrantsRequest
+	(*ListGrantsResponse)(nil),                // 43: sydom.admin.v1.ListGrantsResponse
+	(*RoleInheritanceSummary)(nil),            // 44: sydom.admin.v1.RoleInheritanceSummary
+	(*ListRoleInheritancesRequest)(nil),       // 45: sydom.admin.v1.ListRoleInheritancesRequest
+	(*ListRoleInheritancesResponse)(nil),      // 46: sydom.admin.v1.ListRoleInheritancesResponse
+	(*UserBindingSummary)(nil),                // 47: sydom.admin.v1.UserBindingSummary
+	(*ListUserBindingsRequest)(nil),           // 48: sydom.admin.v1.ListUserBindingsRequest
+	(*ListUserBindingsResponse)(nil),          // 49: sydom.admin.v1.ListUserBindingsResponse
+	(*DataPolicySummary)(nil),                 // 50: sydom.admin.v1.DataPolicySummary
+	(*ListDataPoliciesRequest)(nil),           // 51: sydom.admin.v1.ListDataPoliciesRequest
+	(*ListDataPoliciesResponse)(nil),          // 52: sydom.admin.v1.ListDataPoliciesResponse
+	(*OperatorSummary)(nil),                   // 53: sydom.admin.v1.OperatorSummary
+	(*ListOperatorsRequest)(nil),              // 54: sydom.admin.v1.ListOperatorsRequest
+	(*ListOperatorsResponse)(nil),             // 55: sydom.admin.v1.ListOperatorsResponse
+	(*AdminRoleSummary)(nil),                  // 56: sydom.admin.v1.AdminRoleSummary
+	(*ListAdminRolesRequest)(nil),             // 57: sydom.admin.v1.ListAdminRolesRequest
+	(*ListAdminRolesResponse)(nil),            // 58: sydom.admin.v1.ListAdminRolesResponse
+	(*RegisterTenantRequest)(nil),             // 59: sydom.admin.v1.RegisterTenantRequest
+	(*RegisterTenantResponse)(nil),            // 60: sydom.admin.v1.RegisterTenantResponse
+	(*ListMyTenantsRequest)(nil),              // 61: sydom.admin.v1.ListMyTenantsRequest
+	(*TenantMembershipSummary)(nil),           // 62: sydom.admin.v1.TenantMembershipSummary
+	(*ListMyTenantsResponse)(nil),             // 63: sydom.admin.v1.ListMyTenantsResponse
+	(*InviteMemberRequest)(nil),               // 64: sydom.admin.v1.InviteMemberRequest
+	(*InviteMemberResponse)(nil),              // 65: sydom.admin.v1.InviteMemberResponse
+	(*ListMembersRequest)(nil),                // 66: sydom.admin.v1.ListMembersRequest
+	(*MemberSummary)(nil),                     // 67: sydom.admin.v1.MemberSummary
+	(*ListMembersResponse)(nil),               // 68: sydom.admin.v1.ListMembersResponse
+	(*GetEffectivePermissionsRequest)(nil),    // 69: sydom.admin.v1.GetEffectivePermissionsRequest
+	(*GetEffectivePermissionsResponse)(nil),   // 70: sydom.admin.v1.GetEffectivePermissionsResponse
+	(*EffectivePermission)(nil),               // 71: sydom.admin.v1.EffectivePermission
+	(*DataPolicyPreview)(nil),                 // 72: sydom.admin.v1.DataPolicyPreview
+	(*ExplainDecisionRequest)(nil),            // 73: sydom.admin.v1.ExplainDecisionRequest
+	(*DecidingRule)(nil),                      // 74: sydom.admin.v1.DecidingRule
+	(*DecisionDataScope)(nil),                 // 75: sydom.admin.v1.DecisionDataScope
+	(*ExplainDecisionResponse)(nil),           // 76: sydom.admin.v1.ExplainDecisionResponse
+	(*CreateBusinessRoleRequest)(nil),         // 77: sydom.admin.v1.CreateBusinessRoleRequest
+	(*CreateBusinessRoleResponse)(nil),        // 78: sydom.admin.v1.CreateBusinessRoleResponse
+	(*QueryAuditLogRequest)(nil),              // 79: sydom.admin.v1.QueryAuditLogRequest
+	(*AuditEntry)(nil),                        // 80: sydom.admin.v1.AuditEntry
+	(*QueryAuditLogResponse)(nil),             // 81: sydom.admin.v1.QueryAuditLogResponse
+	(*QueryAdminAuditLogRequest)(nil),         // 82: sydom.admin.v1.QueryAdminAuditLogRequest
+	(*AdminAuditEntry)(nil),                   // 83: sydom.admin.v1.AdminAuditEntry
+	(*QueryAdminAuditLogResponse)(nil),        // 84: sydom.admin.v1.QueryAdminAuditLogResponse
+	(*ListPage)(nil),                          // 85: sydom.admin.v1.ListPage
+	(*TemplatePermission)(nil),                // 86: sydom.admin.v1.TemplatePermission
+	(*TemplateRole)(nil),                      // 87: sydom.admin.v1.TemplateRole
+	(*TemplateDataScope)(nil),                 // 88: sydom.admin.v1.TemplateDataScope
+	(*Template)(nil),                          // 89: sydom.admin.v1.Template
+	(*ListTemplatesRequest)(nil),              // 90: sydom.admin.v1.ListTemplatesRequest
+	(*ListTemplatesResponse)(nil),             // 91: sydom.admin.v1.ListTemplatesResponse
+	(*ApplyTemplateRequest)(nil),              // 92: sydom.admin.v1.ApplyTemplateRequest
+	(*ApplyTemplateResponse)(nil),             // 93: sydom.admin.v1.ApplyTemplateResponse
+	(*SaveAppAsTemplateRequest)(nil),          // 94: sydom.admin.v1.SaveAppAsTemplateRequest
+	(*TenantTemplateRef)(nil),                 // 95: sydom.admin.v1.TenantTemplateRef
+	(*ListTenantTemplatesRequest)(nil),        // 96: sydom.admin.v1.ListTenantTemplatesRequest
+	(*TenantTemplateSummary)(nil),             // 97: sydom.admin.v1.TenantTemplateSummary
+	(*ListTenantTemplatesResponse)(nil),       // 98: sydom.admin.v1.ListTenantTemplatesResponse
+	(*GetTenantTemplateRequest)(nil),          // 99: sydom.admin.v1.GetTenantTemplateRequest
+	(*TenantTemplate)(nil),                    // 100: sydom.admin.v1.TenantTemplate
+	(*ApplyTenantTemplateRequest)(nil),        // 101: sydom.admin.v1.ApplyTenantTemplateRequest
+	(*DeleteTenantTemplateRequest)(nil),       // 102: sydom.admin.v1.DeleteTenantTemplateRequest
+	(*GetRoleGraphRequest)(nil),               // 103: sydom.admin.v1.GetRoleGraphRequest
+	(*RoleGraphCapability)(nil),               // 104: sydom.admin.v1.RoleGraphCapability
+	(*RoleGraphParent)(nil),                   // 105: sydom.admin.v1.RoleGraphParent
+	(*RoleGraphDataScope)(nil),                // 106: sydom.admin.v1.RoleGraphDataScope
+	(*GetRoleGraphResponse)(nil),              // 107: sydom.admin.v1.GetRoleGraphResponse
+	(*SimulateRoleChangeRequest)(nil),         // 108: sydom.admin.v1.SimulateRoleChangeRequest
+	(*SubjectDiff)(nil),                       // 109: sydom.admin.v1.SubjectDiff
+	(*SimulateRoleChangeResponse)(nil),        // 110: sydom.admin.v1.SimulateRoleChangeResponse
+	(*ExportAppPolicyRequest)(nil),            // 111: sydom.admin.v1.ExportAppPolicyRequest
+	(*ExportAppPolicyResponse)(nil),           // 112: sydom.admin.v1.ExportAppPolicyResponse
+	(*ImportAppPolicyRequest)(nil),            // 113: sydom.admin.v1.ImportAppPolicyRequest
+	(*PolicyDiffEntry)(nil),                   // 114: sydom.admin.v1.PolicyDiffEntry
+	(*ImportAppPolicyResponse)(nil),           // 115: sydom.admin.v1.ImportAppPolicyResponse
+	(*UserRoleRef)(nil),                       // 116: sydom.admin.v1.UserRoleRef
+	(*GrantRef)(nil),                          // 117: sydom.admin.v1.GrantRef
+	(*InheritanceRef)(nil),                    // 118: sydom.admin.v1.InheritanceRef
+	(*BatchUnbindUserRoleRequest)(nil),        // 119: sydom.admin.v1.BatchUnbindUserRoleRequest
+	(*BatchRevokePermissionRequest)(nil),      // 120: sydom.admin.v1.BatchRevokePermissionRequest
+	(*BatchRemoveRoleInheritanceRequest)(nil), // 121: sydom.admin.v1.BatchRemoveRoleInheritanceRequest
+	(*BatchDeleteRoleRequest)(nil),            // 122: sydom.admin.v1.BatchDeleteRoleRequest
+	(*BatchDeleteDataPolicyRequest)(nil),      // 123: sydom.admin.v1.BatchDeleteDataPolicyRequest
+	(*BatchWriteResponse)(nil),                // 124: sydom.admin.v1.BatchWriteResponse
 }
 var file_sydom_admin_v1_admin_proto_depIdxs = []int32{
-	83,  // 0: sydom.admin.v1.ListApplicationsRequest.page:type_name -> sydom.admin.v1.ListPage
+	85,  // 0: sydom.admin.v1.ListApplicationsRequest.page:type_name -> sydom.admin.v1.ListPage
 	18,  // 1: sydom.admin.v1.ListApplicationsResponse.applications:type_name -> sydom.admin.v1.ApplicationSummary
-	83,  // 2: sydom.admin.v1.ListRolesRequest.page:type_name -> sydom.admin.v1.ListPage
-	33,  // 3: sydom.admin.v1.ListRolesResponse.roles:type_name -> sydom.admin.v1.RoleSummary
-	83,  // 4: sydom.admin.v1.ListPermissionsRequest.page:type_name -> sydom.admin.v1.ListPage
-	36,  // 5: sydom.admin.v1.ListPermissionsResponse.permissions:type_name -> sydom.admin.v1.PermissionSummary
-	83,  // 6: sydom.admin.v1.ListGrantsRequest.page:type_name -> sydom.admin.v1.ListPage
-	39,  // 7: sydom.admin.v1.ListGrantsResponse.grants:type_name -> sydom.admin.v1.GrantSummary
-	83,  // 8: sydom.admin.v1.ListRoleInheritancesRequest.page:type_name -> sydom.admin.v1.ListPage
-	42,  // 9: sydom.admin.v1.ListRoleInheritancesResponse.inheritances:type_name -> sydom.admin.v1.RoleInheritanceSummary
-	83,  // 10: sydom.admin.v1.ListUserBindingsRequest.page:type_name -> sydom.admin.v1.ListPage
-	45,  // 11: sydom.admin.v1.ListUserBindingsResponse.bindings:type_name -> sydom.admin.v1.UserBindingSummary
-	83,  // 12: sydom.admin.v1.ListDataPoliciesRequest.page:type_name -> sydom.admin.v1.ListPage
-	48,  // 13: sydom.admin.v1.ListDataPoliciesResponse.data_policies:type_name -> sydom.admin.v1.DataPolicySummary
-	83,  // 14: sydom.admin.v1.ListOperatorsRequest.page:type_name -> sydom.admin.v1.ListPage
-	51,  // 15: sydom.admin.v1.ListOperatorsResponse.operators:type_name -> sydom.admin.v1.OperatorSummary
-	83,  // 16: sydom.admin.v1.ListAdminRolesRequest.page:type_name -> sydom.admin.v1.ListPage
-	54,  // 17: sydom.admin.v1.ListAdminRolesResponse.roles:type_name -> sydom.admin.v1.AdminRoleSummary
-	83,  // 18: sydom.admin.v1.ListMyTenantsRequest.page:type_name -> sydom.admin.v1.ListPage
-	60,  // 19: sydom.admin.v1.ListMyTenantsResponse.memberships:type_name -> sydom.admin.v1.TenantMembershipSummary
-	83,  // 20: sydom.admin.v1.ListMembersRequest.page:type_name -> sydom.admin.v1.ListPage
-	65,  // 21: sydom.admin.v1.ListMembersResponse.members:type_name -> sydom.admin.v1.MemberSummary
-	69,  // 22: sydom.admin.v1.GetEffectivePermissionsResponse.permissions:type_name -> sydom.admin.v1.EffectivePermission
-	70,  // 23: sydom.admin.v1.GetEffectivePermissionsResponse.data_previews:type_name -> sydom.admin.v1.DataPolicyPreview
-	72,  // 24: sydom.admin.v1.ExplainDecisionResponse.deciding_rule:type_name -> sydom.admin.v1.DecidingRule
-	73,  // 25: sydom.admin.v1.ExplainDecisionResponse.data_scope:type_name -> sydom.admin.v1.DecisionDataScope
-	78,  // 26: sydom.admin.v1.QueryAuditLogResponse.entries:type_name -> sydom.admin.v1.AuditEntry
-	81,  // 27: sydom.admin.v1.QueryAdminAuditLogResponse.entries:type_name -> sydom.admin.v1.AdminAuditEntry
-	86,  // 28: sydom.admin.v1.TemplateRole.data_scopes:type_name -> sydom.admin.v1.TemplateDataScope
-	84,  // 29: sydom.admin.v1.Template.permissions:type_name -> sydom.admin.v1.TemplatePermission
-	85,  // 30: sydom.admin.v1.Template.roles:type_name -> sydom.admin.v1.TemplateRole
-	87,  // 31: sydom.admin.v1.ListTemplatesResponse.templates:type_name -> sydom.admin.v1.Template
-	83,  // 32: sydom.admin.v1.ListTenantTemplatesRequest.page:type_name -> sydom.admin.v1.ListPage
-	95,  // 33: sydom.admin.v1.ListTenantTemplatesResponse.templates:type_name -> sydom.admin.v1.TenantTemplateSummary
-	84,  // 34: sydom.admin.v1.TenantTemplate.permissions:type_name -> sydom.admin.v1.TemplatePermission
-	85,  // 35: sydom.admin.v1.TenantTemplate.roles:type_name -> sydom.admin.v1.TemplateRole
-	102, // 36: sydom.admin.v1.GetRoleGraphResponse.capabilities:type_name -> sydom.admin.v1.RoleGraphCapability
-	103, // 37: sydom.admin.v1.GetRoleGraphResponse.parents:type_name -> sydom.admin.v1.RoleGraphParent
-	104, // 38: sydom.admin.v1.GetRoleGraphResponse.data_scopes:type_name -> sydom.admin.v1.RoleGraphDataScope
-	0,   // 39: sydom.admin.v1.SimulateRoleChangeRequest.change_type:type_name -> sydom.admin.v1.RoleChangeType
-	69,  // 40: sydom.admin.v1.SubjectDiff.added_permissions:type_name -> sydom.admin.v1.EffectivePermission
-	69,  // 41: sydom.admin.v1.SubjectDiff.removed_permissions:type_name -> sydom.admin.v1.EffectivePermission
-	70,  // 42: sydom.admin.v1.SubjectDiff.added_data_previews:type_name -> sydom.admin.v1.DataPolicyPreview
-	70,  // 43: sydom.admin.v1.SubjectDiff.removed_data_previews:type_name -> sydom.admin.v1.DataPolicyPreview
-	107, // 44: sydom.admin.v1.SimulateRoleChangeResponse.subjects:type_name -> sydom.admin.v1.SubjectDiff
-	112, // 45: sydom.admin.v1.ImportAppPolicyResponse.diff:type_name -> sydom.admin.v1.PolicyDiffEntry
-	114, // 46: sydom.admin.v1.BatchUnbindUserRoleRequest.items:type_name -> sydom.admin.v1.UserRoleRef
-	115, // 47: sydom.admin.v1.BatchRevokePermissionRequest.items:type_name -> sydom.admin.v1.GrantRef
-	116, // 48: sydom.admin.v1.BatchRemoveRoleInheritanceRequest.items:type_name -> sydom.admin.v1.InheritanceRef
-	2,   // 49: sydom.admin.v1.AdminService.CreateRole:input_type -> sydom.admin.v1.CreateRoleRequest
-	4,   // 50: sydom.admin.v1.AdminService.DeleteRole:input_type -> sydom.admin.v1.DeleteRoleRequest
-	5,   // 51: sydom.admin.v1.AdminService.UpsertPermission:input_type -> sydom.admin.v1.UpsertPermissionRequest
-	7,   // 52: sydom.admin.v1.AdminService.GrantPermission:input_type -> sydom.admin.v1.GrantPermissionRequest
-	8,   // 53: sydom.admin.v1.AdminService.RevokePermission:input_type -> sydom.admin.v1.RevokePermissionRequest
-	9,   // 54: sydom.admin.v1.AdminService.AddRoleInheritance:input_type -> sydom.admin.v1.RoleInheritanceRequest
-	9,   // 55: sydom.admin.v1.AdminService.RemoveRoleInheritance:input_type -> sydom.admin.v1.RoleInheritanceRequest
-	10,  // 56: sydom.admin.v1.AdminService.BindUserRole:input_type -> sydom.admin.v1.UserRoleRequest
-	10,  // 57: sydom.admin.v1.AdminService.UnbindUserRole:input_type -> sydom.admin.v1.UserRoleRequest
-	11,  // 58: sydom.admin.v1.AdminService.UpsertDataPolicy:input_type -> sydom.admin.v1.UpsertDataPolicyRequest
-	13,  // 59: sydom.admin.v1.AdminService.DeleteDataPolicy:input_type -> sydom.admin.v1.DeleteDataPolicyRequest
-	14,  // 60: sydom.admin.v1.AdminService.CreateApplication:input_type -> sydom.admin.v1.CreateApplicationRequest
-	16,  // 61: sydom.admin.v1.AdminService.SetApplicationStatus:input_type -> sydom.admin.v1.SetApplicationStatusRequest
-	17,  // 62: sydom.admin.v1.AdminService.ListApplications:input_type -> sydom.admin.v1.ListApplicationsRequest
-	20,  // 63: sydom.admin.v1.AdminService.CreateOperator:input_type -> sydom.admin.v1.CreateOperatorRequest
-	22,  // 64: sydom.admin.v1.AdminService.SetOperatorStatus:input_type -> sydom.admin.v1.SetOperatorStatusRequest
-	23,  // 65: sydom.admin.v1.AdminService.CreateAdminRole:input_type -> sydom.admin.v1.CreateAdminRoleRequest
-	25,  // 66: sydom.admin.v1.AdminService.GrantAdminRole:input_type -> sydom.admin.v1.GrantAdminRoleRequest
-	26,  // 67: sydom.admin.v1.AdminService.BindOperatorRole:input_type -> sydom.admin.v1.BindOperatorRoleRequest
-	27,  // 68: sydom.admin.v1.AdminService.RevokeAdminGrant:input_type -> sydom.admin.v1.RevokeAdminGrantRequest
-	28,  // 69: sydom.admin.v1.AdminService.UnbindOperatorRole:input_type -> sydom.admin.v1.UnbindOperatorRoleRequest
-	29,  // 70: sydom.admin.v1.AdminService.RotateApplicationSecret:input_type -> sydom.admin.v1.RotateApplicationSecretRequest
-	31,  // 71: sydom.admin.v1.AdminService.ResetOperatorSecret:input_type -> sydom.admin.v1.ResetOperatorSecretRequest
-	75,  // 72: sydom.admin.v1.AdminService.CreateBusinessRole:input_type -> sydom.admin.v1.CreateBusinessRoleRequest
-	34,  // 73: sydom.admin.v1.AdminService.ListRoles:input_type -> sydom.admin.v1.ListRolesRequest
-	37,  // 74: sydom.admin.v1.AdminService.ListPermissions:input_type -> sydom.admin.v1.ListPermissionsRequest
-	40,  // 75: sydom.admin.v1.AdminService.ListGrants:input_type -> sydom.admin.v1.ListGrantsRequest
-	43,  // 76: sydom.admin.v1.AdminService.ListRoleInheritances:input_type -> sydom.admin.v1.ListRoleInheritancesRequest
-	46,  // 77: sydom.admin.v1.AdminService.ListUserBindings:input_type -> sydom.admin.v1.ListUserBindingsRequest
-	49,  // 78: sydom.admin.v1.AdminService.ListDataPolicies:input_type -> sydom.admin.v1.ListDataPoliciesRequest
-	52,  // 79: sydom.admin.v1.AdminService.ListOperators:input_type -> sydom.admin.v1.ListOperatorsRequest
-	55,  // 80: sydom.admin.v1.AdminService.ListAdminRoles:input_type -> sydom.admin.v1.ListAdminRolesRequest
-	67,  // 81: sydom.admin.v1.AdminService.GetEffectivePermissions:input_type -> sydom.admin.v1.GetEffectivePermissionsRequest
-	71,  // 82: sydom.admin.v1.AdminService.ExplainDecision:input_type -> sydom.admin.v1.ExplainDecisionRequest
-	101, // 83: sydom.admin.v1.AdminService.GetRoleGraph:input_type -> sydom.admin.v1.GetRoleGraphRequest
-	106, // 84: sydom.admin.v1.AdminService.SimulateRoleChange:input_type -> sydom.admin.v1.SimulateRoleChangeRequest
-	57,  // 85: sydom.admin.v1.AdminService.RegisterTenant:input_type -> sydom.admin.v1.RegisterTenantRequest
-	59,  // 86: sydom.admin.v1.AdminService.ListMyTenants:input_type -> sydom.admin.v1.ListMyTenantsRequest
-	62,  // 87: sydom.admin.v1.AdminService.InviteMember:input_type -> sydom.admin.v1.InviteMemberRequest
-	64,  // 88: sydom.admin.v1.AdminService.ListMembers:input_type -> sydom.admin.v1.ListMembersRequest
-	77,  // 89: sydom.admin.v1.AdminService.QueryAuditLog:input_type -> sydom.admin.v1.QueryAuditLogRequest
-	80,  // 90: sydom.admin.v1.AdminService.QueryAdminAuditLog:input_type -> sydom.admin.v1.QueryAdminAuditLogRequest
-	88,  // 91: sydom.admin.v1.AdminService.ListTemplates:input_type -> sydom.admin.v1.ListTemplatesRequest
-	90,  // 92: sydom.admin.v1.AdminService.ApplyTemplate:input_type -> sydom.admin.v1.ApplyTemplateRequest
-	92,  // 93: sydom.admin.v1.AdminService.SaveAppAsTemplate:input_type -> sydom.admin.v1.SaveAppAsTemplateRequest
-	94,  // 94: sydom.admin.v1.AdminService.ListTenantTemplates:input_type -> sydom.admin.v1.ListTenantTemplatesRequest
-	97,  // 95: sydom.admin.v1.AdminService.GetTenantTemplate:input_type -> sydom.admin.v1.GetTenantTemplateRequest
-	99,  // 96: sydom.admin.v1.AdminService.ApplyTenantTemplate:input_type -> sydom.admin.v1.ApplyTenantTemplateRequest
-	100, // 97: sydom.admin.v1.AdminService.DeleteTenantTemplate:input_type -> sydom.admin.v1.DeleteTenantTemplateRequest
-	109, // 98: sydom.admin.v1.AdminService.ExportAppPolicy:input_type -> sydom.admin.v1.ExportAppPolicyRequest
-	111, // 99: sydom.admin.v1.AdminService.ImportAppPolicy:input_type -> sydom.admin.v1.ImportAppPolicyRequest
-	117, // 100: sydom.admin.v1.AdminService.BatchUnbindUserRole:input_type -> sydom.admin.v1.BatchUnbindUserRoleRequest
-	118, // 101: sydom.admin.v1.AdminService.BatchRevokePermission:input_type -> sydom.admin.v1.BatchRevokePermissionRequest
-	119, // 102: sydom.admin.v1.AdminService.BatchRemoveRoleInheritance:input_type -> sydom.admin.v1.BatchRemoveRoleInheritanceRequest
-	120, // 103: sydom.admin.v1.AdminService.BatchDeleteRole:input_type -> sydom.admin.v1.BatchDeleteRoleRequest
-	121, // 104: sydom.admin.v1.AdminService.BatchDeleteDataPolicy:input_type -> sydom.admin.v1.BatchDeleteDataPolicyRequest
-	3,   // 105: sydom.admin.v1.AdminService.CreateRole:output_type -> sydom.admin.v1.CreateRoleResponse
-	1,   // 106: sydom.admin.v1.AdminService.DeleteRole:output_type -> sydom.admin.v1.WriteResponse
-	6,   // 107: sydom.admin.v1.AdminService.UpsertPermission:output_type -> sydom.admin.v1.UpsertPermissionResponse
-	1,   // 108: sydom.admin.v1.AdminService.GrantPermission:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 109: sydom.admin.v1.AdminService.RevokePermission:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 110: sydom.admin.v1.AdminService.AddRoleInheritance:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 111: sydom.admin.v1.AdminService.RemoveRoleInheritance:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 112: sydom.admin.v1.AdminService.BindUserRole:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 113: sydom.admin.v1.AdminService.UnbindUserRole:output_type -> sydom.admin.v1.WriteResponse
-	12,  // 114: sydom.admin.v1.AdminService.UpsertDataPolicy:output_type -> sydom.admin.v1.UpsertDataPolicyResponse
-	1,   // 115: sydom.admin.v1.AdminService.DeleteDataPolicy:output_type -> sydom.admin.v1.WriteResponse
-	15,  // 116: sydom.admin.v1.AdminService.CreateApplication:output_type -> sydom.admin.v1.CreateApplicationResponse
-	1,   // 117: sydom.admin.v1.AdminService.SetApplicationStatus:output_type -> sydom.admin.v1.WriteResponse
-	19,  // 118: sydom.admin.v1.AdminService.ListApplications:output_type -> sydom.admin.v1.ListApplicationsResponse
-	21,  // 119: sydom.admin.v1.AdminService.CreateOperator:output_type -> sydom.admin.v1.CreateOperatorResponse
-	1,   // 120: sydom.admin.v1.AdminService.SetOperatorStatus:output_type -> sydom.admin.v1.WriteResponse
-	24,  // 121: sydom.admin.v1.AdminService.CreateAdminRole:output_type -> sydom.admin.v1.CreateAdminRoleResponse
-	1,   // 122: sydom.admin.v1.AdminService.GrantAdminRole:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 123: sydom.admin.v1.AdminService.BindOperatorRole:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 124: sydom.admin.v1.AdminService.RevokeAdminGrant:output_type -> sydom.admin.v1.WriteResponse
-	1,   // 125: sydom.admin.v1.AdminService.UnbindOperatorRole:output_type -> sydom.admin.v1.WriteResponse
-	30,  // 126: sydom.admin.v1.AdminService.RotateApplicationSecret:output_type -> sydom.admin.v1.RotateApplicationSecretResponse
-	32,  // 127: sydom.admin.v1.AdminService.ResetOperatorSecret:output_type -> sydom.admin.v1.ResetOperatorSecretResponse
-	76,  // 128: sydom.admin.v1.AdminService.CreateBusinessRole:output_type -> sydom.admin.v1.CreateBusinessRoleResponse
-	35,  // 129: sydom.admin.v1.AdminService.ListRoles:output_type -> sydom.admin.v1.ListRolesResponse
-	38,  // 130: sydom.admin.v1.AdminService.ListPermissions:output_type -> sydom.admin.v1.ListPermissionsResponse
-	41,  // 131: sydom.admin.v1.AdminService.ListGrants:output_type -> sydom.admin.v1.ListGrantsResponse
-	44,  // 132: sydom.admin.v1.AdminService.ListRoleInheritances:output_type -> sydom.admin.v1.ListRoleInheritancesResponse
-	47,  // 133: sydom.admin.v1.AdminService.ListUserBindings:output_type -> sydom.admin.v1.ListUserBindingsResponse
-	50,  // 134: sydom.admin.v1.AdminService.ListDataPolicies:output_type -> sydom.admin.v1.ListDataPoliciesResponse
-	53,  // 135: sydom.admin.v1.AdminService.ListOperators:output_type -> sydom.admin.v1.ListOperatorsResponse
-	56,  // 136: sydom.admin.v1.AdminService.ListAdminRoles:output_type -> sydom.admin.v1.ListAdminRolesResponse
-	68,  // 137: sydom.admin.v1.AdminService.GetEffectivePermissions:output_type -> sydom.admin.v1.GetEffectivePermissionsResponse
-	74,  // 138: sydom.admin.v1.AdminService.ExplainDecision:output_type -> sydom.admin.v1.ExplainDecisionResponse
-	105, // 139: sydom.admin.v1.AdminService.GetRoleGraph:output_type -> sydom.admin.v1.GetRoleGraphResponse
-	108, // 140: sydom.admin.v1.AdminService.SimulateRoleChange:output_type -> sydom.admin.v1.SimulateRoleChangeResponse
-	58,  // 141: sydom.admin.v1.AdminService.RegisterTenant:output_type -> sydom.admin.v1.RegisterTenantResponse
-	61,  // 142: sydom.admin.v1.AdminService.ListMyTenants:output_type -> sydom.admin.v1.ListMyTenantsResponse
-	63,  // 143: sydom.admin.v1.AdminService.InviteMember:output_type -> sydom.admin.v1.InviteMemberResponse
-	66,  // 144: sydom.admin.v1.AdminService.ListMembers:output_type -> sydom.admin.v1.ListMembersResponse
-	79,  // 145: sydom.admin.v1.AdminService.QueryAuditLog:output_type -> sydom.admin.v1.QueryAuditLogResponse
-	82,  // 146: sydom.admin.v1.AdminService.QueryAdminAuditLog:output_type -> sydom.admin.v1.QueryAdminAuditLogResponse
-	89,  // 147: sydom.admin.v1.AdminService.ListTemplates:output_type -> sydom.admin.v1.ListTemplatesResponse
-	91,  // 148: sydom.admin.v1.AdminService.ApplyTemplate:output_type -> sydom.admin.v1.ApplyTemplateResponse
-	93,  // 149: sydom.admin.v1.AdminService.SaveAppAsTemplate:output_type -> sydom.admin.v1.TenantTemplateRef
-	96,  // 150: sydom.admin.v1.AdminService.ListTenantTemplates:output_type -> sydom.admin.v1.ListTenantTemplatesResponse
-	98,  // 151: sydom.admin.v1.AdminService.GetTenantTemplate:output_type -> sydom.admin.v1.TenantTemplate
-	91,  // 152: sydom.admin.v1.AdminService.ApplyTenantTemplate:output_type -> sydom.admin.v1.ApplyTemplateResponse
-	1,   // 153: sydom.admin.v1.AdminService.DeleteTenantTemplate:output_type -> sydom.admin.v1.WriteResponse
-	110, // 154: sydom.admin.v1.AdminService.ExportAppPolicy:output_type -> sydom.admin.v1.ExportAppPolicyResponse
-	113, // 155: sydom.admin.v1.AdminService.ImportAppPolicy:output_type -> sydom.admin.v1.ImportAppPolicyResponse
-	122, // 156: sydom.admin.v1.AdminService.BatchUnbindUserRole:output_type -> sydom.admin.v1.BatchWriteResponse
-	122, // 157: sydom.admin.v1.AdminService.BatchRevokePermission:output_type -> sydom.admin.v1.BatchWriteResponse
-	122, // 158: sydom.admin.v1.AdminService.BatchRemoveRoleInheritance:output_type -> sydom.admin.v1.BatchWriteResponse
-	122, // 159: sydom.admin.v1.AdminService.BatchDeleteRole:output_type -> sydom.admin.v1.BatchWriteResponse
-	122, // 160: sydom.admin.v1.AdminService.BatchDeleteDataPolicy:output_type -> sydom.admin.v1.BatchWriteResponse
-	105, // [105:161] is the sub-list for method output_type
-	49,  // [49:105] is the sub-list for method input_type
-	49,  // [49:49] is the sub-list for extension type_name
-	49,  // [49:49] is the sub-list for extension extendee
-	0,   // [0:49] is the sub-list for field type_name
+	18,  // 2: sydom.admin.v1.GetApplicationResponse.application:type_name -> sydom.admin.v1.ApplicationSummary
+	85,  // 3: sydom.admin.v1.ListRolesRequest.page:type_name -> sydom.admin.v1.ListPage
+	35,  // 4: sydom.admin.v1.ListRolesResponse.roles:type_name -> sydom.admin.v1.RoleSummary
+	85,  // 5: sydom.admin.v1.ListPermissionsRequest.page:type_name -> sydom.admin.v1.ListPage
+	38,  // 6: sydom.admin.v1.ListPermissionsResponse.permissions:type_name -> sydom.admin.v1.PermissionSummary
+	85,  // 7: sydom.admin.v1.ListGrantsRequest.page:type_name -> sydom.admin.v1.ListPage
+	41,  // 8: sydom.admin.v1.ListGrantsResponse.grants:type_name -> sydom.admin.v1.GrantSummary
+	85,  // 9: sydom.admin.v1.ListRoleInheritancesRequest.page:type_name -> sydom.admin.v1.ListPage
+	44,  // 10: sydom.admin.v1.ListRoleInheritancesResponse.inheritances:type_name -> sydom.admin.v1.RoleInheritanceSummary
+	85,  // 11: sydom.admin.v1.ListUserBindingsRequest.page:type_name -> sydom.admin.v1.ListPage
+	47,  // 12: sydom.admin.v1.ListUserBindingsResponse.bindings:type_name -> sydom.admin.v1.UserBindingSummary
+	85,  // 13: sydom.admin.v1.ListDataPoliciesRequest.page:type_name -> sydom.admin.v1.ListPage
+	50,  // 14: sydom.admin.v1.ListDataPoliciesResponse.data_policies:type_name -> sydom.admin.v1.DataPolicySummary
+	85,  // 15: sydom.admin.v1.ListOperatorsRequest.page:type_name -> sydom.admin.v1.ListPage
+	53,  // 16: sydom.admin.v1.ListOperatorsResponse.operators:type_name -> sydom.admin.v1.OperatorSummary
+	85,  // 17: sydom.admin.v1.ListAdminRolesRequest.page:type_name -> sydom.admin.v1.ListPage
+	56,  // 18: sydom.admin.v1.ListAdminRolesResponse.roles:type_name -> sydom.admin.v1.AdminRoleSummary
+	85,  // 19: sydom.admin.v1.ListMyTenantsRequest.page:type_name -> sydom.admin.v1.ListPage
+	62,  // 20: sydom.admin.v1.ListMyTenantsResponse.memberships:type_name -> sydom.admin.v1.TenantMembershipSummary
+	85,  // 21: sydom.admin.v1.ListMembersRequest.page:type_name -> sydom.admin.v1.ListPage
+	67,  // 22: sydom.admin.v1.ListMembersResponse.members:type_name -> sydom.admin.v1.MemberSummary
+	71,  // 23: sydom.admin.v1.GetEffectivePermissionsResponse.permissions:type_name -> sydom.admin.v1.EffectivePermission
+	72,  // 24: sydom.admin.v1.GetEffectivePermissionsResponse.data_previews:type_name -> sydom.admin.v1.DataPolicyPreview
+	74,  // 25: sydom.admin.v1.ExplainDecisionResponse.deciding_rule:type_name -> sydom.admin.v1.DecidingRule
+	75,  // 26: sydom.admin.v1.ExplainDecisionResponse.data_scope:type_name -> sydom.admin.v1.DecisionDataScope
+	80,  // 27: sydom.admin.v1.QueryAuditLogResponse.entries:type_name -> sydom.admin.v1.AuditEntry
+	83,  // 28: sydom.admin.v1.QueryAdminAuditLogResponse.entries:type_name -> sydom.admin.v1.AdminAuditEntry
+	88,  // 29: sydom.admin.v1.TemplateRole.data_scopes:type_name -> sydom.admin.v1.TemplateDataScope
+	86,  // 30: sydom.admin.v1.Template.permissions:type_name -> sydom.admin.v1.TemplatePermission
+	87,  // 31: sydom.admin.v1.Template.roles:type_name -> sydom.admin.v1.TemplateRole
+	89,  // 32: sydom.admin.v1.ListTemplatesResponse.templates:type_name -> sydom.admin.v1.Template
+	85,  // 33: sydom.admin.v1.ListTenantTemplatesRequest.page:type_name -> sydom.admin.v1.ListPage
+	97,  // 34: sydom.admin.v1.ListTenantTemplatesResponse.templates:type_name -> sydom.admin.v1.TenantTemplateSummary
+	86,  // 35: sydom.admin.v1.TenantTemplate.permissions:type_name -> sydom.admin.v1.TemplatePermission
+	87,  // 36: sydom.admin.v1.TenantTemplate.roles:type_name -> sydom.admin.v1.TemplateRole
+	104, // 37: sydom.admin.v1.GetRoleGraphResponse.capabilities:type_name -> sydom.admin.v1.RoleGraphCapability
+	105, // 38: sydom.admin.v1.GetRoleGraphResponse.parents:type_name -> sydom.admin.v1.RoleGraphParent
+	106, // 39: sydom.admin.v1.GetRoleGraphResponse.data_scopes:type_name -> sydom.admin.v1.RoleGraphDataScope
+	0,   // 40: sydom.admin.v1.SimulateRoleChangeRequest.change_type:type_name -> sydom.admin.v1.RoleChangeType
+	71,  // 41: sydom.admin.v1.SubjectDiff.added_permissions:type_name -> sydom.admin.v1.EffectivePermission
+	71,  // 42: sydom.admin.v1.SubjectDiff.removed_permissions:type_name -> sydom.admin.v1.EffectivePermission
+	72,  // 43: sydom.admin.v1.SubjectDiff.added_data_previews:type_name -> sydom.admin.v1.DataPolicyPreview
+	72,  // 44: sydom.admin.v1.SubjectDiff.removed_data_previews:type_name -> sydom.admin.v1.DataPolicyPreview
+	109, // 45: sydom.admin.v1.SimulateRoleChangeResponse.subjects:type_name -> sydom.admin.v1.SubjectDiff
+	114, // 46: sydom.admin.v1.ImportAppPolicyResponse.diff:type_name -> sydom.admin.v1.PolicyDiffEntry
+	116, // 47: sydom.admin.v1.BatchUnbindUserRoleRequest.items:type_name -> sydom.admin.v1.UserRoleRef
+	117, // 48: sydom.admin.v1.BatchRevokePermissionRequest.items:type_name -> sydom.admin.v1.GrantRef
+	118, // 49: sydom.admin.v1.BatchRemoveRoleInheritanceRequest.items:type_name -> sydom.admin.v1.InheritanceRef
+	2,   // 50: sydom.admin.v1.AdminService.CreateRole:input_type -> sydom.admin.v1.CreateRoleRequest
+	4,   // 51: sydom.admin.v1.AdminService.DeleteRole:input_type -> sydom.admin.v1.DeleteRoleRequest
+	5,   // 52: sydom.admin.v1.AdminService.UpsertPermission:input_type -> sydom.admin.v1.UpsertPermissionRequest
+	7,   // 53: sydom.admin.v1.AdminService.GrantPermission:input_type -> sydom.admin.v1.GrantPermissionRequest
+	8,   // 54: sydom.admin.v1.AdminService.RevokePermission:input_type -> sydom.admin.v1.RevokePermissionRequest
+	9,   // 55: sydom.admin.v1.AdminService.AddRoleInheritance:input_type -> sydom.admin.v1.RoleInheritanceRequest
+	9,   // 56: sydom.admin.v1.AdminService.RemoveRoleInheritance:input_type -> sydom.admin.v1.RoleInheritanceRequest
+	10,  // 57: sydom.admin.v1.AdminService.BindUserRole:input_type -> sydom.admin.v1.UserRoleRequest
+	10,  // 58: sydom.admin.v1.AdminService.UnbindUserRole:input_type -> sydom.admin.v1.UserRoleRequest
+	11,  // 59: sydom.admin.v1.AdminService.UpsertDataPolicy:input_type -> sydom.admin.v1.UpsertDataPolicyRequest
+	13,  // 60: sydom.admin.v1.AdminService.DeleteDataPolicy:input_type -> sydom.admin.v1.DeleteDataPolicyRequest
+	14,  // 61: sydom.admin.v1.AdminService.CreateApplication:input_type -> sydom.admin.v1.CreateApplicationRequest
+	16,  // 62: sydom.admin.v1.AdminService.SetApplicationStatus:input_type -> sydom.admin.v1.SetApplicationStatusRequest
+	17,  // 63: sydom.admin.v1.AdminService.ListApplications:input_type -> sydom.admin.v1.ListApplicationsRequest
+	20,  // 64: sydom.admin.v1.AdminService.GetApplication:input_type -> sydom.admin.v1.GetApplicationRequest
+	22,  // 65: sydom.admin.v1.AdminService.CreateOperator:input_type -> sydom.admin.v1.CreateOperatorRequest
+	24,  // 66: sydom.admin.v1.AdminService.SetOperatorStatus:input_type -> sydom.admin.v1.SetOperatorStatusRequest
+	25,  // 67: sydom.admin.v1.AdminService.CreateAdminRole:input_type -> sydom.admin.v1.CreateAdminRoleRequest
+	27,  // 68: sydom.admin.v1.AdminService.GrantAdminRole:input_type -> sydom.admin.v1.GrantAdminRoleRequest
+	28,  // 69: sydom.admin.v1.AdminService.BindOperatorRole:input_type -> sydom.admin.v1.BindOperatorRoleRequest
+	29,  // 70: sydom.admin.v1.AdminService.RevokeAdminGrant:input_type -> sydom.admin.v1.RevokeAdminGrantRequest
+	30,  // 71: sydom.admin.v1.AdminService.UnbindOperatorRole:input_type -> sydom.admin.v1.UnbindOperatorRoleRequest
+	31,  // 72: sydom.admin.v1.AdminService.RotateApplicationSecret:input_type -> sydom.admin.v1.RotateApplicationSecretRequest
+	33,  // 73: sydom.admin.v1.AdminService.ResetOperatorSecret:input_type -> sydom.admin.v1.ResetOperatorSecretRequest
+	77,  // 74: sydom.admin.v1.AdminService.CreateBusinessRole:input_type -> sydom.admin.v1.CreateBusinessRoleRequest
+	36,  // 75: sydom.admin.v1.AdminService.ListRoles:input_type -> sydom.admin.v1.ListRolesRequest
+	39,  // 76: sydom.admin.v1.AdminService.ListPermissions:input_type -> sydom.admin.v1.ListPermissionsRequest
+	42,  // 77: sydom.admin.v1.AdminService.ListGrants:input_type -> sydom.admin.v1.ListGrantsRequest
+	45,  // 78: sydom.admin.v1.AdminService.ListRoleInheritances:input_type -> sydom.admin.v1.ListRoleInheritancesRequest
+	48,  // 79: sydom.admin.v1.AdminService.ListUserBindings:input_type -> sydom.admin.v1.ListUserBindingsRequest
+	51,  // 80: sydom.admin.v1.AdminService.ListDataPolicies:input_type -> sydom.admin.v1.ListDataPoliciesRequest
+	54,  // 81: sydom.admin.v1.AdminService.ListOperators:input_type -> sydom.admin.v1.ListOperatorsRequest
+	57,  // 82: sydom.admin.v1.AdminService.ListAdminRoles:input_type -> sydom.admin.v1.ListAdminRolesRequest
+	69,  // 83: sydom.admin.v1.AdminService.GetEffectivePermissions:input_type -> sydom.admin.v1.GetEffectivePermissionsRequest
+	73,  // 84: sydom.admin.v1.AdminService.ExplainDecision:input_type -> sydom.admin.v1.ExplainDecisionRequest
+	103, // 85: sydom.admin.v1.AdminService.GetRoleGraph:input_type -> sydom.admin.v1.GetRoleGraphRequest
+	108, // 86: sydom.admin.v1.AdminService.SimulateRoleChange:input_type -> sydom.admin.v1.SimulateRoleChangeRequest
+	59,  // 87: sydom.admin.v1.AdminService.RegisterTenant:input_type -> sydom.admin.v1.RegisterTenantRequest
+	61,  // 88: sydom.admin.v1.AdminService.ListMyTenants:input_type -> sydom.admin.v1.ListMyTenantsRequest
+	64,  // 89: sydom.admin.v1.AdminService.InviteMember:input_type -> sydom.admin.v1.InviteMemberRequest
+	66,  // 90: sydom.admin.v1.AdminService.ListMembers:input_type -> sydom.admin.v1.ListMembersRequest
+	79,  // 91: sydom.admin.v1.AdminService.QueryAuditLog:input_type -> sydom.admin.v1.QueryAuditLogRequest
+	82,  // 92: sydom.admin.v1.AdminService.QueryAdminAuditLog:input_type -> sydom.admin.v1.QueryAdminAuditLogRequest
+	90,  // 93: sydom.admin.v1.AdminService.ListTemplates:input_type -> sydom.admin.v1.ListTemplatesRequest
+	92,  // 94: sydom.admin.v1.AdminService.ApplyTemplate:input_type -> sydom.admin.v1.ApplyTemplateRequest
+	94,  // 95: sydom.admin.v1.AdminService.SaveAppAsTemplate:input_type -> sydom.admin.v1.SaveAppAsTemplateRequest
+	96,  // 96: sydom.admin.v1.AdminService.ListTenantTemplates:input_type -> sydom.admin.v1.ListTenantTemplatesRequest
+	99,  // 97: sydom.admin.v1.AdminService.GetTenantTemplate:input_type -> sydom.admin.v1.GetTenantTemplateRequest
+	101, // 98: sydom.admin.v1.AdminService.ApplyTenantTemplate:input_type -> sydom.admin.v1.ApplyTenantTemplateRequest
+	102, // 99: sydom.admin.v1.AdminService.DeleteTenantTemplate:input_type -> sydom.admin.v1.DeleteTenantTemplateRequest
+	111, // 100: sydom.admin.v1.AdminService.ExportAppPolicy:input_type -> sydom.admin.v1.ExportAppPolicyRequest
+	113, // 101: sydom.admin.v1.AdminService.ImportAppPolicy:input_type -> sydom.admin.v1.ImportAppPolicyRequest
+	119, // 102: sydom.admin.v1.AdminService.BatchUnbindUserRole:input_type -> sydom.admin.v1.BatchUnbindUserRoleRequest
+	120, // 103: sydom.admin.v1.AdminService.BatchRevokePermission:input_type -> sydom.admin.v1.BatchRevokePermissionRequest
+	121, // 104: sydom.admin.v1.AdminService.BatchRemoveRoleInheritance:input_type -> sydom.admin.v1.BatchRemoveRoleInheritanceRequest
+	122, // 105: sydom.admin.v1.AdminService.BatchDeleteRole:input_type -> sydom.admin.v1.BatchDeleteRoleRequest
+	123, // 106: sydom.admin.v1.AdminService.BatchDeleteDataPolicy:input_type -> sydom.admin.v1.BatchDeleteDataPolicyRequest
+	3,   // 107: sydom.admin.v1.AdminService.CreateRole:output_type -> sydom.admin.v1.CreateRoleResponse
+	1,   // 108: sydom.admin.v1.AdminService.DeleteRole:output_type -> sydom.admin.v1.WriteResponse
+	6,   // 109: sydom.admin.v1.AdminService.UpsertPermission:output_type -> sydom.admin.v1.UpsertPermissionResponse
+	1,   // 110: sydom.admin.v1.AdminService.GrantPermission:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 111: sydom.admin.v1.AdminService.RevokePermission:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 112: sydom.admin.v1.AdminService.AddRoleInheritance:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 113: sydom.admin.v1.AdminService.RemoveRoleInheritance:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 114: sydom.admin.v1.AdminService.BindUserRole:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 115: sydom.admin.v1.AdminService.UnbindUserRole:output_type -> sydom.admin.v1.WriteResponse
+	12,  // 116: sydom.admin.v1.AdminService.UpsertDataPolicy:output_type -> sydom.admin.v1.UpsertDataPolicyResponse
+	1,   // 117: sydom.admin.v1.AdminService.DeleteDataPolicy:output_type -> sydom.admin.v1.WriteResponse
+	15,  // 118: sydom.admin.v1.AdminService.CreateApplication:output_type -> sydom.admin.v1.CreateApplicationResponse
+	1,   // 119: sydom.admin.v1.AdminService.SetApplicationStatus:output_type -> sydom.admin.v1.WriteResponse
+	19,  // 120: sydom.admin.v1.AdminService.ListApplications:output_type -> sydom.admin.v1.ListApplicationsResponse
+	21,  // 121: sydom.admin.v1.AdminService.GetApplication:output_type -> sydom.admin.v1.GetApplicationResponse
+	23,  // 122: sydom.admin.v1.AdminService.CreateOperator:output_type -> sydom.admin.v1.CreateOperatorResponse
+	1,   // 123: sydom.admin.v1.AdminService.SetOperatorStatus:output_type -> sydom.admin.v1.WriteResponse
+	26,  // 124: sydom.admin.v1.AdminService.CreateAdminRole:output_type -> sydom.admin.v1.CreateAdminRoleResponse
+	1,   // 125: sydom.admin.v1.AdminService.GrantAdminRole:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 126: sydom.admin.v1.AdminService.BindOperatorRole:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 127: sydom.admin.v1.AdminService.RevokeAdminGrant:output_type -> sydom.admin.v1.WriteResponse
+	1,   // 128: sydom.admin.v1.AdminService.UnbindOperatorRole:output_type -> sydom.admin.v1.WriteResponse
+	32,  // 129: sydom.admin.v1.AdminService.RotateApplicationSecret:output_type -> sydom.admin.v1.RotateApplicationSecretResponse
+	34,  // 130: sydom.admin.v1.AdminService.ResetOperatorSecret:output_type -> sydom.admin.v1.ResetOperatorSecretResponse
+	78,  // 131: sydom.admin.v1.AdminService.CreateBusinessRole:output_type -> sydom.admin.v1.CreateBusinessRoleResponse
+	37,  // 132: sydom.admin.v1.AdminService.ListRoles:output_type -> sydom.admin.v1.ListRolesResponse
+	40,  // 133: sydom.admin.v1.AdminService.ListPermissions:output_type -> sydom.admin.v1.ListPermissionsResponse
+	43,  // 134: sydom.admin.v1.AdminService.ListGrants:output_type -> sydom.admin.v1.ListGrantsResponse
+	46,  // 135: sydom.admin.v1.AdminService.ListRoleInheritances:output_type -> sydom.admin.v1.ListRoleInheritancesResponse
+	49,  // 136: sydom.admin.v1.AdminService.ListUserBindings:output_type -> sydom.admin.v1.ListUserBindingsResponse
+	52,  // 137: sydom.admin.v1.AdminService.ListDataPolicies:output_type -> sydom.admin.v1.ListDataPoliciesResponse
+	55,  // 138: sydom.admin.v1.AdminService.ListOperators:output_type -> sydom.admin.v1.ListOperatorsResponse
+	58,  // 139: sydom.admin.v1.AdminService.ListAdminRoles:output_type -> sydom.admin.v1.ListAdminRolesResponse
+	70,  // 140: sydom.admin.v1.AdminService.GetEffectivePermissions:output_type -> sydom.admin.v1.GetEffectivePermissionsResponse
+	76,  // 141: sydom.admin.v1.AdminService.ExplainDecision:output_type -> sydom.admin.v1.ExplainDecisionResponse
+	107, // 142: sydom.admin.v1.AdminService.GetRoleGraph:output_type -> sydom.admin.v1.GetRoleGraphResponse
+	110, // 143: sydom.admin.v1.AdminService.SimulateRoleChange:output_type -> sydom.admin.v1.SimulateRoleChangeResponse
+	60,  // 144: sydom.admin.v1.AdminService.RegisterTenant:output_type -> sydom.admin.v1.RegisterTenantResponse
+	63,  // 145: sydom.admin.v1.AdminService.ListMyTenants:output_type -> sydom.admin.v1.ListMyTenantsResponse
+	65,  // 146: sydom.admin.v1.AdminService.InviteMember:output_type -> sydom.admin.v1.InviteMemberResponse
+	68,  // 147: sydom.admin.v1.AdminService.ListMembers:output_type -> sydom.admin.v1.ListMembersResponse
+	81,  // 148: sydom.admin.v1.AdminService.QueryAuditLog:output_type -> sydom.admin.v1.QueryAuditLogResponse
+	84,  // 149: sydom.admin.v1.AdminService.QueryAdminAuditLog:output_type -> sydom.admin.v1.QueryAdminAuditLogResponse
+	91,  // 150: sydom.admin.v1.AdminService.ListTemplates:output_type -> sydom.admin.v1.ListTemplatesResponse
+	93,  // 151: sydom.admin.v1.AdminService.ApplyTemplate:output_type -> sydom.admin.v1.ApplyTemplateResponse
+	95,  // 152: sydom.admin.v1.AdminService.SaveAppAsTemplate:output_type -> sydom.admin.v1.TenantTemplateRef
+	98,  // 153: sydom.admin.v1.AdminService.ListTenantTemplates:output_type -> sydom.admin.v1.ListTenantTemplatesResponse
+	100, // 154: sydom.admin.v1.AdminService.GetTenantTemplate:output_type -> sydom.admin.v1.TenantTemplate
+	93,  // 155: sydom.admin.v1.AdminService.ApplyTenantTemplate:output_type -> sydom.admin.v1.ApplyTemplateResponse
+	1,   // 156: sydom.admin.v1.AdminService.DeleteTenantTemplate:output_type -> sydom.admin.v1.WriteResponse
+	112, // 157: sydom.admin.v1.AdminService.ExportAppPolicy:output_type -> sydom.admin.v1.ExportAppPolicyResponse
+	115, // 158: sydom.admin.v1.AdminService.ImportAppPolicy:output_type -> sydom.admin.v1.ImportAppPolicyResponse
+	124, // 159: sydom.admin.v1.AdminService.BatchUnbindUserRole:output_type -> sydom.admin.v1.BatchWriteResponse
+	124, // 160: sydom.admin.v1.AdminService.BatchRevokePermission:output_type -> sydom.admin.v1.BatchWriteResponse
+	124, // 161: sydom.admin.v1.AdminService.BatchRemoveRoleInheritance:output_type -> sydom.admin.v1.BatchWriteResponse
+	124, // 162: sydom.admin.v1.AdminService.BatchDeleteRole:output_type -> sydom.admin.v1.BatchWriteResponse
+	124, // 163: sydom.admin.v1.AdminService.BatchDeleteDataPolicy:output_type -> sydom.admin.v1.BatchWriteResponse
+	107, // [107:164] is the sub-list for method output_type
+	50,  // [50:107] is the sub-list for method input_type
+	50,  // [50:50] is the sub-list for extension type_name
+	50,  // [50:50] is the sub-list for extension extendee
+	0,   // [0:50] is the sub-list for field type_name
 }
 
 func init() { file_sydom_admin_v1_admin_proto_init() }
@@ -9773,7 +9887,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateOperatorRequest); i {
+			switch v := v.(*GetApplicationRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9785,7 +9899,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateOperatorResponse); i {
+			switch v := v.(*GetApplicationResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9797,7 +9911,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SetOperatorStatusRequest); i {
+			switch v := v.(*CreateOperatorRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9809,7 +9923,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateAdminRoleRequest); i {
+			switch v := v.(*CreateOperatorResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9821,7 +9935,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateAdminRoleResponse); i {
+			switch v := v.(*SetOperatorStatusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9833,7 +9947,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GrantAdminRoleRequest); i {
+			switch v := v.(*CreateAdminRoleRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9845,7 +9959,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BindOperatorRoleRequest); i {
+			switch v := v.(*CreateAdminRoleResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9857,7 +9971,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RevokeAdminGrantRequest); i {
+			switch v := v.(*GrantAdminRoleRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9869,7 +9983,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UnbindOperatorRoleRequest); i {
+			switch v := v.(*BindOperatorRoleRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9881,7 +9995,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RotateApplicationSecretRequest); i {
+			switch v := v.(*RevokeAdminGrantRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9893,7 +10007,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RotateApplicationSecretResponse); i {
+			switch v := v.(*UnbindOperatorRoleRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9905,7 +10019,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ResetOperatorSecretRequest); i {
+			switch v := v.(*RotateApplicationSecretRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9917,7 +10031,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ResetOperatorSecretResponse); i {
+			switch v := v.(*RotateApplicationSecretResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9929,7 +10043,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RoleSummary); i {
+			switch v := v.(*ResetOperatorSecretRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9941,7 +10055,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRolesRequest); i {
+			switch v := v.(*ResetOperatorSecretResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9953,7 +10067,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRolesResponse); i {
+			switch v := v.(*RoleSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9965,7 +10079,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PermissionSummary); i {
+			switch v := v.(*ListRolesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9977,7 +10091,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListPermissionsRequest); i {
+			switch v := v.(*ListRolesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -9989,7 +10103,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListPermissionsResponse); i {
+			switch v := v.(*PermissionSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10001,7 +10115,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GrantSummary); i {
+			switch v := v.(*ListPermissionsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10013,7 +10127,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGrantsRequest); i {
+			switch v := v.(*ListPermissionsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10025,7 +10139,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGrantsResponse); i {
+			switch v := v.(*GrantSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10037,7 +10151,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[41].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RoleInheritanceSummary); i {
+			switch v := v.(*ListGrantsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10049,7 +10163,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[42].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRoleInheritancesRequest); i {
+			switch v := v.(*ListGrantsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10061,7 +10175,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[43].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRoleInheritancesResponse); i {
+			switch v := v.(*RoleInheritanceSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10073,7 +10187,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[44].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UserBindingSummary); i {
+			switch v := v.(*ListRoleInheritancesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10085,7 +10199,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[45].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListUserBindingsRequest); i {
+			switch v := v.(*ListRoleInheritancesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10097,7 +10211,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[46].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListUserBindingsResponse); i {
+			switch v := v.(*UserBindingSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10109,7 +10223,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[47].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DataPolicySummary); i {
+			switch v := v.(*ListUserBindingsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10121,7 +10235,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[48].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDataPoliciesRequest); i {
+			switch v := v.(*ListUserBindingsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10133,7 +10247,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDataPoliciesResponse); i {
+			switch v := v.(*DataPolicySummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10145,7 +10259,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OperatorSummary); i {
+			switch v := v.(*ListDataPoliciesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10157,7 +10271,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListOperatorsRequest); i {
+			switch v := v.(*ListDataPoliciesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10169,7 +10283,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[52].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListOperatorsResponse); i {
+			switch v := v.(*OperatorSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10181,7 +10295,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[53].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AdminRoleSummary); i {
+			switch v := v.(*ListOperatorsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10193,7 +10307,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[54].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAdminRolesRequest); i {
+			switch v := v.(*ListOperatorsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10205,7 +10319,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[55].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAdminRolesResponse); i {
+			switch v := v.(*AdminRoleSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10217,7 +10331,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[56].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RegisterTenantRequest); i {
+			switch v := v.(*ListAdminRolesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10229,7 +10343,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[57].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RegisterTenantResponse); i {
+			switch v := v.(*ListAdminRolesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10241,7 +10355,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[58].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListMyTenantsRequest); i {
+			switch v := v.(*RegisterTenantRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10253,7 +10367,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[59].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TenantMembershipSummary); i {
+			switch v := v.(*RegisterTenantResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10265,7 +10379,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[60].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListMyTenantsResponse); i {
+			switch v := v.(*ListMyTenantsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10277,7 +10391,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[61].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*InviteMemberRequest); i {
+			switch v := v.(*TenantMembershipSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10289,7 +10403,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[62].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*InviteMemberResponse); i {
+			switch v := v.(*ListMyTenantsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10301,7 +10415,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[63].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListMembersRequest); i {
+			switch v := v.(*InviteMemberRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10313,7 +10427,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[64].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MemberSummary); i {
+			switch v := v.(*InviteMemberResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10325,7 +10439,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[65].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListMembersResponse); i {
+			switch v := v.(*ListMembersRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10337,7 +10451,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[66].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetEffectivePermissionsRequest); i {
+			switch v := v.(*MemberSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10349,7 +10463,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[67].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetEffectivePermissionsResponse); i {
+			switch v := v.(*ListMembersResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10361,7 +10475,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[68].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EffectivePermission); i {
+			switch v := v.(*GetEffectivePermissionsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10373,7 +10487,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[69].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DataPolicyPreview); i {
+			switch v := v.(*GetEffectivePermissionsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10385,7 +10499,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[70].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExplainDecisionRequest); i {
+			switch v := v.(*EffectivePermission); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10397,7 +10511,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[71].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DecidingRule); i {
+			switch v := v.(*DataPolicyPreview); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10409,7 +10523,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[72].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DecisionDataScope); i {
+			switch v := v.(*ExplainDecisionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10421,7 +10535,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[73].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExplainDecisionResponse); i {
+			switch v := v.(*DecidingRule); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10433,7 +10547,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[74].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateBusinessRoleRequest); i {
+			switch v := v.(*DecisionDataScope); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10445,7 +10559,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[75].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateBusinessRoleResponse); i {
+			switch v := v.(*ExplainDecisionResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10457,7 +10571,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[76].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAuditLogRequest); i {
+			switch v := v.(*CreateBusinessRoleRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10469,7 +10583,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AuditEntry); i {
+			switch v := v.(*CreateBusinessRoleResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10481,7 +10595,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[78].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAuditLogResponse); i {
+			switch v := v.(*QueryAuditLogRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10493,7 +10607,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[79].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAdminAuditLogRequest); i {
+			switch v := v.(*AuditEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10505,7 +10619,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[80].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AdminAuditEntry); i {
+			switch v := v.(*QueryAuditLogResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10517,7 +10631,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[81].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAdminAuditLogResponse); i {
+			switch v := v.(*QueryAdminAuditLogRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10529,7 +10643,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[82].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListPage); i {
+			switch v := v.(*AdminAuditEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10541,7 +10655,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[83].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TemplatePermission); i {
+			switch v := v.(*QueryAdminAuditLogResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10553,7 +10667,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[84].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TemplateRole); i {
+			switch v := v.(*ListPage); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10565,7 +10679,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[85].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TemplateDataScope); i {
+			switch v := v.(*TemplatePermission); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10577,7 +10691,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[86].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Template); i {
+			switch v := v.(*TemplateRole); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10589,7 +10703,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[87].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTemplatesRequest); i {
+			switch v := v.(*TemplateDataScope); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10601,7 +10715,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[88].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTemplatesResponse); i {
+			switch v := v.(*Template); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10613,7 +10727,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[89].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ApplyTemplateRequest); i {
+			switch v := v.(*ListTemplatesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10625,7 +10739,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[90].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ApplyTemplateResponse); i {
+			switch v := v.(*ListTemplatesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10637,7 +10751,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[91].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SaveAppAsTemplateRequest); i {
+			switch v := v.(*ApplyTemplateRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10649,7 +10763,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[92].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TenantTemplateRef); i {
+			switch v := v.(*ApplyTemplateResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10661,7 +10775,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[93].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTenantTemplatesRequest); i {
+			switch v := v.(*SaveAppAsTemplateRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10673,7 +10787,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[94].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TenantTemplateSummary); i {
+			switch v := v.(*TenantTemplateRef); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10685,7 +10799,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[95].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTenantTemplatesResponse); i {
+			switch v := v.(*ListTenantTemplatesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10697,7 +10811,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[96].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTenantTemplateRequest); i {
+			switch v := v.(*TenantTemplateSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10709,7 +10823,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[97].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TenantTemplate); i {
+			switch v := v.(*ListTenantTemplatesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10721,7 +10835,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[98].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ApplyTenantTemplateRequest); i {
+			switch v := v.(*GetTenantTemplateRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10733,7 +10847,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[99].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DeleteTenantTemplateRequest); i {
+			switch v := v.(*TenantTemplate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10745,7 +10859,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[100].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRoleGraphRequest); i {
+			switch v := v.(*ApplyTenantTemplateRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10757,7 +10871,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[101].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RoleGraphCapability); i {
+			switch v := v.(*DeleteTenantTemplateRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10769,7 +10883,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[102].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RoleGraphParent); i {
+			switch v := v.(*GetRoleGraphRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10781,7 +10895,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[103].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RoleGraphDataScope); i {
+			switch v := v.(*RoleGraphCapability); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10793,7 +10907,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[104].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRoleGraphResponse); i {
+			switch v := v.(*RoleGraphParent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10805,7 +10919,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[105].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SimulateRoleChangeRequest); i {
+			switch v := v.(*RoleGraphDataScope); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10817,7 +10931,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[106].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SubjectDiff); i {
+			switch v := v.(*GetRoleGraphResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10829,7 +10943,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[107].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SimulateRoleChangeResponse); i {
+			switch v := v.(*SimulateRoleChangeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10841,7 +10955,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[108].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportAppPolicyRequest); i {
+			switch v := v.(*SubjectDiff); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10853,7 +10967,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[109].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportAppPolicyResponse); i {
+			switch v := v.(*SimulateRoleChangeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10865,7 +10979,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[110].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImportAppPolicyRequest); i {
+			switch v := v.(*ExportAppPolicyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10877,7 +10991,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[111].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PolicyDiffEntry); i {
+			switch v := v.(*ExportAppPolicyResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10889,7 +11003,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[112].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ImportAppPolicyResponse); i {
+			switch v := v.(*ImportAppPolicyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10901,7 +11015,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[113].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UserRoleRef); i {
+			switch v := v.(*PolicyDiffEntry); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10913,7 +11027,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[114].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GrantRef); i {
+			switch v := v.(*ImportAppPolicyResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10925,7 +11039,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[115].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*InheritanceRef); i {
+			switch v := v.(*UserRoleRef); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10937,7 +11051,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[116].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchUnbindUserRoleRequest); i {
+			switch v := v.(*GrantRef); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10949,7 +11063,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[117].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchRevokePermissionRequest); i {
+			switch v := v.(*InheritanceRef); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10961,7 +11075,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[118].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchRemoveRoleInheritanceRequest); i {
+			switch v := v.(*BatchUnbindUserRoleRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10973,7 +11087,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[119].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchDeleteRoleRequest); i {
+			switch v := v.(*BatchRevokePermissionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10985,7 +11099,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[120].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BatchDeleteDataPolicyRequest); i {
+			switch v := v.(*BatchRemoveRoleInheritanceRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -10997,6 +11111,30 @@ func file_sydom_admin_v1_admin_proto_init() {
 			}
 		}
 		file_sydom_admin_v1_admin_proto_msgTypes[121].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BatchDeleteRoleRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_sydom_admin_v1_admin_proto_msgTypes[122].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BatchDeleteDataPolicyRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_sydom_admin_v1_admin_proto_msgTypes[123].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BatchWriteResponse); i {
 			case 0:
 				return &v.state
@@ -11015,7 +11153,7 @@ func file_sydom_admin_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_sydom_admin_v1_admin_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   122,
+			NumMessages:   124,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

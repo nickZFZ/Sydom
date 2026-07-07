@@ -171,6 +171,26 @@ func (s *AdminServer) ListApplications(ctx context.Context, r *adminv1.ListAppli
 	return out, nil
 }
 
+// GetApplication 读单个 app 的非敏感元数据（app 域只读）。绝不返回任何 secret：
+// app_secret_* 永不进 ApplicationSummary（该 message 无 secret 字段）。
+func (s *AdminServer) GetApplication(ctx context.Context, r *adminv1.GetApplicationRequest) (*adminv1.GetApplicationResponse, error) {
+	var out adminv1.ApplicationSummary
+	var id, ver int64
+	var st int16
+	err := s.db.QueryRowContext(ctx,
+		`SELECT id, domain, name, app_key, status, current_version FROM application WHERE id = $1`,
+		int64(r.AppId),
+	).Scan(&id, &out.Domain, &out.Name, &out.AppKey, &st, &ver)
+	if err == sql.ErrNoRows {
+		return nil, status.Errorf(codes.NotFound, "application %d not found", r.AppId)
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "get application: %v", err)
+	}
+	out.AppId, out.Status, out.CurrentVersion = uint64(id), uint32(st), uint64(ver)
+	return &adminv1.GetApplicationResponse{Application: &out}, nil
+}
+
 // —— 管理员自管：写后 bump admin_policy_version 触发 enforcer 重载 ——
 
 func (s *AdminServer) CreateOperator(ctx context.Context, r *adminv1.CreateOperatorRequest) (*adminv1.CreateOperatorResponse, error) {
