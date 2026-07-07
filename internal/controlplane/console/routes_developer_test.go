@@ -41,6 +41,27 @@ func TestConsole_DeveloperPage(t *testing.T) {
 	require.NotContains(t, body, "app_secret")
 }
 
+func TestConsole_DeveloperPage_ShowsCredentials(t *testing.T) {
+	ts, store, db := newConsole(t)
+	appID := dbtest.SeedApp(t, db)
+	c, _ := loginAndCSRF(t, ts, store, "root@sydom", "rootsecret")
+
+	resp, err := c.Get(ts.URL + "/apps/" + strconv.FormatInt(appID, 10) + "/developer")
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body := readBody(t, resp)
+
+	require.Contains(t, body, "接入凭据")
+	require.Contains(t, body, `id="credentials"`)
+	// 展示真实 app_key/domain（读回自 GetApplication，有齿：钉死种子值）。
+	require.Contains(t, body, dbtest.SeedAppKey) // "AK_order"
+	require.Contains(t, body, dbtest.SeedDomain) // "order-system"
+	// 轮换凭据入口复用既有 POST /apps/{id}/rotate-secret 流程（含 CSRF；GET-only 链接会 405，故用 POST 表单）。
+	require.Contains(t, body, `action="/apps/`+strconv.FormatInt(appID, 10)+`/rotate-secret"`)
+	// SD-1：绝不渲染 secret（响应体无 app_secret 字面；ApplicationSummary 类型层无 secret 字段）。
+	require.NotContains(t, body, "app_secret")
+}
+
 func TestConsole_DeveloperPage_RequiresSession(t *testing.T) {
 	ts, _, db := newConsole(t)
 	appID := dbtest.SeedApp(t, db)

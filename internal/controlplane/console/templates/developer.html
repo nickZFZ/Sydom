@@ -4,6 +4,20 @@
 <nav class="breadcrumb" aria-label="面包屑">建模台 · 开发者</nav>
 <h1>开发者文档</h1>
 
+<section id="credentials" aria-labelledby="h-credentials">
+<h2 id="h-credentials">接入凭据</h2>
+<p>把下列值注入你的 Sidecar 环境（<strong>secret 仅在轮换时一次性展示，绝不在此显示</strong>）。</p>
+<table class="table"><tbody>
+<tr><th scope="row">App ID</th><td><code>{{.App.AppId}}</code></td></tr>
+<tr><th scope="row">App Key</th><td><code>{{.App.AppKey}}</code></td></tr>
+<tr><th scope="row">Domain</th><td><code>{{.App.Domain}}</code></td></tr>
+<tr><th scope="row">Sidecar 端点（默认约定）</th><td><code>127.0.0.1:8090</code></td></tr>
+</tbody></table>
+<form method="post" action="/apps/{{.AppID}}/rotate-secret" class="inline-form" data-confirm="确定轮换应用凭据吗？旧凭据将立即失效。">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<button class="btn btn-ghost">轮换凭据（生成新 secret，一次性展示）</button></form>
+</section>
+
 <section id="quickstart" aria-labelledby="h-quickstart">
 <h2 id="h-quickstart">Quickstart：在你的应用里加一次授权检查</h2>
 <p>司域数据面通过本机 Sidecar（回环 gRPC）鉴权，域由 Sidecar 按所属 App pin。以下用公开 Go SDK 三步接入。</p>
