@@ -3,6 +3,7 @@ package console
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"testing"
@@ -11,6 +12,26 @@ import (
 	"github.com/nickZFZ/Sydom/internal/dbtest"
 	"github.com/stretchr/testify/require"
 )
+
+// TestConfirmCancelURL 钉死取消目标按作用域推导（严格 CSP 下取消须为真实链接，
+// 见 confirmCancelURL 注释）——app / ops-app / operator / admin-role / 兜底各一。
+func TestConfirmCancelURL(t *testing.T) {
+	cases := []struct{ path, appID, want string }{
+		{"/apps/5/roles/3/delete", "5", "/apps/5/roles"},
+		{"/apps/5/data-policies/batch-delete", "5", "/apps/5/roles"},
+		{"/ops/apps/5/tenant-templates/2/delete", "5", "/ops/apps/5/roles"},
+		{"/operators/9/reset-secret", "", "/operators"},
+		{"/admin-roles/2/revoke-grant", "", "/admin-roles"},
+		{"/unknown/scope/action", "", "/"},
+	}
+	for _, tc := range cases {
+		r := httptest.NewRequest("POST", tc.path, nil)
+		if tc.appID != "" {
+			r.SetPathValue("app_id", tc.appID)
+		}
+		require.Equal(t, tc.want, confirmCancelURL(r), tc.path)
+	}
+}
 
 func TestConsole_ConfirmGate(t *testing.T) {
 	ts, store, db := newConsole(t)
@@ -32,6 +53,9 @@ func TestConsole_ConfirmGate(t *testing.T) {
 	require.Contains(t, body, "确认")
 	require.Contains(t, body, `name="confirmed" value="1"`)
 	require.Contains(t, body, `name="csrf_token"`)
+	// M5.2a 严格 CSP：取消须为真实链接——javascript: URI 会被 script-src 'self' 拒、点击静默失效。
+	require.NotContains(t, body, "javascript:")
+	require.Contains(t, body, `href="/apps/`+strconv.FormatInt(appID, 10)+`/roles"`, "取消应指向 app 作用域列表页")
 
 	// 确认角色仍在库中（确认门阻止了删除）。
 	var count int

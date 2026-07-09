@@ -2,6 +2,7 @@ package console
 
 import (
 	"net/http"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 )
@@ -30,6 +31,26 @@ func confirmPrompt(fullMethod string) string {
 		return p
 	}
 	return "确定执行此操作吗？"
+}
+
+// confirmCancelURL 为确认页「取消」推导一个必定有效的返回目标（真实链接）。
+// 严格 CSP（script-src 'self' 无 unsafe-inline）下 href="javascript:history.back()" 被浏览器拒、
+// 点击静默失效；且 Referrer-Policy: no-referrer 下无 Referer 可回溯——故按 Action 路径的作用域
+// 回落到对应列表页。无法判定时回落登录后首页 "/"（对任何已登录操作员必定可达）。
+func confirmCancelURL(r *http.Request) string {
+	if appID := r.PathValue("app_id"); appID != "" {
+		if strings.HasPrefix(r.URL.Path, "/ops/") {
+			return "/ops/apps/" + appID + "/roles"
+		}
+		return "/apps/" + appID + "/roles"
+	}
+	switch {
+	case strings.HasPrefix(r.URL.Path, "/operators/"):
+		return "/operators"
+	case strings.HasPrefix(r.URL.Path, "/admin-roles/"):
+		return "/admin-roles"
+	}
+	return "/"
 }
 
 // requireConfirm 是破坏性动作的二次确认门。
@@ -64,11 +85,12 @@ func (h *Handler) requireConfirm(w http.ResponseWriter, r *http.Request, fullMet
 		}
 	}
 	h.renderPage(w, r, "ops_confirm.html", http.StatusOK, map[string]any{
-		"Action": r.URL.Path,
-		"Prompt": confirmPrompt(fullMethod),
-		"Hidden": hidden,
-		"CSRF":   sess.CSRF,
-		"Flash":  "", // 确认页是过渡页，不消费待显示的 flash（留给后续目标页）
+		"Action":    r.URL.Path,
+		"Prompt":    confirmPrompt(fullMethod),
+		"Hidden":    hidden,
+		"CSRF":      sess.CSRF,
+		"CancelURL": confirmCancelURL(r),
+		"Flash":     "", // 确认页是过渡页，不消费待显示的 flash（留给后续目标页）
 	})
 	return false
 }
