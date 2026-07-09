@@ -523,7 +523,12 @@
       rootKids.appendChild(buildLeafRow({}));
       afterChildChange(rootGroupEl);
     }
-    toggle.style.display = ""; // JS 在跑，露出切换按钮
+    // JS 在跑：交出 #builder-toggle 与 #builder 的显隐控制权。模板初始以 class="hidden"
+    // (display:none) 藏起（严格 CSP 从源清理：不再用内联 style=）；此处移除 hidden 类，
+    // 之后由 setMode 以 style.display 切换。注：只清 style.display 而不移除类，类的
+    // display:none 仍会盖住（inline "" 不覆盖类的规则）→ 构建器永不显示，故必须 classList.remove。
+    toggle.classList.remove("hidden");
+    builder.classList.remove("hidden");
     setMode(startRaw);
   });
 })();

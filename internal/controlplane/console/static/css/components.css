@@ -127,3 +127,9 @@ dialog.dialog::backdrop { background:rgba(0,0,0,.4); }
 /* M4.4 开发者文档区：代码块可读 + 宽端点表窄屏横向滚动 */
 .developer-doc pre { background:var(--color-bg); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--space-3); overflow-x:auto; font-family:var(--font-mono); font-size:var(--text-sm); }
 .developer-doc .table-scroll { overflow-x:auto; }
+
+/* M5.2a 工具类：把内联 style= 外提以达成严格 CSP（style-src 'self' 无 unsafe-inline）。
+   .d-inline 置于 .inline-form 之后——同特异性下靠声明顺序压过其 inline-flex，保留既有渲染。 */
+.hidden { display: none; }
+.mb-4 { margin-bottom: var(--space-4); }
+.d-inline { display: inline; }

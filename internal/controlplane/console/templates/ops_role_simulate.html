@@ -6,7 +6,7 @@
 <h1>模拟结果 <span class="badge badge-muted">未落库</span></h1>
 {{if .Subjects}}
 {{range .Subjects}}
-<div class="card" style="margin-bottom:var(--space-4)">
+<div class="card mb-4">
 <h2 class="card-header">{{.UserID}}</h2>
 {{if .Added}}<h3>新增能力</h3><ul class="list-plain">{{range .Added}}<li>＋ {{.Name}}</li>{{end}}</ul>{{end}}
 {{if .Removed}}<h3>失去能力</h3><ul class="list-plain">{{range .Removed}}<li>－ {{.Name}}</li>{{end}}</ul>{{end}}

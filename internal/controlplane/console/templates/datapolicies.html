@@ -10,8 +10,8 @@
 <input name="subject_id" placeholder="subject_id，如 clerk" required>
 <input name="resource" placeholder="resource，如 order" required>
 <select name="effect" aria-label="效果（allow/deny）"><option value="allow">allow</option><option value="deny">deny</option></select>
-<button type="button" id="builder-toggle" style="display:none">专业模式（原始 JSON）</button>
-<div id="builder" style="display:none"></div>
+<button type="button" id="builder-toggle" class="hidden">专业模式（原始 JSON）</button>
+<div id="builder" class="hidden"></div>
 <div id="cond-preview" class="cond-preview" role="status" aria-live="polite"></div>
 <textarea name="condition" id="cond-json" rows="4" placeholder='condition（原始 JSON），如 {"op":"AND","children":[]}' required></textarea>
 <input name="description" placeholder="业务说明（运营台显示，如：仅限本人区域的订单）">

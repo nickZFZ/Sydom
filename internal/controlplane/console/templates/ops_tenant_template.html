@@ -6,14 +6,14 @@
 <h1>{{.Name}}</h1>
 <p class="hint">{{.Description}}</p>
 
-<div class="card" style="margin-bottom:var(--space-4)">
+<div class="card mb-4">
 <h2 class="card-header">能力 <span class="badge badge-muted">{{len .Caps}} 项</span></h2>
 {{if .Caps}}
 <ul class="list-plain">{{range .Caps}}<li>{{.}}</li>{{end}}</ul>
 {{else}}<p class="hint">（无能力）</p>{{end}}
 </div>
 
-<div class="card" style="margin-bottom:var(--space-4)">
+<div class="card mb-4">
 <h2 class="card-header">角色 <span class="badge badge-muted">{{len .Roles}} 个</span></h2>
 {{if .Roles}}
 <ul class="list-plain">{{range .Roles}}<li>{{.Name}}：{{range $i, $c := .Caps}}{{if $i}}、{{end}}{{$c}}{{end}}{{if .Scopes}}<br><span class="hint">数据范围：{{range $i, $s := .Scopes}}{{if $i}}；{{end}}{{$s}}{{end}}</span>{{end}}</li>{{end}}</ul>
@@ -24,7 +24,7 @@
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <button class="btn btn-primary">应用到本应用</button>
 </form>
-<form method="post" action="/ops/apps/{{.AppID}}/tenant-templates/{{.TemplateID}}/delete" class="inline-form" style="display:inline" data-confirm="确定删除该模板吗？此操作不可撤销。">
+<form method="post" action="/ops/apps/{{.AppID}}/tenant-templates/{{.TemplateID}}/delete" class="inline-form d-inline" data-confirm="确定删除该模板吗？此操作不可撤销。">
 <input type="hidden" name="csrf_token" value="{{.CSRF}}">
 <button class="btn danger">删除模板</button>
 </form>
