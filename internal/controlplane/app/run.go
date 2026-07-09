@@ -28,6 +28,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
 	"github.com/nickZFZ/Sydom/internal/health"
 	"github.com/nickZFZ/Sydom/internal/obs"
+	"github.com/nickZFZ/Sydom/internal/secheaders"
 	"github.com/nickZFZ/Sydom/internal/tlsconfig"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
@@ -81,6 +82,10 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 
 	m := obs.New() // 可观测性基座：RED 指标 + 访问日志 + /metrics（fail-open，绝不阻断主路径）
 
+	// secure：部署已声明 HTTPS——复用 Console cookie 的同一信号（语义一致「部署在 HTTPS 后」）。
+	// 门控 HSTS 下发（明文部署绝不发，防浏览器强制 HTTPS 锁死本地访问）。不新增 flag（YAGNI）。
+	secure := !cfg.ConsoleCookieInsecure
+
 	mgr := policy.NewPolicyManager(db, outbox.NewSink())
 	adminSrv := mgmt.NewAdminServer(db, mgr, cfg.MasterKey)
 	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db, logger, m, grpcOpts...)
@@ -117,7 +122,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 		if srvTLS != nil {
 			restLis = tls.NewListener(restLis, srvTLS)
 		}
-		restSrv = &http.Server{Handler: m.HTTPMiddleware(logger, restgw.NewHandler(adminSrv, operatorResolver, enforcer, db, logger))}
+		restSrv = &http.Server{Handler: secheaders.API(secure)(m.HTTPMiddleware(logger, restgw.NewHandler(adminSrv, operatorResolver, enforcer, db, logger)))}
 		logger.Info("control plane REST enabled", "rest_addr", restLis.Addr().String())
 		launch("rest-serve", func() error {
 			if e := restSrv.Serve(restLis); e != nil && !errors.Is(e, http.ErrServerClosed) {
@@ -133,8 +138,8 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 			consoleLis = tls.NewListener(consoleLis, srvTLS)
 		}
 		store := console.NewRedisStore(rdb, cfg.ConsoleSessionTTL)
-		consoleSrv = &http.Server{Handler: m.HTTPMiddleware(logger, console.NewHandler(
-			adminSrv, operatorResolver, enforcer, db, store, logger, !cfg.ConsoleCookieInsecure))}
+		consoleSrv = &http.Server{Handler: secheaders.Console(secure)(m.HTTPMiddleware(logger, console.NewHandler(
+			adminSrv, operatorResolver, enforcer, db, store, logger, secure)))}
 		logger.Info("control plane Console enabled", "console_addr", consoleLis.Addr().String())
 		launch("console-serve", func() error {
 			if e := consoleSrv.Serve(consoleLis); e != nil && !errors.Is(e, http.ErrServerClosed) {

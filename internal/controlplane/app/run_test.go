@@ -86,6 +86,23 @@ func TestRun_WiringEndToEnd(t *testing.T) {
 		return resp.StatusCode == http.StatusOK
 	}, 10*time.Second, 100*time.Millisecond, "REST 监听器应走通认证链返回 200")
 
+	// M5.2a 接线核验（REST 面）：secheaders 在链上、且为 JSON 锁死变体（非 Console 变体，SH-4）。
+	{
+		target := "/v1/applications"
+		ts := time.Now().Unix()
+		sum := sha256.Sum256(nil)
+		h := hex.EncodeToString(sum[:])
+		req, _ := http.NewRequest("GET", restBase+target, nil)
+		req.Header.Set(auth.HdrPrincipal, cfg.RootPrincipal)
+		req.Header.Set(auth.HdrTimestamp, strconv.FormatInt(ts, 10))
+		req.Header.Set(auth.HdrSignature, auth.SignREST(rootSecret, cfg.RootPrincipal, ts, "GET", target, h))
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
+		require.Equal(t, "default-src 'none'; frame-ancestors 'none'", resp.Header.Get("Content-Security-Policy"))
+	}
+
 	// Console 监听器起来：未认证 GET /login → 200 登录页。
 	consoleBase := "http://" + consoleLis.Addr().String()
 	require.Eventually(t, func() bool {
@@ -96,6 +113,16 @@ func TestRun_WiringEndToEnd(t *testing.T) {
 		defer resp.Body.Close()
 		return resp.StatusCode == http.StatusOK
 	}, 10*time.Second, 100*time.Millisecond, "Console 监听器应返回登录页 200")
+
+	// M5.2a 接线核验（Console 面）：secheaders 在链上、且为 HTML 严格 CSP 变体（含 script-src 'self' 无 unsafe-inline，SH-2/SH-4）。
+	{
+		resp, err := http.DefaultClient.Get(consoleBase + "/login")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
+		require.Contains(t, resp.Header.Get("Content-Security-Policy"), "script-src 'self'")
+		require.NotContains(t, resp.Header.Get("Content-Security-Policy"), "unsafe-inline")
+	}
 
 	// 优雅关闭。
 	cancel()
