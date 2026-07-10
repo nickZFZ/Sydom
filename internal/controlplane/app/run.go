@@ -74,21 +74,22 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 	if err != nil {
 		return fmt.Errorf("server tls: %w", err) // fail-close：半配置/证书不可读即拒绝启动
 	}
-	var grpcOpts []grpc.ServerOption
-	if srvTLS != nil {
-		grpcOpts = append(grpcOpts, grpc.Creds(credentials.NewTLS(srvTLS)))
-		logger.Info("control plane TLS enabled")
-	}
-
 	// M5.2b：仅 policysync（机对机策略同步）通道派生要求客户端证书的 mTLS 变体；
-	// admin/REST/Console 继续用共享 srvTLS（人面不破）。CA 空 → syncTLS==srvTLS，行为不变。
+	// admin/REST/Console 继续用共享 srvTLS（人面不破）。sync_client_ca_file 空 → syncTLS==srvTLS，行为不变。
 	syncTLS, err := tlsconfig.MutualServer(srvTLS, cfg.SyncClientCAFile)
 	if err != nil {
 		return fmt.Errorf("policysync mtls: %w", err) // fail-close：CA 设但无服务端 TLS / 无效 PEM 即拒绝启动
 	}
-	syncGrpcOpts := grpcOpts
-	if syncTLS != srvTLS {
-		syncGrpcOpts = []grpc.ServerOption{grpc.Creds(credentials.NewTLS(syncTLS))}
+	// baseOpts：admin/policysync 共享的非传输层 server option（拦截器在各 NewGRPCServer 内追加，
+	// 当前为空）。两通道各自在此之上追加自己的传输凭据——唯一差异即用哪份 *tls.Config；
+	// 绝不从头重建 opts，故任何将来加到 baseOpts 的共享 option 两通道都继承、不会被静默丢弃。
+	var baseOpts []grpc.ServerOption
+	grpcOpts := append(baseOpts[:len(baseOpts):len(baseOpts)], serverCreds(srvTLS)...)
+	syncGrpcOpts := append(baseOpts[:len(baseOpts):len(baseOpts)], serverCreds(syncTLS)...)
+	if srvTLS != nil {
+		logger.Info("control plane TLS enabled")
+	}
+	if cfg.SyncClientCAFile != "" {
 		logger.Info("policysync mTLS enabled (client cert required)")
 	}
 
@@ -251,6 +252,15 @@ func Main() int {
 		return 1
 	}
 	return 0
+}
+
+// serverCreds 把可选的 *tls.Config 包成 gRPC 传输凭据 server option 切片：
+// nil（明文）→ 空切片，使调用方 append 后 opts 不含传输凭据。
+func serverCreds(cfg *tls.Config) []grpc.ServerOption {
+	if cfg == nil {
+		return nil
+	}
+	return []grpc.ServerOption{grpc.Creds(credentials.NewTLS(cfg))}
 }
 
 // cpReadiness 构造控制面就绪 checker：DB Ping + Redis Ping 皆通即就绪（fail-close）。
