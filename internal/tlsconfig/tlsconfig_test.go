@@ -235,3 +235,115 @@ func TestMutualClientHappyLoadsCert(t *testing.T) {
 		t.Fatal("应加载一张客户端证书")
 	}
 }
+
+// acceptHandshake 循环 Accept 并完成 TLS 握手后关闭（服务端侧）。
+func acceptHandshake(ln net.Listener) {
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		go func(c net.Conn) {
+			_ = c.(*tls.Conn).Handshake()
+			c.Close()
+		}(c)
+	}
+}
+
+// acceptHandshakeMark 循环 Accept；握手成功时写一个标记字节再关闭，握手失败
+// （如 mTLS 要求客户端证书但校验未过）则不写任何数据直接关闭。
+// 仅供 TestMutualServerEnforcesClientCert 使用：单凭客户端 Read 出错/EOF 不足以
+// 区分「服务端确实完成握手」与「服务端因证书校验失败而拒绝」——两者客户端侧表现
+// 可能相同（回归验证证实：把 ClientAuth 弱化为 tls.RequestClientCert 后，握手其实
+// 成功但连接仍立即被关闭，客户端 Read 同样只读到 EOF，若不看标记字节该弱化会被
+// 误判为「已正确拒绝」，反向验证就没有齿）。
+func acceptHandshakeMark(ln net.Listener) {
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		go func(c net.Conn) {
+			defer c.Close()
+			if err := c.(*tls.Conn).Handshake(); err != nil {
+				return
+			}
+			_, _ = c.Write([]byte{'K'})
+		}(c)
+	}
+}
+
+func TestMutualServerEnforcesClientCert(t *testing.T) {
+	ca := certtest.NewCA(t)
+	srvCert, srvKey := ca.Leaf(t, "localhost", x509.ExtKeyUsageServerAuth)
+	cliCert, cliKey := ca.Leaf(t, "sidecar", x509.ExtKeyUsageClientAuth)
+
+	base, err := tlsconfig.Server(srvCert, srvKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srvCfg, err := tlsconfig.MutualServer(base, ca.File())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ln, err := tls.Listen("tcp", "127.0.0.1:0", srvCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	go acceptHandshakeMark(ln)
+
+	// 无客户端证书 → 握手被拒。
+	// 注：TLS 1.3 下客户端在观测到服务端后置证书校验结果前即完成自身握手并发出
+	// Finished，tls.Dial() 可能返回 (conn, nil)；服务端校验失败后发送 fatal alert
+	// 并关闭连接，客户端须靠后续 Read/Write 才能观测到该拒绝（Go crypto/tls 既有
+	// 语义，非 tlsconfig 实现缺陷——经诊断复现：协商版本 0x304/TLS1.3，Dial 成功，
+	// 随后 Read 得 "remote error: tls: certificate required"）。故 Dial 成功时补一次
+	// 带超时的 Read，凭 acceptHandshakeMark 的标记字节判定服务端是否真完成了握手
+	// （而不仅是看 Read 是否出错——纯看出错/EOF 不足以区分「确被拒绝」与「握手其实
+	// 成功但连接照常被关」，回归验证已证实这点，见上方助手注释）。
+	noCert, err := tlsconfig.MutualClient(ca.File(), "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	noCert.ServerName = "localhost"
+	c0, dialErr := tls.Dial("tcp", ln.Addr().String(), noCert)
+	if dialErr == nil {
+		defer c0.Close()
+		c0.SetDeadline(time.Now().Add(2 * time.Second))
+		buf := make([]byte, 1)
+		if n, rerr := c0.Read(buf); rerr == nil && n > 0 && buf[0] == 'K' {
+			t.Fatal("无客户端证书应被 mTLS 服务端拒绝")
+		}
+	}
+
+	// 持 CA 签发客户端证书 → 握手成功。
+	withCert, err := tlsconfig.MutualClient(ca.File(), cliCert, cliKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	withCert.ServerName = "localhost"
+	c, err := tls.Dial("tcp", ln.Addr().String(), withCert)
+	if err != nil {
+		t.Fatalf("持 CA 签发客户端证书应握手成功: %v", err)
+	}
+	c.Close()
+
+	// 反向验证：退回单向 TLS（不要求客户端证书）后，无证书 client 握手成功，
+	// 证明上面「拒绝」确由客户端证书要求所致（断言有齿）。
+	plain, err := tlsconfig.Server(srvCert, srvKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ln2, err := tls.Listen("tcp", "127.0.0.1:0", plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln2.Close()
+	go acceptHandshake(ln2)
+	c2, err := tls.Dial("tcp", ln2.Addr().String(), noCert)
+	if err != nil {
+		t.Fatalf("单向 TLS 下无证书 client 应握手成功（反向验证）: %v", err)
+	}
+	c2.Close()
+}
