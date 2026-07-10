@@ -80,6 +80,18 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 		logger.Info("control plane TLS enabled")
 	}
 
+	// M5.2b：仅 policysync（机对机策略同步）通道派生要求客户端证书的 mTLS 变体；
+	// admin/REST/Console 继续用共享 srvTLS（人面不破）。CA 空 → syncTLS==srvTLS，行为不变。
+	syncTLS, err := tlsconfig.MutualServer(srvTLS, cfg.SyncClientCAFile)
+	if err != nil {
+		return fmt.Errorf("policysync mtls: %w", err) // fail-close：CA 设但无服务端 TLS / 无效 PEM 即拒绝启动
+	}
+	syncGrpcOpts := grpcOpts
+	if syncTLS != srvTLS {
+		syncGrpcOpts = []grpc.ServerOption{grpc.Creds(credentials.NewTLS(syncTLS))}
+		logger.Info("policysync mTLS enabled (client cert required)")
+	}
+
 	m := obs.New() // 可观测性基座：RED 指标 + 访问日志 + /metrics（fail-open，绝不阻断主路径）
 
 	// secure：部署已声明 HTTPS——复用 Console cookie 的同一信号（语义一致「部署在 HTTPS 后」）。
@@ -90,7 +102,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 	adminSrv := mgmt.NewAdminServer(db, mgr, cfg.MasterKey)
 	grpcSrv := mgmt.NewGRPCServer(adminSrv, operatorResolver, enforcer, db, logger, m, grpcOpts...)
 	syncCore := policysync.NewServer(db, policysync.Config{HeartbeatInterval: cfg.HeartbeatInterval}, mgr)
-	syncSrv := policysync.NewGRPCServer(syncCore, appResolver, m, grpcOpts...)
+	syncSrv := policysync.NewGRPCServer(syncCore, appResolver, m, syncGrpcOpts...)
 	pub := broadcast.NewRedisPublisher(rdb)
 	sub := broadcast.NewRedisSubscriber(rdb)
 
