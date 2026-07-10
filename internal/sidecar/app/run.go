@@ -173,7 +173,7 @@ func buildSyncConfig(cfg Config) (syncclient.Config, error) {
 		BackoffMax:     cfg.BackoffMax,
 	}
 	if cfg.ControlPlaneTLS {
-		cliTLS, err := tlsconfig.Client(cfg.ControlPlaneCAFile)
+		cliTLS, err := tlsconfig.MutualClient(cfg.ControlPlaneCAFile, cfg.ControlPlaneClientCertFile, cfg.ControlPlaneClientKeyFile)
 		if err != nil {
 			return syncclient.Config{}, fmt.Errorf("control plane client tls: %w", err)
 		}
