@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nickZFZ/Sydom/internal/certtest"
 	"github.com/nickZFZ/Sydom/internal/tlsconfig"
 )
 
@@ -135,5 +136,102 @@ func TestClientBadCAFailsClose(t *testing.T) {
 	}
 	if _, err := tlsconfig.Client(bad); err == nil {
 		t.Fatal("want error for invalid CA pem, got nil")
+	}
+}
+
+func TestMutualServerEmptyCAReturnsBaseUnchanged(t *testing.T) {
+	certFile, keyFile := writeSelfSigned(t)
+	base, err := tlsconfig.Server(certFile, keyFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := tlsconfig.MutualServer(base, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != base {
+		t.Fatal("空 clientCAFile 应原样返回 base（向后兼容）")
+	}
+	if got.ClientAuth != tls.NoClientCert {
+		t.Fatal("空 clientCAFile 不应要求客户端证书")
+	}
+}
+
+func TestMutualServerNilBaseFailsClose(t *testing.T) {
+	ca := certtest.NewCA(t)
+	if _, err := tlsconfig.MutualServer(nil, ca.File()); err == nil {
+		t.Fatal("明文(base=nil)下要求客户端证书应 fail-close 返错")
+	}
+}
+
+func TestMutualServerBadCAFailsClose(t *testing.T) {
+	certFile, keyFile := writeSelfSigned(t)
+	base, _ := tlsconfig.Server(certFile, keyFile)
+	dir := t.TempDir()
+	bad := filepath.Join(dir, "bad.pem")
+	if err := os.WriteFile(bad, []byte("not a cert"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tlsconfig.MutualServer(base, bad); err == nil {
+		t.Fatal("无效 CA PEM 应返错")
+	}
+}
+
+func TestMutualServerHappyDoesNotMutateBase(t *testing.T) {
+	ca := certtest.NewCA(t)
+	srvCert, srvKey := ca.Leaf(t, "localhost", x509.ExtKeyUsageServerAuth)
+	base, err := tlsconfig.Server(srvCert, srvKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := tlsconfig.MutualServer(base, ca.File())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ClientAuth != tls.RequireAndVerifyClientCert {
+		t.Fatal("应要求并验证客户端证书")
+	}
+	if got.ClientCAs == nil {
+		t.Fatal("应设置 ClientCAs")
+	}
+	if base.ClientAuth != tls.NoClientCert || base.ClientCAs != nil {
+		t.Fatal("入参 base 不应被改写（别名安全）")
+	}
+}
+
+func TestMutualClientEmptyCertEquivalentToClient(t *testing.T) {
+	ca := certtest.NewCA(t)
+	got, err := tlsconfig.MutualClient(ca.File(), "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Certificates) != 0 {
+		t.Fatal("未配置客户端证书时不应出示证书（向后兼容）")
+	}
+	if got.RootCAs == nil {
+		t.Fatal("应从 caFile 构造信任根")
+	}
+}
+
+func TestMutualClientPartialFailsClose(t *testing.T) {
+	ca := certtest.NewCA(t)
+	cliCert, cliKey := ca.Leaf(t, "sidecar", x509.ExtKeyUsageClientAuth)
+	if _, err := tlsconfig.MutualClient(ca.File(), cliCert, ""); err == nil {
+		t.Fatal("仅 cert 无 key 应 fail-close")
+	}
+	if _, err := tlsconfig.MutualClient(ca.File(), "", cliKey); err == nil {
+		t.Fatal("仅 key 无 cert 应 fail-close")
+	}
+}
+
+func TestMutualClientHappyLoadsCert(t *testing.T) {
+	ca := certtest.NewCA(t)
+	cliCert, cliKey := ca.Leaf(t, "sidecar", x509.ExtKeyUsageClientAuth)
+	got, err := tlsconfig.MutualClient(ca.File(), cliCert, cliKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Certificates) != 1 {
+		t.Fatal("应加载一张客户端证书")
 	}
 }
