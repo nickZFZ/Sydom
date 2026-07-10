@@ -169,6 +169,20 @@ root_principal: "root@sydom"
 	require.True(t, cfg.ConsoleCookieInsecure)
 }
 
+func TestLoadConfig_SyncClientCAFile(t *testing.T) {
+	yaml := `
+database_dsn: "postgres://localhost/sydom"
+redis_addr: "localhost:6379"
+admin_addr: ":8081"
+sync_addr: ":8082"
+root_principal: "root@sydom"
+sync_client_ca_file: /etc/sydom/sync-ca.pem
+`
+	cfg, err := app.LoadConfig(writeConfig(t, yaml), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.Equal(t, "/etc/sydom/sync-ca.pem", cfg.SyncClientCAFile)
+}
+
 func TestLoadConfigParsesTLSAndHealth(t *testing.T) {
 	body := "database_dsn: postgres://x\nredis_addr: r:6379\nadmin_addr: \":1\"\nsync_addr: \":2\"\n" +
 		"root_principal: root@sydom\ntls_cert_file: /c/cert.pem\ntls_key_file: /c/key.pem\nhealth_addr: \":8083\"\n"
