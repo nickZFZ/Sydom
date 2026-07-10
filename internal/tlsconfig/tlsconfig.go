@@ -46,9 +46,11 @@ func Client(caFile string) (*tls.Config, error) {
 }
 
 // MutualServer 由已构造的服务端配置派生「要求并验证客户端证书」的变体：
-//   clientCAFile 空                                → 返回 base 原样（向后兼容，不要求客户端证书）；
-//   base 为 nil（未启用服务端 TLS）但 clientCAFile 非空 → 返错（fail-close：明文上无法要求客户端证书）；
-//   clientCAFile 不可读/无有效 PEM                  → 返错。
+//
+//	clientCAFile 空                                → 返回 base 原样（向后兼容，不要求客户端证书）；
+//	base 为 nil（未启用服务端 TLS）但 clientCAFile 非空 → 返错（fail-close：明文上无法要求客户端证书）；
+//	clientCAFile 不可读/无有效 PEM                  → 返错。
+//
 // 非空路径 base.Clone() 后设置 ClientAuth/ClientCAs，绝不改写入参 base（避免别名污染共享配置）。
 func MutualServer(base *tls.Config, clientCAFile string) (*tls.Config, error) {
 	if clientCAFile == "" {
@@ -72,9 +74,10 @@ func MutualServer(base *tls.Config, clientCAFile string) (*tls.Config, error) {
 }
 
 // MutualClient 在 Client(caFile) 基础上附加客户端证书对用于 mTLS：
-//   certFile/keyFile 皆空 → 等价 Client（不出示客户端证书，向后兼容）；
-//   仅一项非空          → 返错（fail-close：禁止半配置）；
-//   都非空但加载失败    → 返错。
+//
+//	certFile/keyFile 皆空 → 等价 Client（不出示客户端证书，向后兼容）；
+//	仅一项非空          → 返错（fail-close：禁止半配置）；
+//	都非空但加载失败    → 返错。
 func MutualClient(caFile, certFile, keyFile string) (*tls.Config, error) {
 	cfg, err := Client(caFile)
 	if err != nil {
