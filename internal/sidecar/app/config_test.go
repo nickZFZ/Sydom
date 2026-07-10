@@ -114,3 +114,19 @@ func TestLoadConfigParsesTLSAndHealth(t *testing.T) {
 	require.Equal(t, "/c/ca.pem", cfg.ControlPlaneCAFile)
 	require.Equal(t, ":8091", cfg.HealthAddr)
 }
+
+func TestLoadConfig_ControlPlaneClientCert(t *testing.T) {
+	body := "control_plane_addr: cp:8082\napp_key: k\ndomain: shop\nauth_addr: \":8090\"\n" +
+		"control_plane_tls: true\ncontrol_plane_ca_file: /c/ca.pem\n" +
+		"control_plane_client_cert_file: /etc/sydom/sidecar.crt\n" +
+		"control_plane_client_key_file: /etc/sydom/sidecar.key\n"
+	path := writeConfig(t, body)
+	cfg, err := app.LoadConfig(path, envFunc(validEnv()))
+	require.NoError(t, err)
+	if cfg.ControlPlaneClientCertFile != "/etc/sydom/sidecar.crt" {
+		t.Fatalf("ControlPlaneClientCertFile = %q, want /etc/sydom/sidecar.crt", cfg.ControlPlaneClientCertFile)
+	}
+	if cfg.ControlPlaneClientKeyFile != "/etc/sydom/sidecar.key" {
+		t.Fatalf("ControlPlaneClientKeyFile = %q, want /etc/sydom/sidecar.key", cfg.ControlPlaneClientKeyFile)
+	}
+}

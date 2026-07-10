@@ -24,7 +24,11 @@ type Config struct {
 	TLSKeyFile         string
 	ControlPlaneTLS    bool   // dial 控制面 sync 是否走 TLS
 	ControlPlaneCAFile string // 信任 CA；空=系统根
-	HealthAddr         string // 空=不起健康口
+
+	ControlPlaneClientCertFile string // mTLS 客户端证书；与 KeyFile 须同设（tlsconfig.MutualClient 校验）；空=不出示
+	ControlPlaneClientKeyFile  string
+
+	HealthAddr string // 空=不起健康口
 
 	Secret []byte // env SYDOM_APP_SECRET（HMAC 密钥，原始字节）
 }
@@ -41,7 +45,11 @@ type fileConfig struct {
 	TLSKeyFile         string `yaml:"tls_key_file"`
 	ControlPlaneTLS    bool   `yaml:"control_plane_tls"`
 	ControlPlaneCAFile string `yaml:"control_plane_ca_file"`
-	HealthAddr         string `yaml:"health_addr"`
+
+	ControlPlaneClientCertFile string `yaml:"control_plane_client_cert_file"`
+	ControlPlaneClientKeyFile  string `yaml:"control_plane_client_key_file"`
+
+	HealthAddr string `yaml:"health_addr"`
 }
 
 // LoadConfig 读 YAML + env 覆盖密钥/可选项 + 校验（任一不满足 fail-close 返错）。
@@ -65,7 +73,11 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 		TLSKeyFile:         fc.TLSKeyFile,
 		ControlPlaneTLS:    fc.ControlPlaneTLS,
 		ControlPlaneCAFile: fc.ControlPlaneCAFile,
-		HealthAddr:         fc.HealthAddr,
+
+		ControlPlaneClientCertFile: fc.ControlPlaneClientCertFile,
+		ControlPlaneClientKeyFile:  fc.ControlPlaneClientKeyFile,
+
+		HealthAddr: fc.HealthAddr,
 	}
 	if cfg.MaxStaleness, err = parseDurationDefault(fc.MaxStaleness, 0); err != nil {
 		return Config{}, fmt.Errorf("max_staleness: %w", err)
