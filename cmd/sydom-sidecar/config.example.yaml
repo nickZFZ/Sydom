@@ -11,6 +11,10 @@ backoff_max: "30s"
 # 可选 dial 控制面走 TLS（control_plane_ca_file 空=系统根）：
 # control_plane_tls: true
 # control_plane_ca_file: "/etc/sydom/tls/ca.pem"
+# 可选 mTLS：向控制面 policysync 出示客户端证书（cert/key 须同设，半配置启动失败；
+# 缺省=不出示；须与控制面 sync_client_ca_file 的 CA 同源签发）：
+# control_plane_client_cert_file: "/etc/sydom/tls/sidecar-client.pem"
+# control_plane_client_key_file:  "/etc/sydom/tls/sidecar-client-key.pem"
 # 可选健康口（明文、免鉴权；缺省不起）：
 # health_addr: ":8091"
 # 敏感项只走环境变量（不写本文件）：

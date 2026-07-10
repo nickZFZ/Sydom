@@ -12,6 +12,9 @@ relay_poll_interval: "1s"
 # 可选 TLS（cert/key 须同设，半配置启动失败；缺省=明文，仅本地/测试）：
 # tls_cert_file: "/etc/sydom/tls/cert.pem"
 # tls_key_file:  "/etc/sydom/tls/key.pem"
+# 可选 policysync 通道 mTLS（仅 sync_addr 机对机通道要求 sidecar 出示由此 CA 签发的客户端证书；
+# admin/REST/Console 人面通道不受影响。须先设 tls_cert_file/tls_key_file，否则启动失败；缺省=不要求）：
+# sync_client_ca_file: "/etc/sydom/tls/sync-client-ca.pem"
 # 可选健康口（明文、免鉴权，仅 /healthz + /readyz；缺省不起）：
 # health_addr: ":8083"
 # 敏感项只走环境变量（不写本文件）：
