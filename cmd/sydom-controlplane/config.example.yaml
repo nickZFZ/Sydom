@@ -5,6 +5,8 @@ sync_addr: ":8082"
 root_principal: "root@sydom"
 heartbeat_interval: "30s"
 relay_poll_interval: "1s"
+# 运行环境（缺省 development）；production 下未设 tls_cert_file/tls_key_file 即拒绝启动（拒明文）：
+# environment: production
 # Console（服务端 BFF Web 控制台）可选；省略 console_addr 则不启用。
 # console_addr: ":8084"
 # console_session_ttl: "30m"        # 会话/CSRF 有效期，默认 30m
@@ -20,4 +22,6 @@ relay_poll_interval: "1s"
 # 敏感项只走环境变量（不写本文件）：
 #   SYDOM_MASTER_KEY  = base64(32 字节 AES-256 主密钥)
 #   SYDOM_ROOT_SECRET = root operator 初始 HMAC 密钥
+#   或用 <VAR>_FILE 指向挂载的密钥文件（与裸 env 二选一，同设报错；文件尾部空白/换行自动裁剪）：
+#   SYDOM_MASTER_KEY_FILE / SYDOM_ROOT_SECRET_FILE
 # DB 须先 make migrate-up

@@ -5,6 +5,8 @@ auth_addr: "127.0.0.1:8090"
 max_staleness: "0s"        # 0=关闭陈旧守卫（!Ready 仍 fail-close）；生产建议显式设非零，如 "90s"
 backoff_initial: "500ms"
 backoff_max: "30s"
+# 运行环境（缺省 development）；production 下 control_plane_tls 必为 true 否则拒绝启动：
+# environment: production
 # 可选 serve TLS（SDK→sidecar；cert/key 须同设，缺省=明文）：
 # tls_cert_file: "/etc/sydom/tls/cert.pem"
 # tls_key_file:  "/etc/sydom/tls/key.pem"
@@ -19,4 +21,5 @@ backoff_max: "30s"
 # health_addr: ":8091"
 # 敏感项只走环境变量（不写本文件）：
 #   SYDOM_APP_SECRET = 该 app 的 HMAC 密钥（原始字节，须与控制面建该 app 时设置的一致）
+#   或用 SYDOM_APP_SECRET_FILE 指向挂载的密钥文件（与裸 env 二选一，同设报错；尾部空白自动裁剪）。
 # 须先有可达的控制面 PolicySync（cmd/sydom-controlplane）
