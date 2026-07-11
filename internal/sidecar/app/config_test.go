@@ -162,3 +162,13 @@ func TestLoadConfig_AppSecretFromFileAndConflict(t *testing.T) {
 	_, err = app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
 	require.Error(t, err)
 }
+
+func TestLoadConfig_EnvironmentEnvOverride(t *testing.T) {
+	// 对称控制面：yaml 显式 development + env=production + 无 control_plane_tls → 期望报错，
+	// 证明 env 覆盖 yaml（env 优先）。若 firstNonEmpty 参数颠倒（yaml 优先），development 生效、
+	// 无 TLS 也不报错 → 本测试 FAIL（有齿）。
+	env := validEnv()
+	env["SYDOM_ENVIRONMENT"] = "production"
+	_, err := app.LoadConfig(writeConfig(t, fullYAML+"environment: development\n"), envFunc(env))
+	require.Error(t, err, "env=production 覆盖 yaml=development 且无 control_plane_tls 应报错（证明 env 优先）")
+}
