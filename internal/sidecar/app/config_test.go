@@ -130,3 +130,35 @@ func TestLoadConfig_ControlPlaneClientCert(t *testing.T) {
 		t.Fatalf("ControlPlaneClientKeyFile = %q, want /etc/sydom/sidecar.key", cfg.ControlPlaneClientKeyFile)
 	}
 }
+
+func TestLoadConfig_EnvironmentAndProductionRequiresTLS(t *testing.T) {
+	// dev 默认，无 control_plane_tls → ok
+	cfg, err := app.LoadConfig(writeConfig(t, fullYAML), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.False(t, cfg.Environment.IsProduction())
+	// 生产但无 control_plane_tls → 报错
+	_, err = app.LoadConfig(writeConfig(t, fullYAML+"environment: production\n"), envFunc(validEnv()))
+	require.Error(t, err)
+	// 生产 + control_plane_tls: true → ok
+	cfg, err = app.LoadConfig(writeConfig(t, fullYAML+"environment: production\ncontrol_plane_tls: true\n"), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.True(t, cfg.Environment.IsProduction())
+	// 未知环境值 → 报错
+	_, err = app.LoadConfig(writeConfig(t, fullYAML+"environment: prod\n"), envFunc(validEnv()))
+	require.Error(t, err)
+}
+
+func TestLoadConfig_AppSecretFromFileAndConflict(t *testing.T) {
+	env := validEnv()
+	delete(env, "SYDOM_APP_SECRET")
+	p := filepath.Join(t.TempDir(), "as")
+	require.NoError(t, os.WriteFile(p, []byte("file-app-secret\n"), 0o600))
+	env["SYDOM_APP_SECRET_FILE"] = p
+	cfg, err := app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
+	require.NoError(t, err)
+	require.Equal(t, []byte("file-app-secret"), cfg.Secret)
+	// env + file 同设 → 报错
+	env["SYDOM_APP_SECRET"] = "env-app-secret"
+	_, err = app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
+	require.Error(t, err)
+}

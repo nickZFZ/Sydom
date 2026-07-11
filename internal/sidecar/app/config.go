@@ -8,19 +8,21 @@ import (
 	"os"
 	"time"
 
+	"github.com/nickZFZ/Sydom/internal/deploycfg"
 	"gopkg.in/yaml.v3"
 )
 
 // Config 是 Sidecar 进程运行参数。非敏感项来自 YAML，敏感项（Secret）只来自 env。
 type Config struct {
-	ControlPlaneAddr   string        // 控制面 PolicySync 地址
-	AppKey             string        // app_key：HMAC 认证标识 + 流路由（→ syncclient.AppID）
-	Domain             string        // casbin 域（= application.domain，→ kernel.New 域）
-	AuthAddr           string        // 本地 AuthService 监听地址（如 "127.0.0.1:8090"）
-	MaxStaleness       time.Duration // 陈旧守卫上限（零值=关闭）
-	BackoffInitial     time.Duration // syncclient 退避初值（零值用 500ms）
-	BackoffMax         time.Duration // syncclient 退避上限（零值用 30s）
-	TLSCertFile        string        // serve auth 口（SDK→sidecar）证书；空=明文，与 TLSKeyFile 须同设
+	ControlPlaneAddr   string                // 控制面 PolicySync 地址
+	AppKey             string                // app_key：HMAC 认证标识 + 流路由（→ syncclient.AppID）
+	Domain             string                // casbin 域（= application.domain，→ kernel.New 域）
+	AuthAddr           string                // 本地 AuthService 监听地址（如 "127.0.0.1:8090"）
+	MaxStaleness       time.Duration         // 陈旧守卫上限（零值=关闭）
+	BackoffInitial     time.Duration         // syncclient 退避初值（零值用 500ms）
+	BackoffMax         time.Duration         // syncclient 退避上限（零值用 30s）
+	Environment        deploycfg.Environment // development（默认）/ production；production 下 ControlPlaneTLS 必为 true
+	TLSCertFile        string                // serve auth 口（SDK→sidecar）证书；空=明文，与 TLSKeyFile 须同设
 	TLSKeyFile         string
 	ControlPlaneTLS    bool   // dial 控制面 sync 是否走 TLS
 	ControlPlaneCAFile string // 信任 CA；空=系统根
@@ -41,6 +43,7 @@ type fileConfig struct {
 	MaxStaleness       string `yaml:"max_staleness"`
 	BackoffInitial     string `yaml:"backoff_initial"`
 	BackoffMax         string `yaml:"backoff_max"`
+	Environment        string `yaml:"environment"`
 	TLSCertFile        string `yaml:"tls_cert_file"`
 	TLSKeyFile         string `yaml:"tls_key_file"`
 	ControlPlaneTLS    bool   `yaml:"control_plane_tls"`
@@ -88,8 +91,15 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 	if cfg.BackoffMax, err = parseDurationDefault(fc.BackoffMax, 30*time.Second); err != nil {
 		return Config{}, fmt.Errorf("backoff_max: %w", err)
 	}
+	if cfg.Environment, err = deploycfg.ParseEnvironment(firstNonEmpty(getenv("SYDOM_ENVIRONMENT"), fc.Environment)); err != nil {
+		return Config{}, fmt.Errorf("environment: %w", err)
+	}
 
-	cfg.Secret = []byte(getenv("SYDOM_APP_SECRET"))
+	appSecret, err := deploycfg.ResolveSecret(getenv, "SYDOM_APP_SECRET")
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.Secret = []byte(appSecret)
 
 	if len(cfg.Secret) == 0 {
 		return Config{}, errors.New("SYDOM_APP_SECRET required")
@@ -103,6 +113,9 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 		if f.val == "" {
 			return Config{}, fmt.Errorf("%s required", f.name)
 		}
+	}
+	if cfg.Environment.IsProduction() && !cfg.ControlPlaneTLS {
+		return Config{}, errors.New("environment=production 要求 control_plane_tls: true（生产不得明文 dial 控制面）")
 	}
 	return cfg, nil
 }
