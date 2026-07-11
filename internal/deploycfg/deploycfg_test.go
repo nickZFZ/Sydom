@@ -62,6 +62,24 @@ func TestResolveSecret_EnvOnly(t *testing.T) {
 	}
 }
 
+func TestResolveSecret_EnvValueNotTrimmed(t *testing.T) {
+	// 向后兼容关键不变量：纯 env 路径绝不 trim。原代码 getenv(name) 直接用，
+	// 若密钥结尾恰有空格必须原样保留。防止有人误给纯 env 分支也加 TrimRight。
+	getenv := func(k string) string {
+		if k == "SYDOM_X" {
+			return "env-value " // 尾部空格必须原样保留
+		}
+		return ""
+	}
+	got, err := deploycfg.ResolveSecret(getenv, "SYDOM_X")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "env-value " {
+		t.Fatalf("纯 env 值应原样返回(不 trim), want %q, got %q", "env-value ", got)
+	}
+}
+
 func TestResolveSecret_FileOnlyTrimsTrailing(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "secret")
 	if err := os.WriteFile(p, []byte("file-value\n"), 0o600); err != nil {
