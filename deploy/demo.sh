@@ -8,6 +8,11 @@ source .env.demo
 set +a
 DC="docker compose --env-file .env.demo"
 
+# 先按当前 Dockerfile 重建应用镜像：docker compose up 默认不重建已存在的同名镜像，
+# 若本机有旧镜像会静默复用陈旧代码（曾致 seeder unknown tenant 假失败）。--profile tools 一并含 seeder。
+echo "[0/5] 重建应用镜像（避免复用旧镜像）..."
+$DC --profile tools build
+
 echo "[1/5] 起 PG + Redis ..."
 $DC up -d postgres redis
 
