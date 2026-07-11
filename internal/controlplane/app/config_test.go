@@ -197,3 +197,62 @@ func TestLoadConfigParsesTLSAndHealth(t *testing.T) {
 	require.Equal(t, "/c/key.pem", cfg.TLSKeyFile)
 	require.Equal(t, ":8083", cfg.HealthAddr)
 }
+
+func TestLoadConfig_EnvironmentDefaultsDevelopment(t *testing.T) {
+	cfg, err := app.LoadConfig(writeConfig(t, fullYAML), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.False(t, cfg.Environment.IsProduction())
+}
+
+func TestLoadConfig_EnvironmentUnknownFailsClose(t *testing.T) {
+	_, err := app.LoadConfig(writeConfig(t, fullYAML+"environment: prod\n"), envFunc(validEnv()))
+	require.Error(t, err)
+}
+
+func TestLoadConfig_ProductionRequiresTLS(t *testing.T) {
+	// 生产但无 TLS → 报错
+	_, err := app.LoadConfig(writeConfig(t, fullYAML+"environment: production\n"), envFunc(validEnv()))
+	require.Error(t, err)
+	// 生产 + TLS → ok（LoadConfig 不读证书文件本身，仅校验路径非空）
+	okYAML := fullYAML + "environment: production\ntls_cert_file: /x/cert.pem\ntls_key_file: /x/key.pem\n"
+	cfg, err := app.LoadConfig(writeConfig(t, okYAML), envFunc(validEnv()))
+	require.NoError(t, err)
+	require.True(t, cfg.Environment.IsProduction())
+	// dev 无 TLS → ok（向后兼容）
+	_, err = app.LoadConfig(writeConfig(t, fullYAML), envFunc(validEnv()))
+	require.NoError(t, err)
+}
+
+func TestLoadConfig_EnvironmentEnvOverride(t *testing.T) {
+	env := validEnv()
+	env["SYDOM_ENVIRONMENT"] = "production" // env 覆盖 yaml，且触发生产硬校验
+	_, err := app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
+	require.Error(t, err, "env 覆盖为 production 且无 TLS 应报错（证明覆盖生效）")
+}
+
+func TestLoadConfig_MasterKeyFromFile(t *testing.T) {
+	env := validEnv()
+	b64 := env["SYDOM_MASTER_KEY"]
+	delete(env, "SYDOM_MASTER_KEY")
+	p := filepath.Join(t.TempDir(), "mk")
+	require.NoError(t, os.WriteFile(p, []byte(b64+"\n"), 0o600)) // 尾换行应被 trim 后 base64 解码成功
+	env["SYDOM_MASTER_KEY_FILE"] = p
+	cfg, err := app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
+	require.NoError(t, err)
+	require.Len(t, cfg.MasterKey, crypto.KeySize)
+}
+
+func TestLoadConfig_RootSecretFromFileAndConflict(t *testing.T) {
+	env := validEnv()
+	delete(env, "SYDOM_ROOT_SECRET")
+	p := filepath.Join(t.TempDir(), "rs")
+	require.NoError(t, os.WriteFile(p, []byte("file-root-secret\n"), 0o600))
+	env["SYDOM_ROOT_SECRET_FILE"] = p
+	cfg, err := app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
+	require.NoError(t, err)
+	require.Equal(t, []byte("file-root-secret"), cfg.RootSecret)
+	// env + file 同设 → 报错
+	env["SYDOM_ROOT_SECRET"] = "env-root-secret"
+	_, err = app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
+	require.Error(t, err)
+}

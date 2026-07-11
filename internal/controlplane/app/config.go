@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nickZFZ/Sydom/internal/crypto"
+	"github.com/nickZFZ/Sydom/internal/deploycfg"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,6 +23,7 @@ type Config struct {
 	RootPrincipal     string
 	HeartbeatInterval time.Duration
 	RelayPollInterval time.Duration
+	Environment       deploycfg.Environment // development（默认）/ production；production 下传输 TLS 缺失即拒启动
 
 	ConsoleAddr           string        // 空=不起 Console，向后兼容
 	ConsoleSessionTTL     time.Duration // 默认 30m
@@ -45,6 +47,7 @@ type fileConfig struct {
 	RootPrincipal     string `yaml:"root_principal"`
 	HeartbeatInterval string `yaml:"heartbeat_interval"`
 	RelayPollInterval string `yaml:"relay_poll_interval"`
+	Environment       string `yaml:"environment"`
 
 	ConsoleAddr           string `yaml:"console_addr"`
 	ConsoleSessionTTL     string `yaml:"console_session_ttl"`
@@ -94,12 +97,24 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 		return Config{}, fmt.Errorf("console_session_ttl: %w", err)
 	}
 
-	mk, err := base64.StdEncoding.DecodeString(getenv("SYDOM_MASTER_KEY"))
+	if cfg.Environment, err = deploycfg.ParseEnvironment(firstNonEmpty(getenv("SYDOM_ENVIRONMENT"), fc.Environment)); err != nil {
+		return Config{}, fmt.Errorf("environment: %w", err)
+	}
+
+	masterKeyB64, err := deploycfg.ResolveSecret(getenv, "SYDOM_MASTER_KEY")
+	if err != nil {
+		return Config{}, err
+	}
+	mk, err := base64.StdEncoding.DecodeString(masterKeyB64)
 	if err != nil {
 		return Config{}, fmt.Errorf("decode SYDOM_MASTER_KEY: %w", err)
 	}
 	cfg.MasterKey = mk
-	cfg.RootSecret = []byte(getenv("SYDOM_ROOT_SECRET"))
+	rootSecret, err := deploycfg.ResolveSecret(getenv, "SYDOM_ROOT_SECRET")
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.RootSecret = []byte(rootSecret)
 
 	if len(cfg.MasterKey) != crypto.KeySize {
 		return Config{}, fmt.Errorf("SYDOM_MASTER_KEY must decode to %d bytes, got %d", crypto.KeySize, len(cfg.MasterKey))
@@ -117,6 +132,9 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 		if f.val == "" {
 			return Config{}, fmt.Errorf("%s required", f.name)
 		}
+	}
+	if cfg.Environment.IsProduction() && (cfg.TLSCertFile == "" || cfg.TLSKeyFile == "") {
+		return Config{}, errors.New("environment=production 要求设置 tls_cert_file 与 tls_key_file（生产不得走明文）")
 	}
 	return cfg, nil
 }
