@@ -224,10 +224,12 @@ func TestLoadConfig_ProductionRequiresTLS(t *testing.T) {
 }
 
 func TestLoadConfig_EnvironmentEnvOverride(t *testing.T) {
+	// yaml 显式设 development，env 设 production：env 必须覆盖 yaml。
+	// 若 firstNonEmpty 顺序被颠倒（yaml 优先），则 development 生效、无 TLS 也不报错 → 本测试 FAIL（有齿）。
 	env := validEnv()
-	env["SYDOM_ENVIRONMENT"] = "production" // env 覆盖 yaml，且触发生产硬校验
-	_, err := app.LoadConfig(writeConfig(t, fullYAML), envFunc(env))
-	require.Error(t, err, "env 覆盖为 production 且无 TLS 应报错（证明覆盖生效）")
+	env["SYDOM_ENVIRONMENT"] = "production"
+	_, err := app.LoadConfig(writeConfig(t, fullYAML+"environment: development\n"), envFunc(env))
+	require.Error(t, err, "env=production 覆盖 yaml=development 且无 TLS 应报错（证明 env 优先）")
 }
 
 func TestLoadConfig_MasterKeyFromFile(t *testing.T) {
