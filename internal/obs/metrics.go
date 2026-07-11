@@ -25,6 +25,7 @@ type Metrics struct {
 	cacheMiss   prometheus.Counter
 	snapApplied prometheus.Counter
 	connected   prometheus.Gauge
+	relayLeader prometheus.Gauge
 }
 
 // New 构造并注册全部指标 + Go/process 采集器。
@@ -48,9 +49,10 @@ func New() *Metrics {
 		cacheMiss:   prometheus.NewCounter(prometheus.CounterOpts{Name: "sydom_cache_misses_total", Help: "sidecar 决策缓存未命中"}),
 		snapApplied: prometheus.NewCounter(prometheus.CounterOpts{Name: "sydom_sidecar_snapshot_applied_total", Help: "sidecar 快照应用次数"}),
 		connected:   prometheus.NewGauge(prometheus.GaugeOpts{Name: "sydom_sidecar_connected", Help: "sidecar 是否连接控制面(0/1)"}),
+		relayLeader: prometheus.NewGauge(prometheus.GaugeOpts{Name: "sydom_relay_leader", Help: "本控制面副本是否为 outbox relay leader(0/1)"}),
 	}
 	reg.MustRegister(m.grpcReqs, m.grpcDur, m.httpReqs, m.httpDur, m.authzDec,
-		m.checkDur, m.cacheHits, m.cacheMiss, m.snapApplied, m.connected)
+		m.checkDur, m.cacheHits, m.cacheMiss, m.snapApplied, m.connected, m.relayLeader)
 	reg.MustRegister(collectors.NewGoCollector())
 	reg.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	return m
@@ -125,6 +127,18 @@ func (m *Metrics) SetConnected(c bool) {
 		v = 1
 	}
 	m.connected.Set(v)
+}
+
+// SetRelayLeader 标记本副本是否为 outbox relay leader。nil 接收者安全。
+func (m *Metrics) SetRelayLeader(isLeader bool) {
+	if m == nil {
+		return
+	}
+	var v float64
+	if isLeader {
+		v = 1
+	}
+	m.relayLeader.Set(v)
 }
 
 // statusClass 把 HTTP 状态码归一为低基数类别（2xx/3xx/4xx/5xx），防每码一 series。
