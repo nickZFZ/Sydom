@@ -49,18 +49,15 @@ docker compose -f docker-compose.yaml up -d
 
 **验证就绪**（控制面默认健康口为容器内 `:8083`，未发布到宿主）：
 
-```bash
-# 方式 A：docker exec 进容器查
-docker compose -f docker-compose.yaml exec controlplane \
-    wget -qO- http://127.0.0.1:8083/readyz
+> 业务容器为 distroless（无 shell、无 wget，见「容器镜像硬化」节），**不能** `docker compose exec <svc> wget ...` 进容器自查——命令会因无 shell/无 wget 直接失败。现场排障请用 `kubectl debug`（临时调试容器）或旁挂一次性 sidecar；就绪自查请从**宿主侧**探。compose 层已不含容器内 healthcheck，端到端就绪以 `demo.sh`/`smoke.sh` 从宿主探为准。
 
-# 方式 B：临时映射端口后本机查
+```bash
+# 临时映射健康口到宿主后，从宿主 wget/curl 自查：
 # 先在 docker-compose.yaml 的 controlplane 的 ports 段加 "8083:8083"，重启后：
 wget -qO- http://127.0.0.1:8083/readyz
 
-# sidecar 就绪（容器内 :8091）
-docker compose -f docker-compose.yaml exec sidecar \
-    wget -qO- http://127.0.0.1:8091/readyz
+# sidecar 就绪（同理：先给 sidecar 的 ports 段加 "8091:8091"，重启后）：
+wget -qO- http://127.0.0.1:8091/readyz
 ```
 
 就绪返回 `200 OK`，未就绪返回 `503 Service Unavailable`（不含内部错误细节）。
