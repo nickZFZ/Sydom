@@ -1,6 +1,6 @@
 # 司域(Sydom) 部署 Runbook
 
-> M1.5 最小可托管运维底座。涵盖：密钥准备、明文 Demo 起栈、TLS 开启、健康探针说明、非 root 证书权限、运维注记。
+> M1.5 最小可托管运维底座。涵盖：密钥准备、明文 Demo 起栈、TLS 开启、健康探针说明、容器镜像硬化（M5.3b）、非 root 证书权限、运维注记。
 
 ---
 
@@ -212,18 +212,25 @@ client, err := sydom.New(ctx, "sidecar:8090",
 
 ---
 
-## 6. 非 root
+## 6. 容器镜像硬化（M5.3b）
 
-四个镜像（controlplane、sidecar、seed、orderservice）在构建阶段均执行：
+四个镜像最终阶段均为 distroless（`gcr.io/distroless/static-debian12:nonroot`，因 gcr.io 直连受限经 DaoCloud gcr 代理 `gcr.m.daocloud.io` 按 digest 固定拉取，内容同 gcr.io）：
 
-```dockerfile
-RUN adduser -D -u 10001 sydom
-USER sydom
-```
+- 以固定非 root **uid 65532** 运行（此前 alpine 下为 uid 10001）；K8s 可直接 `runAsNonRoot`。
+- 内置 ca-certificates，支持到 PG/Redis 的出站 TLS（生产模式硬要求，见 M5.3a）。
+- **无 shell / 无包管理器 / 无 wget**：不能 `docker exec sh` 进容器调试；compose 层不再用容器内 wget 做 healthcheck（改由 demo.sh/smoke.sh 从宿主探就绪）；现场排障请用 `kubectl debug`（临时调试容器）或旁挂一次性 sidecar，而非进入业务容器。
+- 运行期不写本地盘，兼容 K8s `readOnlyRootFilesystem`（强制留后续 K8s 清单切片）。
+- 构建层与最终层均按 `@sha256` digest 固定，`go build` 加 `-trimpath -ldflags='-s -w'` 求可复现与更小体积。
 
-容器以 `uid=10001(sydom)` 运行，不以 root 启动进程。
+---
 
-**证书文件权限**：挂载进容器的证书文件须对 `uid 10001` 可读，否则进程读取证书失败 → fail-close 启动失败。
+## 7. 非 root（进程运行身份）
+
+四个镜像（controlplane、sidecar、seed、orderservice）的最终阶段直接基于 distroless `nonroot` 基础镜像（见上节），**无需**在 Dockerfile 里自建用户——基础镜像已内置固定非 root 账号并设为默认 `USER`。
+
+容器以 `uid=65532` 运行，不以 root 启动进程。
+
+**证书文件权限**：挂载进容器的证书文件须对 `uid 65532` 可读，否则进程读取证书失败 → fail-close 启动失败。
 
 宿主机上生成证书后建议设置权限：
 
@@ -234,11 +241,11 @@ chmod 644 tls/cert.pem tls/ca.pem
 chmod 600 tls/key.pem tls/ca.key
 ```
 
-> Docker 挂载时宿主权限直接映射进容器。若私钥为 `600` 且宿主 uid 与容器 `10001` 不同，容器内会读取失败。可将宿主私钥属主改为 `10001`，或在 compose 中用 `user: "10001"` 显式对齐，或开放 `640`（仅当宿主组可控时）。实际部署依照团队安全规范选择。
+> Docker 挂载时宿主权限直接映射进容器。若私钥为 `600` 且宿主 uid 与容器 `65532` 不同，容器内会读取失败。可将宿主私钥属主改为 `65532`，或在 compose 中用 `user: "65532"` 显式对齐，或开放 `640`（仅当宿主组可控时）。实际部署依照团队安全规范选择。
 
 ---
 
-## 7. 运维注记
+## 8. 运维注记
 
 **证书轮换**：M1.5 不支持热 reload（进程不监听证书文件变化）。轮换证书须执行滚动重启：
 
