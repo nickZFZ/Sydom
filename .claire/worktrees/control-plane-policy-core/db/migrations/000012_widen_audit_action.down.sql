@@ -1,1 +1,0 @@
-ALTER TABLE policy_audit_log ALTER COLUMN action TYPE VARCHAR(16);
