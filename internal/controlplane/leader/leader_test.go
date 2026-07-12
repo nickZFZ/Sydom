@@ -72,3 +72,40 @@ func TestRun_SingleLeaderAndFailover(t *testing.T) {
 		t.Fatal("failover 后出现过并发 leader >1")
 	}
 }
+
+// onElected 若不经 ctx 而快速返回，Run 必须在重新参选前退避（约每 poll 一轮），否则会
+// busy-loop 疯抢 advisory lock 打爆 PG。断言固定窗口内的调用次数受 poll 上界约束（有齿：
+// 撤掉退避则次数暴涨至成百上千）。
+func TestRun_BackoffOnFastReturn(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	const key int64 = 918273646
+	const poll = 30 * time.Millisecond
+
+	var calls int32
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		_ = leader.Run(ctx, db, key, poll, func(context.Context) error {
+			atomic.AddInt32(&calls, 1)
+			return nil // 立即返回（非经 ctx 取消）
+		})
+		close(done)
+	}()
+
+	time.Sleep(10 * poll)
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run 未在 ctx 取消后返回")
+	}
+
+	n := atomic.LoadInt32(&calls)
+	if n == 0 {
+		t.Fatal("onElected 从未被调用（选主未生效）")
+	}
+	// 10*poll 窗口、每轮 ~poll → 约 10 次量级；给足调度余量放宽到 40。无退避则会是成百上千次。
+	if n > 40 {
+		t.Fatalf("onElected 被调用 %d 次，疑似 busy-loop（重新参选退避失效）", n)
+	}
+}
