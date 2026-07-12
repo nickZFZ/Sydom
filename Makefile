@@ -31,7 +31,14 @@ proto-gen: proto-lint
 proto-check: proto-gen
 	git diff --exit-code gen/
 
-.PHONY: migrate-up migrate-down test proto-tools proto-lint proto-gen proto-check
+# 注意：Makefile 中 # 是注释，字面量 # 须转义为 \#
+BREAKING_AGAINST ?= .git\#branch=main
+# 向后兼容门：对基线检测 proto 破坏性变更（buf.yaml breaking: FILE）。CI 与合并前应跑。
+# 基线可覆盖：make proto-breaking BREAKING_AGAINST='.git\#tag=v1.0.0'
+proto-breaking:
+	PATH="$(GOBIN):$$PATH" buf breaking --against '$(BREAKING_AGAINST)'
+
+.PHONY: migrate-up migrate-down test proto-tools proto-lint proto-gen proto-check proto-breaking
 
 .PHONY: demo demo-down smoke
 demo: ## 一键起 demo 全栈（compose + 编排器）
