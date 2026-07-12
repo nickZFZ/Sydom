@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sydom-controlplane.fullname" . }}
+  labels:
+    {{- include "sydom-controlplane.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      {{- include "sydom-controlplane.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "sydom-controlplane.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "sydom-controlplane.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: controlplane
+          image: {{ include "sydom-controlplane.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["-config", "/etc/sydom/config.yaml"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: SYDOM_ENVIRONMENT
+              value: {{ .Values.environment | quote }}
+            - name: SYDOM_MASTER_KEY_FILE
+              value: "/etc/sydom/secrets/master-key"
+            - name: SYDOM_ROOT_SECRET_FILE
+              value: "/etc/sydom/secrets/root-secret"
+          ports:
+            - name: grpc-admin
+              containerPort: {{ .Values.ports.admin }}
+            - name: grpc-sync
+              containerPort: {{ .Values.ports.sync }}
+            - name: health
+              containerPort: {{ .Values.ports.health }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.ports.health }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.ports.health }}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sydom/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: config
+              mountPath: /etc/sydom/secrets/master-key
+              subPath: master-key
+              readOnly: true
+            - name: config
+              mountPath: /etc/sydom/secrets/root-secret
+              subPath: root-secret
+              readOnly: true
+            {{- if .Values.tls.enabled }}
+            - name: config
+              mountPath: /etc/sydom/tls/tls.crt
+              subPath: tls.crt
+              readOnly: true
+            - name: config
+              mountPath: /etc/sydom/tls/tls.key
+              subPath: tls.key
+              readOnly: true
+            {{- end }}
+            {{- if .Values.tls.syncClientCA }}
+            - name: config
+              mountPath: /etc/sydom/tls/sync-client-ca.crt
+              subPath: sync-client-ca.crt
+              readOnly: true
+            {{- end }}
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          secret:
+            secretName: {{ include "sydom-controlplane.secretName" . }}
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
