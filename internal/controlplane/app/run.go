@@ -219,9 +219,19 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 // Main 是进程入口逻辑：解析 -config、装信号 ctx、建监听器、调 Run，返回退出码。
 func Main() int {
 	configPath := flag.String("config", "config.yaml", "path to YAML config file")
+	migrateOnly := flag.Bool("migrate", false, "apply embedded DB migrations then exit（迁移专用模式，不起服务）")
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+
+	if *migrateOnly {
+		if err := runMigrate(*configPath, os.Getenv); err != nil {
+			logger.Error("migrate", "err", err)
+			return 1
+		}
+		logger.Info("migrations applied")
+		return 0
+	}
 
 	cfg, err := LoadConfig(*configPath, os.Getenv)
 	if err != nil {
