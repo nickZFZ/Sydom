@@ -1,0 +1,65 @@
+{{- if .Values.backup.enabled }}
+{{- if not .Values.backup.pvcClaim }}{{ fail "backup.enabled=true 需设 backup.pvcClaim" }}{{- end }}
+{{- if not .Values.backup.dsnSecret.name }}{{ fail "backup.enabled=true 需设 backup.dsnSecret.name" }}{{- end }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "sydom-controlplane.fullname" . }}-backup
+  labels:
+    {{- include "sydom-controlplane.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            {{- include "sydom-controlplane.selectorLabels" . | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: {{ include "sydom-controlplane.serviceAccountName" . }}
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            fsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              image: {{ .Values.backup.image | quote }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  TS=$(date -u +%Y%m%dT%H%M%SZ)
+                  OUT="/backups/sydom-$TS.dump"
+                  pg_dump "$DATABASE_URL" -Fc --no-owner --no-privileges -f "$OUT"
+                  echo "backup written: $OUT ($(wc -c < "$OUT") bytes)"
+                  find /backups -name 'sydom-*.dump' -type f -mtime "+${RETENTION_DAYS}" -delete
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.backup.dsnSecret.name | quote }}
+                      key: {{ .Values.backup.dsnSecret.key | quote }}
+                - name: RETENTION_DAYS
+                  value: {{ .Values.backup.retentionDays | quote }}
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: {{ .Values.backup.pvcClaim | quote }}
+{{- end }}

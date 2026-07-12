@@ -59,6 +59,17 @@ migrations:
   hookWeight: "-5"     # 早于默认 0，迁移先于其它资源
   backoffLimit: 3
 
+# 定时逻辑备份（M5.3-backup）：CronJob 用 postgres 镜像 pg_dump 到 PVC。默认关（目的地/存储部署侧定）。
+backup:
+  enabled: false
+  schedule: "0 3 * * *"          # 每日 03:00 UTC
+  image: "postgres:17-alpine"
+  pvcClaim: ""                    # 备份落此 PVC；enabled 时必填
+  retentionDays: "7"
+  dsnSecret:                      # 含 DATABASE_URL 的 Secret 引用
+    name: ""
+    key: "DATABASE_URL"
+
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "8083"
