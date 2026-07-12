@@ -1,0 +1,18 @@
+司域控制面已部署：{{ include "sydom-controlplane.fullname" . }}（副本 {{ .Values.replicaCount }}）。
+
+⚠️ 迁移时序：本 chart 不含数据库迁移（归 M5.3-migrate 零停机切片）。
+   首次安装/升级前，请先对目标库应用 db/migrations（make migrate-up 或外部 Job）。
+
+多副本 HA：M5.4a relay 选主使 {{ .Values.replicaCount }} 副本开箱安全——
+   仅一个副本经 PG advisory-lock 成为 outbox relay leader，leader 崩溃自动 failover。
+
+sidecar 拨入：控制面 policysync 在 Service {{ include "sydom-controlplane.fullname" . }}:{{ .Values.ports.sync }}。
+   sidecar 参考清单见 deploy/k8s/sidecar-reference.yaml。
+
+指标：Prometheus 按 Pod 注解抓 :{{ .Values.ports.health }}/metrics。
+健康：liveness :{{ .Values.ports.health }}/healthz、readiness :{{ .Values.ports.health }}/readyz。
+{{- if not .Values.existingSecret }}
+
+注意：当前用 chart 自建 Secret。生产请改用 existingSecret 由外部密钥管理注入
+   （该 Secret 须含键 config.yaml/master-key/root-secret{{ if .Values.tls.enabled }}/tls.crt/tls.key{{ end }}）。
+{{- end }}
