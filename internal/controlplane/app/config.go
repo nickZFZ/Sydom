@@ -139,6 +139,24 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 	return cfg, nil
 }
 
+// LoadDSN 只解析出数据库 DSN（file database_dsn，SYDOM_DATABASE_DSN env 覆盖），供 -migrate
+// 模式使用——迁移无关密钥/TLS，故不走 LoadConfig 的生产 fail-close。空 DSN 返错。
+func LoadDSN(path string, getenv func(string) string) (string, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("read config: %w", err)
+	}
+	var fc fileConfig
+	if err := yaml.Unmarshal(raw, &fc); err != nil {
+		return "", fmt.Errorf("parse config: %w", err)
+	}
+	dsn := firstNonEmpty(getenv("SYDOM_DATABASE_DSN"), fc.DatabaseDSN)
+	if dsn == "" {
+		return "", errors.New("database_dsn required（config 或 SYDOM_DATABASE_DSN）")
+	}
+	return dsn, nil
+}
+
 func firstNonEmpty(a, b string) string {
 	if a != "" {
 		return a
