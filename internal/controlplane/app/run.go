@@ -20,6 +20,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
 	"github.com/nickZFZ/Sydom/internal/controlplane/console"
+	"github.com/nickZFZ/Sydom/internal/controlplane/leader"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 	"github.com/nickZFZ/Sydom/internal/controlplane/outbox"
 	"github.com/nickZFZ/Sydom/internal/controlplane/policy"
@@ -34,6 +35,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
+
+// relayLeaderKey 是 outbox relay 选主的固定 advisory-lock key（同 PG 实例内专属本用途）。
+const relayLeaderKey int64 = 0x53444f42 // "SDOB"
 
 // Run 装配并运行控制面，阻塞至 ctx 取消后优雅关闭。adminLis/syncLis/restLis/consoleLis 由调用方注入（测试用 :0）。
 // restLis 为 nil 时不起 REST 监听器，consoleLis 为 nil 时不起 Console 监听器，均向后兼容。
@@ -127,7 +131,14 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 	}
 	launch("admin-serve", func() error { return grpcSrv.Serve(adminLis) })
 	launch("sync-serve", func() error { return syncSrv.Serve(syncLis) })
-	launch("relay", func() error { return outbox.RunRelayLoop(runCtx, db, pub, cfg.RelayPollInterval) })
+	launch("relay", func() error {
+		return leader.Run(runCtx, db, relayLeaderKey, cfg.RelayPollInterval,
+			func(lctx context.Context) error {
+				m.SetRelayLeader(true)
+				defer m.SetRelayLeader(false)
+				return outbox.RunRelayLoop(lctx, db, pub, cfg.RelayPollInterval)
+			})
+	})
 	launch("dispatch", func() error { return syncCore.RunDispatchLoop(runCtx, sub) })
 
 	var restSrv *http.Server
