@@ -1,0 +1,69 @@
+# 司域控制面 Helm values。生产请覆盖 image.digest / database / secrets / tls / existingSecret。
+replicaCount: 2
+
+image:
+  repository: sydom/controlplane
+  # 优先 digest（对齐 M5.3b 内容寻址防漂移）；digest 非空则忽略 tag。
+  digest: ""            # 例：sha256:...
+  tag: "latest"
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# 外部托管 PG / Redis endpoint。database.dsn 含口令 → 渲染进 Secret（非 ConfigMap）。
+database:
+  dsn: "postgres://sydom:CHANGEME@postgres:5432/sydom?sslmode=require"
+redis:
+  addr: "redis:6379"
+
+# 密钥。existingSecret 非空 → 复用既有 Secret（生产推荐，外部注入），chart 不渲染 secret.yaml；
+# 该 Secret 须含键 config.yaml/master-key/root-secret[/tls.crt/tls.key/sync-client-ca.crt]。
+# existingSecret 为空 → chart 用下方值自建 Secret（起步/非生产便利路径）。
+existingSecret: ""
+secrets:
+  masterKey: ""         # base64，解码须 32 字节（→ SYDOM_MASTER_KEY）
+  rootSecret: ""        # 原始字节（→ SYDOM_ROOT_SECRET）
+
+environment: production
+
+# 生产模式传输 TLS（M5.3a fail-close：production 缺 cert/key 拒启动）。
+tls:
+  enabled: true
+  cert: ""              # PEM；existingSecret 为空时写入自建 Secret
+  key: ""               # PEM
+  syncClientCA: ""      # policysync mTLS（M5.2b）：非空则校验 sidecar 客户端证书
+
+controlPlane:
+  rootPrincipal: "root@sydom"
+  heartbeatInterval: "30s"
+  relayPollInterval: "1s"
+
+ports:
+  admin: 8081
+  sync: 8082
+  health: 8083
+
+service:
+  type: ClusterIP
+
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { cpu: 500m, memory: 256Mi }
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8083"
+  prometheus.io/path: "/metrics"
+
+serviceAccount:
+  create: true
+  name: ""
+
+nameOverride: ""
+fullnameOverride: ""
+nodeSelector: {}
+tolerations: []
+affinity: {}

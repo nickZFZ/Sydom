@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sydom-controlplane.fullname" . }}
+  labels:
+    {{- include "sydom-controlplane.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "sydom-controlplane.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: grpc-admin
+      port: {{ .Values.ports.admin }}
+      targetPort: grpc-admin
+      protocol: TCP
+      appProtocol: grpc
+    - name: grpc-sync
+      port: {{ .Values.ports.sync }}
+      targetPort: grpc-sync
+      protocol: TCP
+      appProtocol: grpc

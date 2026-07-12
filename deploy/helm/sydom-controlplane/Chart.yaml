@@ -1,0 +1,9 @@
+apiVersion: v2
+name: sydom-controlplane
+description: 司域(Sydom)控制面 —— 多副本安全的多租户授权控制平面
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.23.0-0"
+sources:
+  - https://github.com/nickZFZ/Sydom
