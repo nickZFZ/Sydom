@@ -53,6 +53,12 @@ pdb:
   enabled: true
   minAvailable: 1
 
+# 迁移自动化（M5.3-migrate）：pre-install/pre-upgrade hook Job 在滚动前跑嵌入迁移。
+migrations:
+  enabled: true
+  hookWeight: "-5"     # 早于默认 0，迁移先于其它资源
+  backoffLimit: 3
+
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "8083"

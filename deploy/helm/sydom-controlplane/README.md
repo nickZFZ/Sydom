@@ -6,7 +6,7 @@
 
 - Kubernetes ≥ 1.23、Helm 3/4。
 - 外部托管 PostgreSQL 与 Redis（生产）。
-- **数据库迁移须先于安装完成**（本 chart 不含迁移，见 M5.3-migrate）：`make migrate-up` 或外部 Job 对目标库应用 `db/migrations`。
+- **数据库迁移已自动化**（M5.3-migrate）：`migrations.enabled=true`（默认）时，pre-install/pre-upgrade hook Job 在滚动前跑嵌入迁移；失败则不滚动（fail-close）。零停机纪律见 `docs/runbooks/zero-downtime-migrations.md`。
 
 ## 快速起步（非生产，chart 自建 Secret）
 

@@ -1,7 +1,8 @@
 司域控制面已部署：{{ include "sydom-controlplane.fullname" . }}（副本 {{ .Values.replicaCount }}）。
 
-⚠️ 迁移时序：本 chart 不含数据库迁移（归 M5.3-migrate 零停机切片）。
-   首次安装/升级前，请先对目标库应用 db/migrations（make migrate-up 或外部 Job）。
+✅ 迁移自动化（M5.3-migrate）：pre-install/pre-upgrade hook Job（{{ include "sydom-controlplane.fullname" . }}-migrate）
+   在滚动更新之前跑嵌入迁移（幂等 up）；Job 失败则 release 失败、不滚动（fail-close）。
+   零停机纪律（一次发布只做 expand 向后兼容变更）见 docs/runbooks/zero-downtime-migrations.md。
 
 多副本 HA：M5.4a relay 选主使 {{ .Values.replicaCount }} 副本开箱安全——
    仅一个副本经 PG advisory-lock 成为 outbox relay leader，leader 崩溃自动 failover。
