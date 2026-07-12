@@ -1,0 +1,99 @@
+# 司域 Sidecar 客户侧接入参考（文档即清单，按需改）。
+# 模式：sidecar 作为同 Pod 边车容器注入你的应用 Pod；应用经 localhost:8090 拨数据面 Check。
+# 密钥走挂载 Secret + SYDOM_APP_SECRET_FILE（对齐 M5.3a）；探针用 httpGet（distroless 无 shell 友好）。
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: myapp-sidecar-config
+data:
+  config.yaml: |
+    control_plane_addr: "sydom-controlplane.sydom.svc:8082"
+    app_key: "demo-shop"
+    domain: "shop"
+    auth_addr: ":8090"
+    health_addr: ":8091"
+    max_staleness: "0s"
+    backoff_initial: "500ms"
+    backoff_max: "30s"
+    environment: "production"
+    control_plane_tls: true
+    control_plane_ca_file: "/etc/sydom/tls/ca.crt"
+    # policysync mTLS（M5.2b，可选）：出示客户端证书
+    control_plane_client_cert_file: "/etc/sydom/tls/client.crt"
+    control_plane_client_key_file: "/etc/sydom/tls/client.key"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myapp-sidecar-secret
+type: Opaque
+stringData:
+  app-secret: "REPLACE_WITH_APP_HMAC_SECRET"   # → SYDOM_APP_SECRET_FILE
+  ca.crt: "REPLACE_WITH_CONTROL_PLANE_CA_PEM"
+  client.crt: "REPLACE_WITH_SIDECAR_CLIENT_CERT_PEM"
+  client.key: "REPLACE_WITH_SIDECAR_CLIENT_KEY_PEM"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  labels: { app: myapp }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: myapp }
+  template:
+    metadata:
+      labels: { app: myapp }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        # —— 你的应用容器（占位）——
+        - name: app
+          image: your-registry/myapp:latest
+          env:
+            - name: SIDECAR_ADDR
+              value: "localhost:8090"   # 同 Pod 共享 localhost 拨 sidecar 数据面
+          ports:
+            - { name: http, containerPort: 8080 }
+        # —— 司域 sidecar 边车容器 ——
+        - name: sydom-sidecar
+          image: sydom/sidecar@sha256:REPLACE_WITH_DIGEST   # M5.3b distroless nonroot
+          args: ["-config", "/etc/sydom/config.yaml"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 65532
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: SYDOM_ENVIRONMENT
+              value: "production"
+            - name: SYDOM_APP_SECRET_FILE
+              value: "/etc/sydom/secrets/app-secret"
+          ports:
+            - { name: check, containerPort: 8090 }
+            - { name: health, containerPort: 8091 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8091 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8091 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          volumeMounts:
+            - { name: sidecar-config, mountPath: /etc/sydom/config.yaml, subPath: config.yaml, readOnly: true }
+            - { name: sidecar-secret, mountPath: /etc/sydom/secrets/app-secret, subPath: app-secret, readOnly: true }
+            - { name: sidecar-secret, mountPath: /etc/sydom/tls/ca.crt, subPath: ca.crt, readOnly: true }
+            - { name: sidecar-secret, mountPath: /etc/sydom/tls/client.crt, subPath: client.crt, readOnly: true }
+            - { name: sidecar-secret, mountPath: /etc/sydom/tls/client.key, subPath: client.key, readOnly: true }
+      volumes:
+        - name: sidecar-config
+          configMap: { name: myapp-sidecar-config }
+        - name: sidecar-secret
+          secret: { secretName: myapp-sidecar-secret }
