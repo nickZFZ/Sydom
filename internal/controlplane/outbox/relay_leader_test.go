@@ -114,14 +114,41 @@ func TestRelayUnderLeader_FailoverContinuity(t *testing.T) {
 	const poll = 25 * time.Millisecond
 	ctx1, cancel1 := context.WithCancel(context.Background())
 	ctx2, cancel2 := context.WithCancel(context.Background())
+	defer cancel1()
 	defer cancel2()
-	go func() { _ = leader.Run(ctx1, db, key, poll, func(l context.Context) error { return outbox.RunRelayLoop(l, db, pub, poll) }) }()
-	go func() { _ = leader.Run(ctx2, db, key, poll, func(l context.Context) error { return outbox.RunRelayLoop(l, db, pub, poll) }) }()
 
+	// 记录真实当选者 id，以便确定性地杀「赢家」。争锁赢家不确定，若无条件杀 ctx1 而 ctx2 才是
+	// 赢家，则杀的是 follower、failover 从不发生、drain 由未被杀的赢家独自跑完 → 测试假绿。
+	cancels := map[int]context.CancelFunc{1: cancel1, 2: cancel2}
+	won := make(chan int, 2)
+	start := func(id int, lc context.Context) {
+		go func() {
+			_ = leader.Run(lc, db, key, poll, func(l context.Context) error {
+				select {
+				case won <- id:
+				default:
+				}
+				return outbox.RunRelayLoop(l, db, pub, poll)
+			})
+		}()
+	}
+	start(1, ctx1)
+	start(2, ctx2)
+
+	first := <-won // 真实赢家（onElected 进入即上报 id，早于任何 drain）
 	waitUntil(t, 3*time.Second, func() bool { return countPublished(t, db) >= 2 })
-	cancel1() // 杀先当选 leader
+	cancels[first]() // 确定性杀真实赢家 → 强制触发 failover
 	waitUntil(t, 5*time.Second, func() bool { return countPublished(t, db) == 12 })
-	cancel2()
+
+	// 另一实例必须接管（否则杀赢家后再无 drainer，积压永不清空）——这条断言坐实 failover 真发生。
+	select {
+	case second := <-won:
+		if second == first {
+			t.Fatalf("接管者不应是被杀的赢家 %d", first)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("failover 超时：无实例接管")
+	}
 
 	// 无丢：12 条全 published，且版本集恰为 {1..12}（failover 边界允许 ≤1 条重复，故只查完整性）。
 	seen := map[uint64]bool{}
