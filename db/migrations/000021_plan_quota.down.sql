@@ -1,0 +1,2 @@
+ALTER TABLE tenant DROP COLUMN plan_id;
+DROP TABLE plan;
