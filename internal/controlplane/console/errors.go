@@ -25,6 +25,8 @@ func httpStatusForCode(c codes.Code) int {
 		return http.StatusNotFound
 	case codes.AlreadyExists, codes.FailedPrecondition:
 		return http.StatusConflict
+	case codes.ResourceExhausted:
+		return http.StatusTooManyRequests
 	case codes.Unavailable:
 		return http.StatusServiceUnavailable
 	default:
