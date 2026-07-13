@@ -31,6 +31,22 @@ func TestTenantPlanLimits_ReadAndNotFound(t *testing.T) {
 	require.ErrorIs(t, err, store.ErrNotFound)
 }
 
+func TestTenantUsageOf(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	var tenantID int64
+	require.NoError(t, db.QueryRow(`SELECT tenant_id FROM application WHERE id=$1`, appID).Scan(&tenantID))
+
+	u, err := store.TenantUsageOf(context.Background(), db, tenantID)
+	require.NoError(t, err)
+	require.Equal(t, "free", u.PlanName)
+	require.Equal(t, 3, u.MaxApplications)
+	require.Equal(t, 1, u.UsedApplications, "seed 1 应用")
+
+	_, err = store.TenantUsageOf(context.Background(), db, 999999)
+	require.ErrorIs(t, err, store.ErrNotFound)
+}
+
 // 并发 8 个 tx 各 TenantPlanLimits(FOR UPDATE)→+1 应用→commit：行锁串行，无交错超计。
 func TestTenantPlanLimits_LockSerializes(t *testing.T) {
 	db := dbtest.SetupSchema(t)

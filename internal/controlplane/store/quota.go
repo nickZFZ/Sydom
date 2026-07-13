@@ -33,3 +33,24 @@ func CountApplications(ctx context.Context, ex cp.DBTX, tenantID int64) (int, er
 	err := ex.QueryRowContext(ctx, `SELECT count(*) FROM application WHERE tenant_id=$1`, tenantID).Scan(&n)
 	return n, err
 }
+
+// TenantUsage 是租户的套餐名 + 各资源用量/上限（本增量仅 applications）。
+type TenantUsage struct {
+	PlanName         string
+	MaxApplications  int
+	UsedApplications int
+}
+
+// TenantUsageOf 只读返租户套餐名 + 应用上限 + 当前应用数（无锁，读路径）。租户不存在→ErrNotFound。
+func TenantUsageOf(ctx context.Context, ex cp.DBTX, tenantID int64) (TenantUsage, error) {
+	var u TenantUsage
+	err := ex.QueryRowContext(ctx,
+		`SELECT p.name, p.max_applications,
+		        (SELECT count(*) FROM application a WHERE a.tenant_id = t.id)
+		   FROM tenant t JOIN plan p ON p.id = t.plan_id WHERE t.id = $1`,
+		tenantID).Scan(&u.PlanName, &u.MaxApplications, &u.UsedApplications)
+	if errors.Is(err, sql.ErrNoRows) {
+		return TenantUsage{}, ErrNotFound
+	}
+	return u, err
+}
