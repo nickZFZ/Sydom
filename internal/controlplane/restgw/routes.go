@@ -720,6 +720,18 @@ func applicationRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.GetApplication(ctx, m.(*adminv1.GetApplicationRequest))
 			}},
+		// M6.1b 用量计量：租户套餐 + 应用用量/上限只读。
+		{"GET", "/v1/tenant-usage", pfx + "GetTenantUsage",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				tid, err := queryInt64(r, "tenant_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.GetTenantUsageRequest{TenantId: uint64(tid)}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.GetTenantUsage(ctx, m.(*adminv1.GetTenantUsageRequest))
+			}},
 	}
 }
 

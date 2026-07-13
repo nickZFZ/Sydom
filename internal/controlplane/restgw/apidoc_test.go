@@ -34,3 +34,15 @@ func TestRoutes_CoversAllRoutes(t *testing.T) {
 		return docs[i].Pattern < docs[j].Pattern
 	}))
 }
+
+// M6.1b：GET /v1/tenant-usage 路由存在且映 GetTenantUsage。
+func TestRoute_TenantUsage(t *testing.T) {
+	found := false
+	for _, d := range Routes() {
+		if d.Method == "GET" && d.Pattern == "/v1/tenant-usage" {
+			require.Contains(t, d.FullMethod, "GetTenantUsage")
+			found = true
+		}
+	}
+	require.True(t, found, "应有 GET /v1/tenant-usage 路由")
+}
