@@ -32,6 +32,7 @@ func NewHandler(srv *mgmt.AdminServer, resolver secretResolver, enf *adminauthz.
 	h.registerDataSandbox(mux)     // M4.5 数据权限沙箱专页
 	h.registerSystem(mux)          // 任务 9
 	h.registerAccounts(mux)        // M1.2 账户层：注册/我的租户/成员
+	h.registerUsage(mux)           // M6.1c 租户用量页（消费 GetTenantUsage）
 	h.registerOps(mux)             // M1.4 运营台：业务向人员/业务角色旅程
 	h.registerTemplates(mux)       // M3.2 运营台模板库
 	h.registerTenantTemplates(mux) // M3.2c-2 运营台「我的模板」（租户自有模板）

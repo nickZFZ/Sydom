@@ -133,3 +133,6 @@ dialog.dialog::backdrop { background:rgba(0,0,0,.4); }
 .hidden { display: none; }
 .mb-4 { margin-bottom: var(--space-4); }
 .d-inline { display: inline; }
+
+/* M6.1c 用量 meter：配额用量条（值经 value/max 属性驱动，无内联 style，满足严格 CSP） */
+.usage-meter { width: 20rem; max-width: 100%; height: 0.9rem; vertical-align: middle; }
