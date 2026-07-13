@@ -23,5 +23,6 @@ func (s *AdminServer) GetTenantUsage(ctx context.Context, r *adminv1.GetTenantUs
 	return &adminv1.GetTenantUsageResponse{
 		PlanName:     u.PlanName,
 		Applications: &adminv1.ResourceUsage{Used: uint32(u.UsedApplications), Limit: uint32(u.MaxApplications)},
+		Members:      &adminv1.ResourceUsage{Used: uint32(u.UsedMembers), Limit: uint32(u.MaxMembers)},
 	}, nil
 }

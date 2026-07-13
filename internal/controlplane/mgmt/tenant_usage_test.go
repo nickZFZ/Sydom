@@ -28,6 +28,8 @@ func TestGetTenantUsage(t *testing.T) {
 	require.Equal(t, "free", resp.PlanName)
 	require.Equal(t, uint32(1), resp.Applications.Used)
 	require.Equal(t, uint32(3), resp.Applications.Limit)
+	require.Equal(t, uint32(0), resp.Members.Used, "SeedApp 租户无 membership")
+	require.Equal(t, uint32(3), resp.Members.Limit, "free 成员限 3")
 
 	// 建第二个应用 → used 递增
 	_, err = s.CreateApplication(ctx, &adminv1.CreateApplicationRequest{TenantId: uint64(tenantID), Domain: "d2", Name: "n", AppKey: "ak2"})
