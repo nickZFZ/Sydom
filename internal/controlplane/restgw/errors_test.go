@@ -23,6 +23,7 @@ func TestHTTPStatusForCode(t *testing.T) {
 		codes.NotFound:           http.StatusNotFound,
 		codes.AlreadyExists:      http.StatusConflict,
 		codes.FailedPrecondition: http.StatusConflict,
+		codes.ResourceExhausted:  http.StatusTooManyRequests, // 配额超限（M6.1a）
 		codes.Unavailable:        http.StatusServiceUnavailable,
 		codes.Internal:           http.StatusInternalServerError,
 		codes.Unknown:            http.StatusInternalServerError,

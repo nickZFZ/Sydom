@@ -28,6 +28,8 @@ func httpStatusForCode(c codes.Code) int {
 		return http.StatusConflict
 	case codes.FailedPrecondition:
 		return http.StatusConflict
+	case codes.ResourceExhausted:
+		return http.StatusTooManyRequests
 	case codes.Unavailable:
 		return http.StatusServiceUnavailable
 	default: // Internal / Unknown / DataLoss / ...
@@ -59,6 +61,8 @@ func codeName(c codes.Code) string {
 		return "already_exists"
 	case codes.FailedPrecondition:
 		return "failed_precondition"
+	case codes.ResourceExhausted:
+		return "resource_exhausted"
 	case codes.Unavailable:
 		return "unavailable"
 	case codes.Internal:
