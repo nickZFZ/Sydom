@@ -37,3 +37,18 @@ func roleName(m map[string]string, code string) string {
 	}
 	return code
 }
+
+// planName 是套餐技术名 → 中文业务名词表。
+var planName = map[string]string{
+	"free": "免费版",
+	"pro":  "专业版",
+}
+
+// planLabel 返回套餐的中文业务名；未在词表中则原样返回（不臆造，
+// 与 actionLabel/roleName 的回退范式一致）。
+func planLabel(name string) string {
+	if v, ok := planName[name]; ok {
+		return v
+	}
+	return name
+}

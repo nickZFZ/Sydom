@@ -47,3 +47,17 @@ func TestRoleName(t *testing.T) {
 		t.Errorf("miss must fall back to code, got %q", got)
 	}
 }
+
+func TestPlanLabel(t *testing.T) {
+	cases := map[string]string{
+		"free": "免费版",
+		"pro":  "专业版",
+		"":     "",     // 空原样
+		"team": "team", // 未知原样（绝不臆造，与 actionLabel/roleName 回退范式一致）
+	}
+	for in, want := range cases {
+		if got := planLabel(in); got != want {
+			t.Errorf("planLabel(%q)=%q，want %q", in, got, want)
+		}
+	}
+}
