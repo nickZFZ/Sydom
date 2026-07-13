@@ -105,6 +105,22 @@ func TestDashboard_SuperAdmin_ListsApps(t *testing.T) {
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	body := readBody(t, resp)
 	require.Contains(t, body, "应用")
+	require.NotContains(t, body, "配额：") // 超管全量(tid=0)：fail-soft 跳过用量提示（双向有齿）
+}
+
+// dashboard 内联用量提示（M6.1e）：root + ?tenant_id 触发（root scopeTenant 看任意租户用量）。
+func TestDashboard_UsageHint(t *testing.T) {
+	ts, _, db := newConsole(t)
+	tid, _ := dbtest.SeedAppInTenant(t, db, "dash-usage", "dash-app", "AK_dash")
+	c := loginClient(t, ts, "root@sydom", "rootsecret")
+	resp, err := c.Get(ts.URL + fmt.Sprintf("/?tenant_id=%d", tid))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body := readBody(t, resp)
+	require.Contains(t, body, "配额：")
+	require.Contains(t, body, "应用 1/3") // SeedAppInTenant：1 应用、free 限 3
+	require.Contains(t, body, "成员 0/3") // 无 membership、free 成员限 3
+	require.Contains(t, body, fmt.Sprintf(`href="/tenants/%d/usage"`, tid), "详情链接钉死")
 }
 
 func TestDashboard_NoSession_RedirectsLogin(t *testing.T) {

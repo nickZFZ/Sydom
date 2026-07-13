@@ -190,7 +190,29 @@ func (h *Handler) dashboard(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, fm, err)
 		return
 	}
-	h.renderPage(w, r, "dashboard.html", http.StatusOK, map[string]any{
+	data := map[string]any{
 		"Nav": "apps", "Degraded": false, "Apps": resp.Applications, "CSRF": sess.CSRF,
-		"Tenants": mine.Memberships, "TenantID": tid, "Pager": pagerData(r, resp.Total)})
+		"Tenants": mine.Memberships, "TenantID": tid, "Pager": pagerData(r, resp.Total)}
+	if tid != 0 { // 超管全量(tid=0)无单一租户用量；仅具体租户上下文取用量提示（fail-soft）
+		data["UsageRows"] = h.tenantUsageRows(r.Context(), principal, tid)
+	}
+	h.renderPage(w, r, "dashboard.html", http.StatusOK, data)
+}
+
+// tenantUsageRows 为 dashboard 内联提示取租户用量行；任何错误返回 nil（fail-soft，绝不破坏页面）。
+// 因 ListApplications(tid) 已过同 application:read/scopeTenant 授权，正常路径 GetTenantUsage 必然也过。
+func (h *Handler) tenantUsageRows(ctx context.Context, principal string, tid uint64) []usageRow {
+	msg := &adminv1.GetTenantUsageRequest{TenantId: tid}
+	authCtx, err := mgmt.AuthorizeRule(ctx, h.enf, svc+"GetTenantUsage", principal, msg)
+	if err != nil {
+		return nil
+	}
+	resp, err := h.srv.GetTenantUsage(authCtx, msg)
+	if err != nil {
+		return nil
+	}
+	return []usageRow{
+		makeUsageRow("应用", resp.Applications),
+		makeUsageRow("成员", resp.Members),
+	}
 }

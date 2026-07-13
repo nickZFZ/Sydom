@@ -8,6 +8,7 @@
 <button class="btn btn-primary">前往</button></form>
 {{else}}
 <p class="hint"><a href="/tenants">我的租户</a>{{if .TenantID}} · 当前租户 {{.TenantID}}{{end}}</p>
+{{if .UsageRows}}<p class="hint">配额：{{range .UsageRows}}{{.Name}} {{.Used}}/{{.Limit}}{{if .AtLimit}}（已达上限）{{end}} · {{end}}<a href="/tenants/{{.TenantID}}/usage">详情</a></p>{{end}}
 <a class="btn btn-primary" href="/apps/new?tenant_id={{.TenantID}}">+ 新建应用</a>
 {{template "searchbox" .Pager}}
 <table class="table"><thead><tr>
