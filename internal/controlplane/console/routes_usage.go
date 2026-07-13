@@ -7,6 +7,25 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
 )
 
+// usageRow 是用量页一行资源（应用/成员/…），为多配额维度可扩展（新维度只需 append 一行，模板零改）。
+type usageRow struct {
+	Name      string
+	Used      int
+	Limit     int
+	AtLimit   bool
+	ShowMeter bool
+}
+
+// makeUsageRow 从一条 ResourceUsage 构造视图行；ru 为 nil 时视为 0/0（防御性）。
+func makeUsageRow(name string, ru *adminv1.ResourceUsage) usageRow {
+	used, limit := 0, 0
+	if ru != nil {
+		used = int(ru.Used)
+		limit = int(ru.Limit)
+	}
+	return usageRow{Name: name, Used: used, Limit: limit, AtLimit: used >= limit, ShowMeter: limit > 0}
+}
+
 // registerUsage 注册租户用量页（M6.1c 计量可见）。
 func (h *Handler) registerUsage(mux *http.ServeMux) {
 	mux.HandleFunc("GET /tenants/{tenant_id}/usage", h.usage)
@@ -36,18 +55,14 @@ func (h *Handler) usage(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, svc+"GetTenantUsage", err)
 		return
 	}
-	used, limit := 0, 0
-	if resp.Applications != nil { // 本 in-process 服务恒设，防御性 nil 守卫
-		used = int(resp.Applications.Used)
-		limit = int(resp.Applications.Limit)
+	rows := []usageRow{
+		makeUsageRow("应用", resp.Applications),
+		makeUsageRow("成员", resp.Members),
 	}
 	h.renderPage(w, r, "usage.html", http.StatusOK, map[string]any{
 		"Nav":       "tenants",
 		"TenantID":  tid,
 		"PlanLabel": planLabel(resp.PlanName),
-		"Used":      used,
-		"Limit":     limit,
-		"AtLimit":   used >= limit,
-		"ShowMeter": limit > 0, // max="0" 无效（须 > min）；limit 为 0 时仅文本
+		"Rows":      rows,
 	})
 }
