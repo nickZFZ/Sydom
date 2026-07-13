@@ -22,6 +22,13 @@ func TestMigration_PlanQuota(t *testing.T) {
 	require.Equal(t, 3, freeMax)
 	require.Equal(t, 50, proMax)
 
+	// M6.1d：max_members 列 + 种子 free=3/pro=25
+	var freeMem, proMem int
+	require.NoError(t, db.QueryRow(`SELECT max_members FROM plan WHERE name='free'`).Scan(&freeMem))
+	require.NoError(t, db.QueryRow(`SELECT max_members FROM plan WHERE name='pro'`).Scan(&proMem))
+	require.Equal(t, 3, freeMem)
+	require.Equal(t, 25, proMem)
+
 	// tenant.plan_id 存在且默认 free(id=1)
 	var tid, planID int64
 	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('t') RETURNING id, plan_id`).Scan(&tid, &planID))
