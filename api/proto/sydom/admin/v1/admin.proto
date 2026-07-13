@@ -26,6 +26,7 @@ service AdminService {
   rpc SetApplicationStatus(SetApplicationStatusRequest) returns (WriteResponse);
   rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse);
   rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
+  rpc GetTenantUsage(GetTenantUsageRequest) returns (GetTenantUsageResponse);
 
   // —— 管理员自身管理（system 域，super-admin 专属）——
   rpc CreateOperator(CreateOperatorRequest) returns (CreateOperatorResponse);
@@ -204,6 +205,12 @@ message ListApplicationsResponse {
 }
 message GetApplicationRequest { uint64 app_id = 1; }
 message GetApplicationResponse { ApplicationSummary application = 1; }
+message GetTenantUsageRequest { uint64 tenant_id = 1; }
+message ResourceUsage { uint32 used = 1; uint32 limit = 2; }
+message GetTenantUsageResponse {
+  string plan_name = 1;
+  ResourceUsage applications = 2;
+}
 
 message CreateOperatorRequest {
   string principal = 1;
