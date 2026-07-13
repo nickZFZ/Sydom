@@ -226,6 +226,10 @@ func TestListMembers_PageTierFilterTenantScopeTotal(t *testing.T) {
 	rB, err := s.RegisterTenant(ctx, &adminv1.RegisterTenantRequest{TenantName: "mB", OwnerPrincipal: "mOwnerB"})
 	require.NoError(t, err)
 
+	// 抬高 free 成员限（该测试需租户 A 达 4 成员，测分页非配额；解耦 M6.1d 成员配额）
+	_, err = db.Exec(`UPDATE plan SET max_members=1000 WHERE name='free'`)
+	require.NoError(t, err)
+
 	// 租户 A：owner（已有）+ 3 个 admin 成员
 	for i := 0; i < 3; i++ {
 		_, err := s.InviteMember(ctx, &adminv1.InviteMemberRequest{

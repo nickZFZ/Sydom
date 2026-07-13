@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/auth"
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
+	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/crypto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -168,16 +170,33 @@ func (s *AdminServer) InviteMember(ctx context.Context, r *adminv1.InviteMemberR
 	}
 	defer tx.Rollback()
 
+	// 成员配额门（M6.1d）：早锁租户行取成员限额（FOR UPDATE 串行并发邀请）。unknown 租户→InvalidArgument。
+	limits, err := store.TenantPlanLimits(ctx, tx, int64(r.TenantId))
+	if errors.Is(err, store.ErrNotFound) {
+		return nil, status.Error(codes.InvalidArgument, "unknown tenant")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "quota: %v", err)
+	}
+
 	opID, created, err := adminauthz.EnsureOperator(ctx, tx, r.Principal, enc)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "ensure operator: %v", err)
+	}
+	memberCount, err := store.CountMembers(ctx, tx, int64(r.TenantId)) // 锁内 pre-insert 计数
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "quota: %v", err)
 	}
 	inserted, err := adminauthz.InsertMembership(ctx, tx, int64(r.TenantId), opID, adminauthz.TierAdmin)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	if !inserted {
-		return nil, status.Error(codes.AlreadyExists, "already a member")
+		return nil, status.Error(codes.AlreadyExists, "already a member") // 已是成员：不消耗配额，短路（Order B）
+	}
+	if memberCount >= limits.MaxMembers { // 新成员超限 → ResourceExhausted（defer Rollback 撤销 insert）
+		return nil, status.Errorf(codes.ResourceExhausted,
+			"member quota reached (%d/%d); upgrade plan", memberCount, limits.MaxMembers)
 	}
 	if err := adminauthz.BindTenantAdminTx(ctx, tx, int64(r.TenantId), opID); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
