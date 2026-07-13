@@ -14,6 +14,7 @@ import (
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
+	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/crypto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,6 +49,23 @@ func (s *AdminServer) CreateApplication(ctx context.Context, r *adminv1.CreateAp
 		return nil, status.Errorf(codes.Internal, "begin: %v", err)
 	}
 	defer tx.Rollback()
+	// 应用配额门（M6.1a）：锁租户行取套餐限额 + 计数，达上限 fail-close。锁+计数+插入同 tx，
+	// 并发建应用经 FOR UPDATE 串行，杜绝绕过。
+	limits, err := store.TenantPlanLimits(ctx, tx, int64(r.TenantId))
+	if errors.Is(err, store.ErrNotFound) {
+		return nil, status.Error(codes.InvalidArgument, "unknown tenant")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "quota: %v", err)
+	}
+	count, err := store.CountApplications(ctx, tx, int64(r.TenantId))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "quota: %v", err)
+	}
+	if count >= limits.MaxApplications {
+		return nil, status.Errorf(codes.ResourceExhausted,
+			"application quota reached (%d/%d); upgrade plan", count, limits.MaxApplications)
+	}
 	var appID int64
 	err = tx.QueryRowContext(ctx,
 		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
