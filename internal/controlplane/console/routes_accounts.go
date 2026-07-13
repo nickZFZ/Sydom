@@ -81,9 +81,13 @@ func (h *Handler) membersList(w http.ResponseWriter, r *http.Request) {
 		h.renderGRPCError(w, r, fm, err)
 		return
 	}
-	h.renderPage(w, r, "members.html", http.StatusOK, map[string]any{
+	data := map[string]any{
 		"Nav": "tenants", "TenantID": tid, "Members": resp.Members, "CSRF": sess.CSRF,
-		"Pager": pagerData(r, resp.Total)})
+		"Pager": pagerData(r, resp.Total)}
+	if u := h.tenantUsage(r.Context(), principal, tid); u != nil { // fail-soft 成员配额提示（仅成员维）
+		data["MemberUsage"] = makeUsageRow("成员", u.Members)
+	}
+	h.renderPage(w, r, "members.html", http.StatusOK, data)
 }
 
 // memberInvite：InviteMember（CSRF → 授权 → 直调 → 一次性 secret 当场渲染，不 PRG）。

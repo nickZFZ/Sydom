@@ -1,11 +1,13 @@
 package console
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 
+	"github.com/nickZFZ/Sydom/internal/dbtest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,4 +41,17 @@ func TestConsole_Members_RequiresSession(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+}
+
+// 成员页内联成员配额提示（M6.1f）：root GET 成员页 → 「成员配额：0/3」+ 详情链接。
+func TestConsole_Members_UsageHint(t *testing.T) {
+	ts, _, db := newConsole(t)
+	tid, _ := dbtest.SeedAppInTenant(t, db, "mem-usage", "mem-app", "AK_memusage")
+	c := loginClient(t, ts, "root@sydom", "rootsecret")
+	resp, err := c.Get(ts.URL + fmt.Sprintf("/tenants/%d/members", tid))
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body := readBody(t, resp)
+	require.Contains(t, body, "成员配额：0/3") // SeedAppInTenant 0 成员、free 限 3
+	require.Contains(t, body, fmt.Sprintf(`href="/tenants/%d/usage"`, tid), "详情链接钉死")
 }
