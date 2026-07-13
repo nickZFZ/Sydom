@@ -34,6 +34,7 @@ func TestPageSweep_System(t *testing.T) {
 		"/operators",
 		"/tenants",
 		"/tenants/" + strconv.FormatInt(tid, 10) + "/members",
+		"/tenants/" + strconv.FormatInt(tid, 10) + "/usage",
 	} {
 		assertSweptPage(t, c, ts.URL+p, true)
 	}
