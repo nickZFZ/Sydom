@@ -23,9 +23,13 @@ func TestTenantPlanLimits_ReadAndNotFound(t *testing.T) {
 	pl, err := store.TenantPlanLimits(context.Background(), tx, tenantID)
 	require.NoError(t, err)
 	require.Equal(t, 3, pl.MaxApplications, "默认 free 限 3")
+	require.Equal(t, 3, pl.MaxMembers, "默认 free 成员限 3")
 	n, err := store.CountApplications(context.Background(), tx, tenantID)
 	require.NoError(t, err)
 	require.Equal(t, 1, n)
+	m, err := store.CountMembers(context.Background(), tx, tenantID)
+	require.NoError(t, err)
+	require.Equal(t, 0, m, "SeedApp 租户无 membership")
 
 	_, err = store.TenantPlanLimits(context.Background(), tx, 999999)
 	require.ErrorIs(t, err, store.ErrNotFound)
@@ -42,6 +46,8 @@ func TestTenantUsageOf(t *testing.T) {
 	require.Equal(t, "free", u.PlanName)
 	require.Equal(t, 3, u.MaxApplications)
 	require.Equal(t, 1, u.UsedApplications, "seed 1 应用")
+	require.Equal(t, 3, u.MaxMembers)
+	require.Equal(t, 0, u.UsedMembers, "SeedApp 租户无 membership")
 
 	_, err = store.TenantUsageOf(context.Background(), db, 999999)
 	require.ErrorIs(t, err, store.ErrNotFound)
