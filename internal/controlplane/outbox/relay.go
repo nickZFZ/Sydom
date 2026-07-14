@@ -8,6 +8,7 @@ import (
 
 	syncv1 "github.com/nickZFZ/Sydom/gen/sydom/sync/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/broadcast"
+	"github.com/nickZFZ/Sydom/internal/obs"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -20,7 +21,7 @@ func RunRelayLoop(ctx context.Context, db *sql.DB, pub broadcast.Publisher, poll
 		n, err := drainOnce(ctx, db, pub)
 		if err != nil && ctx.Err() == nil {
 			// 记录但不中断循环（DB 抖动等）；下轮重试。
-			// TODO: 接入日志/metric 后在此记录 drain 错误（当前全包未引入日志设施，暂静默续投）。
+			obs.From(ctx).Warn("relay drain error (retrying next tick)", "err", err)
 			n = 0
 		}
 		if n > 0 {

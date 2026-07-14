@@ -136,6 +136,7 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 			func(lctx context.Context) error {
 				m.SetRelayLeader(true)
 				defer m.SetRelayLeader(false)
+				lctx = obs.With(lctx, logger.With("component", "relay"))
 				return outbox.RunRelayLoop(lctx, db, pub, cfg.RelayPollInterval)
 			})
 	})
