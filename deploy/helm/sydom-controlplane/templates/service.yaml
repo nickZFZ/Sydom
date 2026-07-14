@@ -19,3 +19,7 @@ spec:
       targetPort: grpc-sync
       protocol: TCP
       appProtocol: grpc
+    - name: metrics
+      port: {{ .Values.ports.health }}
+      targetPort: health
+      protocol: TCP
