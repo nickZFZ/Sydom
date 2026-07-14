@@ -41,6 +41,10 @@ helm install cp deploy/helm/sydom-controlplane \
 | `tls.enabled` | `true` | 传输 TLS；cert/key 进 Secret 挂 `/etc/sydom/tls` |
 | `tls.syncClientCA` | `""` | 非空→policysync mTLS 校验 sidecar 证书（M5.2b） |
 | `pdb.minAvailable` | `1` | replicas>1 时保 relay leader 连续 |
+| `autoscaling.enabled` | `false` | 开 HPA（CPU 扩缩 `minReplicas`-`maxReplicas`，默认 2-5/80%）；开启后 Deployment 不再固定 `replicas`，交 HPA 管（M5.3-k8s-ext） |
+| `serviceMonitor.enabled` | `false` | 开 Prometheus Operator ServiceMonitor 抓 `/metrics`（需集群已装其 CRD；或用既有 pod 注解抓取）（M5.3-k8s-ext） |
+
+> Ingress 暂未内置：admin 口为 gRPC(+REST)、console 为可选独立监听，接入按所选 ingress controller（须支持 gRPC）自行配置。
 
 ## 安全基线
 
@@ -52,3 +56,7 @@ helm install cp deploy/helm/sydom-controlplane \
 ## sidecar 接入
 
 见 `deploy/k8s/sidecar-reference.yaml`（同 Pod 边车模式）。
+
+## 相关文档
+
+全部文档索引见 [`docs/README.md`](../../../docs/README.md)。运维直达：[零停机迁移](../../../docs/runbooks/zero-downtime-migrations.md) · [备份恢复](../../../docs/runbooks/backup-restore.md) · [性能基线](../../../docs/runbooks/performance-baselines.md)。

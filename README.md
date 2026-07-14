@@ -29,3 +29,12 @@ make demo-down     # 拆栈（清容器与卷）
 
 一次真人浏览器走查（含截图）见 [`test/e2e/browser/WALKTHROUGH.md`](test/e2e/browser/WALKTHROUGH.md)，
 逐屏印证**功能权限**、**数据权限**与 **fail-close** 三件事。
+
+## 文档导航
+
+完整文档索引见 **[`docs/README.md`](docs/README.md)**（评估 / 部署 / 运维 / API 契约分组）。生产部署直达：
+
+- **Docker Compose**（单机/测试）：[`deploy/README.md`](deploy/README.md)
+- **Kubernetes Helm**（生产）：[`deploy/helm/sydom-controlplane/README.md`](deploy/helm/sydom-controlplane/README.md)
+- **运维 Runbook**：[零停机迁移](docs/runbooks/zero-downtime-migrations.md) · [备份恢复](docs/runbooks/backup-restore.md) · [性能基线](docs/runbooks/performance-baselines.md)
+- **API 契约**：[API 版本化 + 向后兼容](docs/api-versioning.md)
