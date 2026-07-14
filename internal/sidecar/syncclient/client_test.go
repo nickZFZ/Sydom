@@ -402,3 +402,15 @@ func TestReportPermissions_RelaysToControlPlane(t *testing.T) {
 	require.Equal(t, "p.read", got[0].GetCode())
 	require.Equal(t, "read", got[0].GetAction())
 }
+
+// OnSnapshotApplied 回调须在 bootstrap 成功 apply 后触发一次（M5.1c snapshot_applied 指标 hook）。
+func TestSyncClient_Bootstrap_FiresSnapshotHook(t *testing.T) {
+	f := &fakeServer{snapFn: func(int) (*syncv1.Snapshot, error) {
+		return &syncv1.Snapshot{Version: 1}, nil
+	}}
+	c, _, _ := startFake(t, f)
+	var n int
+	c.cfg.OnSnapshotApplied = func() { n++ }
+	require.NoError(t, c.bootstrap(context.Background()))
+	require.Equal(t, 1, n, "OnSnapshotApplied 应在成功 apply 后触发一次")
+}

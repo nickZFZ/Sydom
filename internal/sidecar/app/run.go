@@ -41,6 +41,7 @@ func Run(ctx context.Context, cfg Config, authLis net.Listener, logger *slog.Log
 	if err != nil {
 		return err
 	}
+	scCfg.OnSnapshotApplied = m.SnapshotApplied // M5.1c: 全量快照 apply 计入 sydom_sidecar_snapshot_applied_total
 	syncCli, err := syncclient.New(scCfg, engine)
 	if err != nil {
 		return fmt.Errorf("new sync client: %w", err)

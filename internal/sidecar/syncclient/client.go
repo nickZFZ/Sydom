@@ -130,6 +130,9 @@ func (c *SyncClient) resync(ctx context.Context) error {
 	if err := c.engine.ApplySnapshot(ks); err != nil {
 		return err
 	}
+	if c.cfg.OnSnapshotApplied != nil { // 观测 hook：全量快照成功 apply 计入指标（apply 逻辑不变）
+		c.cfg.OnSnapshotApplied()
+	}
 	c.markSync()
 	return nil
 }

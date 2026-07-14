@@ -26,4 +26,7 @@ type Config struct {
 
 	BackoffInitial time.Duration // 退避初值（零值用 500ms）
 	BackoffMax     time.Duration // 退避上限（零值用 30s）
+
+	// OnSnapshotApplied 可选：每次全量快照成功 apply 后触发（观测 hook，nil=no-op）。
+	OnSnapshotApplied func()
 }
