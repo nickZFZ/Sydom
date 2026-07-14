@@ -8,6 +8,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/auth"
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
+	"github.com/nickZFZ/Sydom/internal/obs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -147,7 +148,10 @@ func AuthorizeRule(ctx context.Context, enf *adminauthz.Enforcer, fullMethod, pr
 		}
 	}
 	allow, err := enf.Enforce(ctx, principal, domain, tdom, rule.resource, rule.action)
-	// TODO(observability): Enforce 内部错误（DB/策略加载故障）当前与"权限不足"一并 fail-close 为 PermissionDenied；接入日志/metric 后在此区分并记录。
+	if err != nil { // 仅内部错误(DB/策略加载故障)记日志；合法拒绝(!allow)是正常结果不记，避噪声
+		obs.From(ctx).Warn("authz enforce internal error (fail-closed as permission denied)",
+			"method", fullMethod, "principal", principal, "err", err)
+	}
 	if err != nil || !allow {
 		return nil, status.Error(codes.PermissionDenied, "permission denied")
 	}
