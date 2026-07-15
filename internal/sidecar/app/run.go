@@ -96,9 +96,6 @@ func Run(ctx context.Context, cfg Config, authLis net.Listener, logger *slog.Log
 			}
 		}
 	})
-	// TODO(M5.x): sydom_sidecar_snapshot_applied_total 待 syncclient 暴露快照事件 hook 后接入
-	// （快照 apply 在 syncclient.Run 内部，无干净的 app 层 hook；不改 syncclient 内部逻辑）。
-
 	var healthSrv *http.Server
 	if cfg.HealthAddr != "" {
 		healthLis, lerr := net.Listen("tcp", cfg.HealthAddr)
