@@ -298,3 +298,64 @@ func TestEngine_EnforceEx_FailClose(t *testing.T) {
 	_, _, err = e.EnforceEx("alice", "other", "order", "read") // 越域
 	require.ErrorIs(t, err, ErrForeignDomain)
 }
+
+// T2: 批量判定须与逐条 Enforce 逐一相等（allow/deny 混合）——改写循环不得改判定。
+// 刻意用两个独立引擎：同一引擎上批量会先填缓存、单条再读同一条目 → 两边"串供"会掩盖分歧。
+func TestEngine_BatchEnforce_MatchesSingleEnforce(t *testing.T) {
+	reqs := [][]string{
+		{"alice", "dom1", "order", "read"},   // 经 manager 继承
+		{"alice", "dom1", "order", "delete"}, // 无此 act
+		{"bob", "dom1", "order", "read"},     // 非 manager
+		{"manager", "dom1", "order", "read"}, // 直接主体（casbin HasLink 自反，role_manager.go:310）
+	}
+
+	eb, err := New("dom1", nil, nil)
+	require.NoError(t, err)
+	require.NoError(t, eb.ApplySnapshot(mgrSnapshot(1)))
+	batch, err := eb.BatchEnforce(reqs)
+	require.NoError(t, err)
+	require.Len(t, batch, len(reqs))
+
+	es, err := New("dom1", nil, nil)
+	require.NoError(t, err)
+	require.NoError(t, es.ApplySnapshot(mgrSnapshot(1)))
+	for i, r := range reqs {
+		single, serr := es.Enforce(r[0], r[1], r[2], r[3])
+		require.NoError(t, serr)
+		require.Equal(t, single, batch[i], "第 %d 行：批量与单条判定必须一致（req=%v）", i, r)
+	}
+}
+
+// T3: 批量对外域行返 false 且不报错——与单条 Enforce 的 ErrForeignDomain 刻意不同（engine.go 契约）。
+// 钉死陷阱：实现须调 e.ce.Enforce（casbin），若误写 e.Enforce（内核）→ 外域行变报错 → 本测试红。
+func TestEngine_BatchEnforce_ForeignDomainRowReturnsFalseNotError(t *testing.T) {
+	e, err := New("dom1", nil, nil)
+	require.NoError(t, err)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+
+	res, err := e.BatchEnforce([][]string{
+		{"alice", "dom1", "order", "read"}, // 本域
+		{"alice", "dom2", "order", "read"}, // 外域：须 false，不得报错
+	})
+	require.NoError(t, err, "批量不得对外域行返错（契约：外域以 false 表达拒绝，不回传越域信号）")
+	require.Equal(t, []bool{true, false}, res)
+
+	// 对照：单条 Enforce 对同一外域请求显式报 ErrForeignDomain——两者刻意不对称
+	_, serr := e.Enforce("alice", "dom2", "order", "read")
+	require.ErrorIs(t, serr, ErrForeignDomain, "单条须保留越域信号（与批量的刻意差异）")
+}
+
+// T5: 空输入返 nil（非空切片）——逐字对齐 casbin BatchEnforce 现行行为（authorizer.go:88 直接透传）。
+func TestEngine_BatchEnforce_EmptyInputReturnsNil(t *testing.T) {
+	e, err := New("dom1", nil, nil)
+	require.NoError(t, err)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+
+	res, err := e.BatchEnforce(nil)
+	require.NoError(t, err)
+	require.Nil(t, res, "空输入须返 nil（实现须用 var results []bool + append，非 make([]bool,0,n)）")
+
+	res, err = e.BatchEnforce([][]string{})
+	require.NoError(t, err)
+	require.Nil(t, res)
+}
