@@ -229,7 +229,8 @@ func (e *Engine) GetImplicitRolesForUser(user, dom string) ([]string, error) {
 // 表达拒绝、不回传越域信号——调用方需要区分「越域」与「域内无权」时应走单条 Enforce。
 //
 // 实现逐行调 e.ce.Enforce（casbin SyncedCachedEnforcer 的缓存 Enforce），而非 e.ce.BatchEnforce：
-// 后者经嵌入落到 Enforcer.BatchEnforce（enforcer.go:951）直调底层 enforce，完全绕过决策缓存
+// 后者经嵌入先落到 SyncedEnforcer.BatchEnforce（enforcer_synced.go:219，持一次批次级 RLock）再落
+// 基类 Enforcer.BatchEnforce（enforcer.go:951）直调底层 enforce，完全绕过决策缓存
 // （casbin 的缓存只挂在 Enforce 上，SyncedCachedEnforcer 未覆写 BatchEnforce）。两者 matcher 同为 ""
 // （Enforce 与 BatchEnforce 都走 e.enforce("", nil, ...)），故缓存键逐字相同——批量与单条共享缓存
 // 条目、互相暖缓存，且语义正确。实测 50 条批量 ~2.1ms → ~µs 量级（见 docs/runbooks/performance-baselines.md）。
