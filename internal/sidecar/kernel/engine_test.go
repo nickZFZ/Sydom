@@ -359,3 +359,28 @@ func TestEngine_BatchEnforce_EmptyInputReturnsNil(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, res)
 }
+
+// T4: 版本变更后批量判定须立即反映撤权——本片的核心一致性证明。
+// 缓存复用绝不可喂陈旧决策：ApplyDelta 的 InvalidateCache 全量清 → 后续探测必 miss → 按新策略重算。
+// 是 TestEngine_ApplyDelta_RevokeTakesEffectImmediately 的批量孪生。
+func TestEngine_BatchEnforce_RevokeTakesEffectImmediately(t *testing.T) {
+	e, err := New("dom1", nil, nil)
+	require.NoError(t, err)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+
+	reqs := [][]string{{"alice", "dom1", "order", "read"}}
+	res, err := e.BatchEnforce(reqs)
+	require.NoError(t, err)
+	require.Equal(t, []bool{true}, res, "撤权前应 allow（并填充决策缓存）")
+
+	// 撤掉 manager 的 order:read（delta REMOVE p）
+	d := Delta{Version: 2, PolicyChanges: []PolicyChange{
+		{Op: ChangeRemove, Rule: Rule{Ptype: "p", V: [6]string{"manager", "dom1", "order", "read", "allow", ""}}},
+	}}
+	require.NoError(t, e.ApplyDelta(d))
+	require.Equal(t, uint64(2), e.Version())
+
+	res, err = e.BatchEnforce(reqs)
+	require.NoError(t, err)
+	require.Equal(t, []bool{false}, res, "撤权后批量必须立即翻 false——绝不可从缓存喂旧决策")
+}
