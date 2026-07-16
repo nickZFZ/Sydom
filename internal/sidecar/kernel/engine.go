@@ -243,8 +243,8 @@ func (e *Engine) GetImplicitRolesForUser(user, dom string) ([]string, error) {
 // 使批次跨版本撕裂（前几行旧版本、其余新版本）。可接受：每行答案都是某个近期版本的正确答案；
 // BatchCheck 语义上等价于 N 次 Check（客户端发 N 次单条本就如此撕裂），批量只是省 RTT 的传输层优化；
 // 原子性从非承诺契约，而 §2.2/§5 已明文接受新鲜度滞后。撤权及时性不受影响：apply 的 InvalidateCache
-// 全量清同一缓存 → 之后探测必 miss → 按新策略重算（TestEngine_BatchEnforce_
-// RevokeTakesEffectImmediately 钉死此点）。
+// 全量清同一缓存 → 顺序流下之后探测必 miss、按新策略重算（TestEngine_BatchEnforce_
+// RevokeTakesEffectImmediately 钉死此点）；并发下的 set-after-clear 窄窗与单条 Check 同款、非本片新增。
 func (e *Engine) BatchEnforce(reqs [][]string) ([]bool, error) {
 	if !e.ready.Load() {
 		return nil, ErrNotReady
