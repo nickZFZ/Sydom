@@ -18,12 +18,13 @@ go test -run=^$ -bench=. -benchmem ./test/bench/
 | Enforce 未命中 rules=10 | 23,110 | 21,564 | 359 | 冷 matcher，小策略 |
 | Enforce 未命中 rules=100 | 203,768 | 207,361 | 3,455 | 冷 matcher，中策略 |
 | Enforce 未命中 rules=1000 | 2,297,526 | 2,063,118 | 34,407 | 冷 matcher，大策略（O(rules)） |
-| BatchEnforce 50 | 2,130,430 | 1,503,118 | 41,061 | 批量 50 条/次 |
+| BatchEnforce 50（缓存命中） | 7,522 | 9,324 | 404 | 批量 50 条/次；M5.5 优化后复用决策缓存 |
 
 **观察**：
 - 缓存命中（137 ns）比未命中 rules=100（203,768 ns）快 **~1,487 倍** → 生产在高命中率下走快路径；**性能高度依赖缓存命中率**。
 - 未命中随 rules 10→100→1000 近线性增（23µs→204µs→2.3ms）→ 策略规模是冷成本主因；未命中成本高（rules=100 时 204µs/3,455 allocs）。
-- **BatchEnforce 50 ≈ 2.13ms（~42µs/决策）远高于缓存命中单次（137ns）** → 批量路径未充分复用决策缓存（casbin `BatchEnforce` 走底层枚举）。**非阻断观察，留后续优化候选**（本切片只测量不改核）。
+- **BatchEnforce 50 已复用决策缓存**（M5.5 优化，见 `docs/superpowers/specs/2026-07-16-sydom-m55-batchenforce-cache-design.md`）：原 2.13ms（~42µs/决策，casbin `BatchEnforce` 直调底层 enforce 绕过缓存）→ 现 7,522 ns/op（**~283× 提升**）。内核逐行调 casbin 缓存 `Enforce`，与单条**共享缓存键**（同 matcher `""`）→ 批量与单条互相暖缓存。
+- **运维注意（批次跨版本撕裂）**：批量不再共享单一 RLock，一次策略 apply 可能插在行间，使一批中前后行分属相邻两个版本。**这不是不一致**——每行都是某个近期版本的正确答案，且 `BatchCheck` 语义上等价于 N 次 `Check`。**撤权及时性不受影响**（apply 全量清缓存 → 后续必按新策略重算）。
 
 ## 容量估算（粗略）
 
