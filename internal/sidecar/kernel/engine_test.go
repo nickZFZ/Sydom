@@ -4,6 +4,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/casbin/casbin/v3/persist/cache"
 	"github.com/stretchr/testify/require"
 )
 
@@ -383,4 +384,64 @@ func TestEngine_BatchEnforce_RevokeTakesEffectImmediately(t *testing.T) {
 	res, err = e.BatchEnforce(reqs)
 	require.NoError(t, err)
 	require.Equal(t, []bool{false}, res, "撤权后批量必须立即翻 false——绝不可从缓存喂旧决策")
+}
+
+// countingCache 包 boundedCache 计 Get 的命中/未命中，供缓存复用断言。
+// 只在 Get 上计数（Set/Delete/Clear 透传）——不改任何缓存策略。
+type countingCache struct {
+	cache.Cache
+	mu     sync.Mutex
+	hits   int
+	misses int
+}
+
+func newCountingCache() *countingCache { return &countingCache{Cache: newBoundedCache(1024)} }
+
+func (c *countingCache) Get(key string) (bool, error) {
+	v, err := c.Cache.Get(key)
+	c.mu.Lock()
+	if err == nil {
+		c.hits++
+	} else {
+		c.misses++
+	}
+	c.mu.Unlock()
+	return v, err
+}
+
+func (c *countingCache) stats() (hits, misses int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.hits, c.misses
+}
+
+func (c *countingCache) reset() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.hits, c.misses = 0, 0
+}
+
+// T1: 批量判定须复用决策缓存——同一批连跑两次，第二次须每行命中、零未命中。
+// 现行实现（e.ce.BatchEnforce 直调底层 enforce）根本不读缓存 → 命中 0 → 本测试红。
+func TestEngine_BatchEnforce_ReusesDecisionCache(t *testing.T) {
+	c := newCountingCache()
+	e, err := New("dom1", c, nil)
+	require.NoError(t, err)
+	require.NoError(t, e.ApplySnapshot(mgrSnapshot(1)))
+
+	reqs := [][]string{
+		{"alice", "dom1", "order", "read"},   // true
+		{"alice", "dom1", "order", "delete"}, // false
+	}
+	_, err = e.BatchEnforce(reqs) // 第一次：冷，填充缓存
+	require.NoError(t, err)
+
+	c.reset()
+	res, err := e.BatchEnforce(reqs) // 第二次：须全命中
+	require.NoError(t, err)
+	require.Equal(t, []bool{true, false}, res, "缓存命中不得改变判定")
+
+	hits, misses := c.stats()
+	require.Equal(t, len(reqs), hits, "第二次批量须每行命中决策缓存")
+	require.Equal(t, 0, misses, "第二次批量不得有未命中")
 }
