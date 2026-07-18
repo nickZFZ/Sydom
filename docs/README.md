@@ -26,6 +26,7 @@
 | [零停机迁移](runbooks/zero-downtime-migrations.md) | expand/contract 纪律、`maxUnavailable:0`、pre-upgrade 迁移 Job fail-close | 发版含 DB schema 变更时 |
 | [备份与恢复](runbooks/backup-restore.md) | 逻辑 `pg_dump` 备份/恢复脚本、CronJob、两层策略（逻辑备份 + 委托托管 PG PITR）、DR 步骤、RPO/RTO | 建立备份策略 / 灾难恢复演练 |
 | [授权决策性能基线](runbooks/performance-baselines.md) | 决策热路径 benchmark 实测基线、容量估算、benchstat 回归对照 | 容量规划 / 改动内核前立基线 |
+| [SLO/SLA 与告警](runbooks/service-level-objectives.md) | 服务水平目标（可用性/延迟/命中率/连接性/leader）、PrometheusRule 告警、告警→处置 runbook、阈值调优 | 上生产监控 / 定 SLA 承诺 / 告警响应 |
 
 ## 安全 · 信任边界
 

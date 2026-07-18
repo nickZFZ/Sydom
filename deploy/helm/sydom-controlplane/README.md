@@ -43,6 +43,7 @@ helm install cp deploy/helm/sydom-controlplane \
 | `pdb.minAvailable` | `1` | replicas>1 时保 relay leader 连续 |
 | `autoscaling.enabled` | `false` | 开 HPA（CPU 扩缩 `minReplicas`-`maxReplicas`，默认 2-5/80%）；开启后 Deployment 不再固定 `replicas`，交 HPA 管（M5.3-k8s-ext） |
 | `serviceMonitor.enabled` | `false` | 开 Prometheus Operator ServiceMonitor 抓 `/metrics`（需集群已装其 CRD；或用既有 pod 注解抓取）（M5.3-k8s-ext） |
+| `prometheusRule.enabled` | `false` | 开 SLO 告警 PrometheusRule（可用性/延迟/命中率/连接性/relay leader；需 Operator CRD）。阈值经 `prometheusRule.*`（`grpcFaultRatioWarning/Critical`、`checkLatencyP99Seconds`、`cacheHitRatioMin`）调优，详见 [SLO runbook](../../../docs/runbooks/service-level-objectives.md)（M6-SLO） |
 
 > Ingress 暂未内置：admin 口为 gRPC(+REST)、console 为可选独立监听，接入按所选 ingress controller（须支持 gRPC）自行配置。
 

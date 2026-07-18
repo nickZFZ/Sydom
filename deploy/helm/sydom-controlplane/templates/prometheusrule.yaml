@@ -1,0 +1,117 @@
+{{- if .Values.prometheusRule.enabled }}
+{{- $pr := .Values.prometheusRule }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "sydom-controlplane.fullname" . }}
+  labels:
+    {{- include "sydom-controlplane.labels" . | nindent 4 }}
+    {{- with $pr.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    # ── SLO 记录规则（先聚合出比率/分位，告警与仪表盘复用同一真相）──────────────
+    - name: sydom-slo.rules
+      rules:
+        # 控制面 gRPC 服务端故障率：只计服务端故障码（Internal/Unknown/Unavailable/DataLoss）。
+        # 客户端错误（InvalidArgument/AlreadyExists/FailedPrecondition/NotFound/PermissionDenied…）
+        # 是调用方问题、不计入可用性——此区分由 M6 error-semantics 细分 code 后才成立。
+        - record: sydom:grpc_server_fault_ratio:rate5m
+          expr: |
+            sum(rate(sydom_grpc_requests_total{code=~"Internal|Unknown|Unavailable|DataLoss"}[5m]))
+            /
+            sum(rate(sydom_grpc_requests_total[5m]))
+        # REST/Console HTTP 服务端故障率（5xx）。
+        - record: sydom:http_server_fault_ratio:rate5m
+          expr: |
+            sum(rate(sydom_http_requests_total{code=~"5.."}[5m]))
+            /
+            sum(rate(sydom_http_requests_total[5m]))
+        # 数据面授权 Check 尾延迟 p99（秒）。
+        - record: sydom:authz_check_latency_p99:5m
+          expr: |
+            histogram_quantile(0.99, sum by (le) (rate(sydom_authz_check_duration_seconds_bucket[5m])))
+        # sidecar 决策缓存命中率（无流量时分母为 0 → NaN，告警比较自动不触发，无误报）。
+        - record: sydom:cache_hit_ratio:rate5m
+          expr: |
+            sum(rate(sydom_cache_hits_total[5m]))
+            /
+            (sum(rate(sydom_cache_hits_total[5m])) + sum(rate(sydom_cache_misses_total[5m])))
+
+    # ── SLO 告警规则 ────────────────────────────────────────────────────────
+    - name: sydom-slo.alerts
+      rules:
+        - alert: SydomControlPlaneHighErrorRate
+          expr: sydom:grpc_server_fault_ratio:rate5m > {{ $pr.grpcFaultRatioWarning }}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: 控制面 gRPC 服务端故障率偏高（>{{ $pr.grpcFaultRatioWarning }}）
+            description: 近 5m 服务端故障码占比 {{`{{ $value | humanizePercentage }}`}}，超出 warning 阈值。见 SLO runbook「可用性」处置。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+        - alert: SydomControlPlaneHighErrorRateCritical
+          expr: sydom:grpc_server_fault_ratio:rate5m > {{ $pr.grpcFaultRatioCritical }}
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: 控制面 gRPC 服务端故障率严重偏高（>{{ $pr.grpcFaultRatioCritical }}）
+            description: 近 5m 服务端故障码占比 {{`{{ $value | humanizePercentage }}`}}，超出 critical 阈值——很可能 DB/依赖故障。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+        - alert: SydomRestConsoleHighErrorRate
+          expr: sydom:http_server_fault_ratio:rate5m > {{ $pr.grpcFaultRatioWarning }}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: REST/Console HTTP 5xx 比率偏高（>{{ $pr.grpcFaultRatioWarning }}）
+            description: 近 5m HTTP 5xx 占比 {{`{{ $value | humanizePercentage }}`}}。见 SLO runbook「可用性」。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+        - alert: SydomAuthzCheckLatencyHigh
+          expr: sydom:authz_check_latency_p99:5m > {{ $pr.checkLatencyP99Seconds }}
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: 数据面授权 Check p99 延迟偏高（>{{ $pr.checkLatencyP99Seconds }}s）
+            description: 近 5m Check p99 = {{`{{ $value | humanizeDuration }}`}}。多因缓存命中率下降或策略规模增大，见 SLO runbook「延迟」。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+        - alert: SydomCacheHitRatioLow
+          expr: sydom:cache_hit_ratio:rate5m < {{ $pr.cacheHitRatioMin }}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: sidecar 决策缓存命中率偏低（<{{ $pr.cacheHitRatioMin }}）
+            description: 近 5m 命中率 {{`{{ $value | humanizePercentage }}`}}——延迟将向未命中路径退化（M5.5：慢 ~1487×）。见 SLO runbook「缓存命中率」。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+        - alert: SydomSidecarDisconnected
+          expr: sydom_sidecar_connected == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: sidecar 与控制面断连（sydom_sidecar_connected=0）
+            description: sidecar 无法同步策略，正以最后快照服务——撤权/新授权不生效。见 SLO runbook「连接性」。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+        - alert: SydomNoRelayLeader
+          expr: sum(sydom_relay_leader) < 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: 无 outbox relay leader（sum(sydom_relay_leader)<1）
+            description: 无副本持有选主锁，outbox 未 drain——策略变更不广播到数据面。见 SLO runbook「relay leader」。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+        - alert: SydomMultipleRelayLeaders
+          expr: sum(sydom_relay_leader) > 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: 多个 relay leader（sum(sydom_relay_leader)>1，疑似脑裂）
+            description: 应恰有 1 个 leader（pg_advisory_lock 保证）。持续 >1 说明选主/指标异常，可能重复投递。见 SLO runbook「relay leader」。
+            runbook_url: https://github.com/nickZFZ/Sydom/blob/main/docs/runbooks/service-level-objectives.md
+{{- end }}

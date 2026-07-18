@@ -69,6 +69,21 @@ serviceMonitor:
   path: "/metrics"
   labels: {}          # 供 Prometheus serviceMonitorSelector 匹配
 
+# SLO 告警规则（PrometheusRule，M6-SLO）。默认关；需集群已装 Prometheus Operator CRD。
+# 覆盖 M5.1 obs 指标 + M5.4a relay leader；阈值为据 M5.5 基线的推荐默认，据实际流量调优。
+# 详见 docs/runbooks/service-level-objectives.md（告警→处置 runbook）。
+prometheusRule:
+  enabled: false
+  labels: {}                      # 供 Prometheus ruleSelector 匹配（如 release: kube-prometheus-stack）
+  # 控制面可用性 SLO：只计服务端故障码（Internal/Unknown/Unavailable），排除客户端错误
+  # （InvalidArgument/AlreadyExists/FailedPrecondition/NotFound/PermissionDenied，由 M6 error-semantics 细分）。
+  grpcFaultRatioWarning: 0.01     # 服务端故障率 >1% 持续 5m → warning（≈99% 成功）
+  grpcFaultRatioCritical: 0.05    # >5% 持续 5m → critical
+  # 数据面授权 Check 尾延迟 SLO（M5.5 基线：缓存命中 137ns、未命中 rules=100 ~204µs，端到端含 gRPC 往返，留足余量）。
+  checkLatencyP99Seconds: 0.05    # p99 >50ms 持续 10m → warning
+  # 缓存命中率 SLO（M5.5：命中比未命中快 ~1487×，容量强依赖命中率）。
+  cacheHitRatioMin: 0.8           # 命中率 <80% 持续 15m → warning
+
 # 迁移自动化（M5.3-migrate）：pre-install/pre-upgrade hook Job 在滚动前跑嵌入迁移。
 migrations:
   enabled: true
