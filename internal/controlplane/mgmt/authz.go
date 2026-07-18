@@ -68,6 +68,8 @@ var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/ListApplications":           {"application", "read", false, scopeTenant},
 	"/sydom.admin.v1.AdminService/GetTenantUsage":             {"application", "read", false, scopeTenant},
 	"/sydom.admin.v1.AdminService/ChangeTenantPlan":           {"billing", "update", false, scopeSystem}, // 计费=平台超管专属（无支付故绝不自助升级）
+	"/sydom.admin.v1.AdminService/ConfigureTenantIdp":         {"sso", "update", false, scopeTenant},
+	"/sydom.admin.v1.AdminService/GetTenantIdp":               {"sso", "read", false, scopeTenant},
 
 	"/sydom.admin.v1.AdminService/GetApplication":             {"application", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/CreateOperator":             {"admin", "create", false, scopeSystem},

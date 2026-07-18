@@ -86,5 +86,32 @@ func accountRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.ListMembers(ctx, m.(*adminv1.ListMembersRequest))
 			}},
+		{"PUT", "/v1/tenants/{tenant_id}/idp", pfx + "ConfigureTenantIdp",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.ConfigureTenantIdpRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "tenant_id")
+				if err != nil {
+					return nil, err
+				}
+				m.TenantId = id
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ConfigureTenantIdp(ctx, m.(*adminv1.ConfigureTenantIdpRequest))
+			}},
+		{"GET", "/v1/tenants/{tenant_id}/idp", pfx + "GetTenantIdp",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "tenant_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.GetTenantIdpRequest{TenantId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.GetTenantIdp(ctx, m.(*adminv1.GetTenantIdpRequest))
+			}},
 	}
 }
