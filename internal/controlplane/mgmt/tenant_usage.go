@@ -3,6 +3,7 @@ package mgmt
 import (
 	"context"
 	"errors"
+	"time"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
@@ -20,9 +21,17 @@ func (s *AdminServer) GetTenantUsage(ctx context.Context, r *adminv1.GetTenantUs
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
-	return &adminv1.GetTenantUsageResponse{
-		PlanName:     u.PlanName,
-		Applications: &adminv1.ResourceUsage{Used: uint32(u.UsedApplications), Limit: uint32(u.MaxApplications)},
-		Members:      &adminv1.ResourceUsage{Used: uint32(u.UsedMembers), Limit: uint32(u.MaxMembers)},
-	}, nil
+	resp := &adminv1.GetTenantUsageResponse{
+		PlanName:           u.PlanName,
+		Applications:       &adminv1.ResourceUsage{Used: uint32(u.UsedApplications), Limit: uint32(u.MaxApplications)},
+		Members:            &adminv1.ResourceUsage{Used: uint32(u.UsedMembers), Limit: uint32(u.MaxMembers)},
+		PriceCents:         u.PriceCents,
+		Currency:           u.Currency,
+		BillingPeriod:      u.BillingPeriod,
+		SubscriptionStatus: u.SubStatus,
+	}
+	if u.CurrentPeriodEnd.Valid {
+		resp.CurrentPeriodEnd = u.CurrentPeriodEnd.Time.Format(time.RFC3339)
+	}
+	return resp, nil
 }

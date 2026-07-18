@@ -24,6 +24,22 @@ func accountRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.RegisterTenant(ctx, m.(*adminv1.RegisterTenantRequest))
 			}},
+		{"POST", "/v1/tenants/{tenant_id}/plan", pfx + "ChangeTenantPlan",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.ChangeTenantPlanRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				id, err := pathUint64(r, "tenant_id")
+				if err != nil {
+					return nil, err
+				}
+				m.TenantId = id
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.ChangeTenantPlan(ctx, m.(*adminv1.ChangeTenantPlanRequest))
+			}},
 		{"GET", "/v1/me/tenants", pfx + "ListMyTenants",
 			func(r *http.Request, _ []byte) (proto.Message, error) {
 				page, err := parseListPage(r)
