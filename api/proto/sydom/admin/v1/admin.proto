@@ -29,6 +29,9 @@ service AdminService {
   rpc GetTenantUsage(GetTenantUsageRequest) returns (GetTenantUsageResponse);
   // ChangeTenantPlan 变更租户套餐（billing 资源，super-admin 专属，M6-billing-1）。
   rpc ChangeTenantPlan(ChangeTenantPlanRequest) returns (ChangeTenantPlanResponse);
+  // 企业 SSO：每租户 OIDC IdP 配置（M6-sso-1，scopeTenant 租户 owner 自助）。
+  rpc ConfigureTenantIdp(ConfigureTenantIdpRequest) returns (ConfigureTenantIdpResponse);
+  rpc GetTenantIdp(GetTenantIdpRequest) returns (GetTenantIdpResponse);
 
   // —— 管理员自身管理（system 域，super-admin 专属）——
   rpc CreateOperator(CreateOperatorRequest) returns (CreateOperatorResponse);
@@ -230,6 +233,29 @@ message ChangeTenantPlanResponse {
   uint64 plan_id = 2;
   string status = 3;
   string current_period_end = 4; // RFC3339；空=无到期
+}
+
+// —— M6-sso-1 企业 SSO：每租户 OIDC IdP 配置 ——
+message ConfigureTenantIdpRequest {
+  uint64 tenant_id = 1;
+  string issuer = 2;
+  string client_id = 3;
+  string client_secret = 4;    // 明文入参，服务端加密存储；GetTenantIdp 绝不回
+  repeated string domains = 5; // email 域（服务端 lowercase）
+  bool enabled = 6;
+}
+message ConfigureTenantIdpResponse {
+  uint64 tenant_id = 1;
+  bool enabled = 2;
+}
+message GetTenantIdpRequest { uint64 tenant_id = 1; }
+message GetTenantIdpResponse {
+  bool configured = 1;
+  string issuer = 2;
+  string client_id = 3;
+  repeated string domains = 4;
+  bool enabled = 5;
+  // 绝不含 client_secret（INV-1）
 }
 
 message CreateOperatorRequest {
