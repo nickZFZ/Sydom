@@ -43,13 +43,18 @@ func CountMembers(ctx context.Context, ex cp.DBTX, tenantID int64) (int, error) 
 	return n, err
 }
 
-// TenantUsage 是租户的套餐名 + 各资源用量/上限（applications + members）。
+// TenantUsage 是租户的套餐名 + 各资源用量/上限（applications + members）+ 定价/订阅（M6-billing-1）。
 type TenantUsage struct {
 	PlanName         string
 	MaxApplications  int
 	UsedApplications int
 	MaxMembers       int
 	UsedMembers      int
+	PriceCents       int64        // M6-billing-1：套餐价格（最小币种单位）
+	Currency         string       // ISO4217
+	BillingPeriod    string       // month|year
+	SubStatus        string       // 订阅状态；无订阅行→""
+	CurrentPeriodEnd sql.NullTime // 无到期/无订阅→NULL
 }
 
 // TenantUsageOf 只读返租户套餐名 + 应用/成员上限与当前用量（无锁，读路径）。租户不存在→ErrNotFound。
@@ -59,9 +64,15 @@ func TenantUsageOf(ctx context.Context, ex cp.DBTX, tenantID int64) (TenantUsage
 		`SELECT p.name, p.max_applications,
 		        (SELECT count(*) FROM application a WHERE a.tenant_id = t.id),
 		        p.max_members,
-		        (SELECT count(*) FROM tenant_membership tm WHERE tm.tenant_id = t.id)
-		   FROM tenant t JOIN plan p ON p.id = t.plan_id WHERE t.id = $1`,
-		tenantID).Scan(&u.PlanName, &u.MaxApplications, &u.UsedApplications, &u.MaxMembers, &u.UsedMembers)
+		        (SELECT count(*) FROM tenant_membership tm WHERE tm.tenant_id = t.id),
+		        p.price_cents, p.currency, p.billing_period,
+		        COALESCE(s.status, ''), s.current_period_end
+		   FROM tenant t
+		   JOIN plan p ON p.id = t.plan_id
+		   LEFT JOIN subscription s ON s.tenant_id = t.id
+		  WHERE t.id = $1`,
+		tenantID).Scan(&u.PlanName, &u.MaxApplications, &u.UsedApplications, &u.MaxMembers, &u.UsedMembers,
+		&u.PriceCents, &u.Currency, &u.BillingPeriod, &u.SubStatus, &u.CurrentPeriodEnd)
 	if errors.Is(err, sql.ErrNoRows) {
 		return TenantUsage{}, ErrNotFound
 	}
