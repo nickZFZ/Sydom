@@ -60,6 +60,11 @@ func (s *AdminServer) RegisterTenant(ctx context.Context, r *adminv1.RegisterTen
 	if err := adminauthz.BindTenantAdminTx(ctx, tx, tenantID, opID); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
+	// M6-billing-1：同事务建订阅，杜绝无订阅孤儿租户（与 membership/casbin 锁步）。
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO subscription (tenant_id) VALUES ($1)`, tenantID); err != nil {
+		return nil, status.Errorf(codes.Internal, "create subscription: %v", err)
+	}
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}

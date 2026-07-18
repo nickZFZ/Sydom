@@ -104,6 +104,9 @@ func SeedApp(t *testing.T, conn *sql.DB) int64 {
 	var tenantID, appID int64
 	require.NoError(t, conn.QueryRow(
 		`INSERT INTO tenant (name) VALUES ('acme') RETURNING id`).Scan(&tenantID))
+	// M6-billing-1：每租户一订阅（与生产 RegisterTenant 一致），使订阅/用量测试有数据。
+	_, err := conn.Exec(`INSERT INTO subscription (tenant_id) VALUES ($1)`, tenantID)
+	require.NoError(t, err)
 	require.NoError(t, conn.QueryRow(
 		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
 		 VALUES ($1, $2, '订单系统', $3, '\xab'::bytea) RETURNING id`,
@@ -118,6 +121,9 @@ func SeedAppInTenant(t *testing.T, conn *sql.DB, tenantName, domain, appKey stri
 	var tenantID, appID int64
 	require.NoError(t, conn.QueryRow(
 		`INSERT INTO tenant (name) VALUES ($1) RETURNING id`, tenantName).Scan(&tenantID))
+	// M6-billing-1：每租户一订阅（与生产 RegisterTenant 一致）。
+	_, err := conn.Exec(`INSERT INTO subscription (tenant_id) VALUES ($1)`, tenantID)
+	require.NoError(t, err)
 	require.NoError(t, conn.QueryRow(
 		`INSERT INTO application (tenant_id, domain, name, app_key, app_secret_enc)
 		 VALUES ($1, $2, $3, $4, '\xab'::bytea) RETURNING id`,
