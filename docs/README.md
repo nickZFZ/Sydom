@@ -1,6 +1,6 @@
 # 司域(Sydom) 文档索引
 
-一张地图，指向所有面向使用者/运维者的文档。按**评估 → 部署 → 运维 → API 契约**分组。
+一张地图，指向所有面向使用者/运维者的文档。按**评估 → 部署 → 运维 → 安全 → API 契约**分组。
 
 > 本页只做导航，不复述内容——细节以各文档为准。设计/实现过程记录另见 `docs/superpowers/`（specs 与 plans），非本索引范围。
 
@@ -26,6 +26,12 @@
 | [零停机迁移](runbooks/zero-downtime-migrations.md) | expand/contract 纪律、`maxUnavailable:0`、pre-upgrade 迁移 Job fail-close | 发版含 DB schema 变更时 |
 | [备份与恢复](runbooks/backup-restore.md) | 逻辑 `pg_dump` 备份/恢复脚本、CronJob、两层策略（逻辑备份 + 委托托管 PG PITR）、DR 步骤、RPO/RTO | 建立备份策略 / 灾难恢复演练 |
 | [授权决策性能基线](runbooks/performance-baselines.md) | 决策热路径 benchmark 实测基线、容量估算、benchstat 回归对照 | 容量规划 / 改动内核前立基线 |
+
+## 安全 · 信任边界
+
+| 文档 | 覆盖 | 何时看 |
+|---|---|---|
+| [GA 安全评审](security-review-ga.md) | 信任边界源码级审计：静态加密/认证/多租户授权/会话/输出边界的已验证强项、加固建议、一处停用≠吊销的语义澄清（F-1） | GA 前安全评估、事件响应查凭据吊销路径、决定是否做纵深加固 |
 
 ## API 契约 · 集成与演进
 
