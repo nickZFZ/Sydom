@@ -40,13 +40,9 @@ func NewAdminServer(db *sql.DB, mgr *policy.PolicyManager, masterKey []byte) *Ad
 }
 
 // writeResp 把 (delta, err) 归一为 WriteResponse；delta==nil 表示无策略影响。
-// TODO(error-semantics): 当前把 PolicyManager 的所有错误一律映射 codes.Internal 并以 %v
-// 回传内部细节。待 PolicyManager 暴露领域 sentinel error（如环检测/外键/唯一冲突）后，
-// 应据 errors.Is 细化为 InvalidArgument/FailedPrecondition/NotFound，并对 Internal 路径
-// 只回通用文案、详情转日志（与 authz.go 的 observability TODO 呼应）。
 func writeResp(d *cp.Delta, err error) (*adminv1.WriteResponse, error) {
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "write: %v", err)
+		return nil, mapWriteErr("write", err)
 	}
 	if d == nil {
 		return &adminv1.WriteResponse{Changed: false}, nil
@@ -54,10 +50,32 @@ func writeResp(d *cp.Delta, err error) (*adminv1.WriteResponse, error) {
 	return &adminv1.WriteResponse{Version: uint64(d.Version), Changed: true}, nil
 }
 
+// mapWriteErr 把 PolicyManager 写方法的错误按领域 sentinel 细化为 gRPC status，取代先前
+// 一律 codes.Internal 的粗粒度映射（调用方由此拿到可操作的语义码而非笼统「internal error」）。
+//
+// 安全边界：分类码（AlreadyExists/FailedPrecondition/NotFound）不经 SanitizeErrorUnaryInterceptor
+// 脱敏、直达客户端，故一律回干净固定文案，绝不把 raw 驱动详情（约束名/表名/SQL）插值进 message。
+// ErrInvalidInput 的内容全部来自我方 curated 校验串（含调用方自身的非法输入回显），可安全带上下文。
+// 未分类错误落 Internal，由脱敏拦截器统一转通用文案、原始详情仅入日志（与既有行为一致）。
+func mapWriteErr(what string, err error) error {
+	switch {
+	case errors.Is(err, policy.ErrInvalidInput):
+		return status.Errorf(codes.InvalidArgument, "%s: %v", what, err)
+	case errors.Is(err, policy.ErrConflict):
+		return status.Error(codes.AlreadyExists, what+"：目标已存在或与现有记录冲突")
+	case errors.Is(err, policy.ErrNotFound):
+		return status.Error(codes.NotFound, what+"：目标不存在")
+	case errors.Is(err, policy.ErrPrecondition):
+		return status.Error(codes.FailedPrecondition, what+"：当前状态不满足操作前提（引用缺失或将形成角色环）")
+	default:
+		return status.Errorf(codes.Internal, "%s: %v", what, err)
+	}
+}
+
 func (s *AdminServer) CreateRole(ctx context.Context, r *adminv1.CreateRoleRequest) (*adminv1.CreateRoleResponse, error) {
 	roleID, d, err := s.mgr.CreateRole(ctx, int64(r.AppId), r.Code, r.Name)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "create role: %v", err)
+		return nil, mapWriteErr("create role", err)
 	}
 	resp := &adminv1.CreateRoleResponse{RoleId: roleID}
 	if d != nil {
@@ -73,7 +91,7 @@ func (s *AdminServer) DeleteRole(ctx context.Context, r *adminv1.DeleteRoleReque
 func (s *AdminServer) UpsertPermission(ctx context.Context, r *adminv1.UpsertPermissionRequest) (*adminv1.UpsertPermissionResponse, error) {
 	permID, d, err := s.mgr.UpsertPermission(ctx, int64(r.AppId), r.Code, r.Resource, r.Action, r.Ptype, r.Name)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "upsert permission: %v", err)
+		return nil, mapWriteErr("upsert permission", err)
 	}
 	resp := &adminv1.UpsertPermissionResponse{PermissionId: permID}
 	if d != nil {
@@ -115,7 +133,7 @@ func (s *AdminServer) UpsertDataPolicy(ctx context.Context, r *adminv1.UpsertDat
 		ID: r.Id, SubjectType: r.SubjectType, SubjectID: r.SubjectId, Resource: r.Resource, Condition: r.Condition, Effect: eff, Description: r.Description,
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "upsert data policy: %v", err)
+		return nil, mapWriteErr("upsert data policy", err)
 	}
 	resp := &adminv1.UpsertDataPolicyResponse{}
 	if d != nil && len(d.DataChanges) > 0 {
@@ -169,7 +187,7 @@ func (s *AdminServer) ImportAppPolicy(ctx context.Context, r *adminv1.ImportAppP
 // 形参顺序刻意对齐 BatchWriteResponse 的字段顺序（requested 先于 applied），二者同为 int 时防手滑传反。
 func batchResp(d *cp.Delta, requested, applied int, err error) (*adminv1.BatchWriteResponse, error) {
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "batch write: %v", err)
+		return nil, mapWriteErr("batch write", err)
 	}
 	resp := &adminv1.BatchWriteResponse{
 		Requested: uint32(requested),

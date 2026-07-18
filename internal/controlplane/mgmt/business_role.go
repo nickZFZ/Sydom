@@ -15,7 +15,7 @@ func (s *AdminServer) CreateBusinessRole(ctx context.Context, r *adminv1.CreateB
 	}
 	roleID, d, err := s.mgr.CreateBusinessRole(ctx, int64(r.AppId), r.Name, r.PermissionIds)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "create business role: %v", err)
+		return nil, mapWriteErr("create business role", err)
 	}
 	resp := &adminv1.CreateBusinessRoleResponse{RoleId: roleID}
 	if d != nil {

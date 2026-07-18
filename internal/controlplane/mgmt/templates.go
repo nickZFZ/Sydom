@@ -45,7 +45,7 @@ func (s *AdminServer) ApplyTemplate(ctx context.Context, r *adminv1.ApplyTemplat
 	}
 	res, _, err := s.mgr.ApplyTemplate(ctx, int64(r.AppId), tpl.ID, perms, roles)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "apply template: %v", err)
+		return nil, mapWriteErr("apply template", err)
 	}
 	return &adminv1.ApplyTemplateResponse{
 		PermissionsUpserted: uint32(res.PermsUpserted),

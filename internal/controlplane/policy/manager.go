@@ -74,16 +74,16 @@ func (m *PolicyManager) runVersionedWrite(ctx context.Context, appID int64, op w
 	if err != nil {
 		return nil, fmt.Errorf("policy: lock app %d version: %w", appID, err)
 	}
-	// 2. 前置校验（环检测等）
+	// 2. 前置校验（环检测等）——classify 把领域错误（如成环）归入 sentinel 供上层细化状态码。
 	if op.preCheck != nil {
 		if err := op.preCheck(ctx, tx); err != nil {
-			return nil, fmt.Errorf("policy: precheck %s: %w", op.action, err)
+			return nil, classify(fmt.Errorf("policy: precheck %s: %w", op.action, err))
 		}
 	}
-	// 3. 业务表 CUD
+	// 3. 业务表 CUD——classify 把唯一冲突/外键等驱动错误归入 sentinel。
 	dataChanges, err := op.mutate(ctx, tx)
 	if err != nil {
-		return nil, fmt.Errorf("policy: mutate %s: %w", op.action, err)
+		return nil, classify(fmt.Errorf("policy: mutate %s: %w", op.action, err))
 	}
 	// 4. 重投影 + diff
 	desired, err := projection.ProjectApp(ctx, tx, appID)
@@ -272,11 +272,11 @@ func (m *PolicyManager) ApplyTemplate(ctx context.Context, appID int64, template
 	// 确定性角色 code 以 ':' 分隔（tpl:<templateID>:<key>）；templateID 或 key 含 ':' 会破坏
 	// 该不变量并可能与另一组合冲突命中同一 uq_role_app_code 行——fail-close 直接拒绝。
 	if strings.ContainsRune(templateID, ':') {
-		return ApplyTemplateResult{}, nil, fmt.Errorf("policy: apply_template: template id %q must not contain ':'", templateID)
+		return ApplyTemplateResult{}, nil, fmt.Errorf("%w: apply_template: template id %q must not contain ':'", ErrInvalidInput, templateID)
 	}
 	for _, r := range roles {
 		if strings.ContainsRune(r.Key, ':') {
-			return ApplyTemplateResult{}, nil, fmt.Errorf("policy: apply_template: role key %q must not contain ':'", r.Key)
+			return ApplyTemplateResult{}, nil, fmt.Errorf("%w: apply_template: role key %q must not contain ':'", ErrInvalidInput, r.Key)
 		}
 	}
 	d, err := m.runVersionedWrite(ctx, appID, writeOp{
@@ -489,7 +489,7 @@ func (m *PolicyManager) runVersionedWriteData(ctx context.Context, appID int64, 
 	vNew := cur + 1
 	changes, err := op.apply(ctx, tx, vNew)
 	if err != nil {
-		return nil, fmt.Errorf("policy: apply %s: %w", op.action, err)
+		return nil, classify(fmt.Errorf("policy: apply %s: %w", op.action, err))
 	}
 	if err := store.BumpAppVersion(ctx, tx, appID, vNew); err != nil {
 		return nil, fmt.Errorf("policy: bump app %d to v%d: %w", appID, vNew, err)

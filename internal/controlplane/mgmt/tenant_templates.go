@@ -125,7 +125,7 @@ func (s *AdminServer) ApplyTenantTemplate(ctx context.Context, r *adminv1.ApplyT
 	perms, roles := bundleToApplyInputs(b)
 	res, _, err := s.mgr.ApplyTemplate(ctx, int64(r.AppId), "tt-"+strconv.FormatInt(t.ID, 10), perms, roles)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "apply tenant template: %v", err)
+		return nil, mapWriteErr("apply tenant template", err)
 	}
 	return &adminv1.ApplyTemplateResponse{
 		PermissionsUpserted: uint32(res.PermsUpserted), PermissionsSkipped: uint32(res.PermsSkipped),
