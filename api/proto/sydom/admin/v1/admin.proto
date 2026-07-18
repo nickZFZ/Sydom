@@ -27,6 +27,8 @@ service AdminService {
   rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse);
   rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
   rpc GetTenantUsage(GetTenantUsageRequest) returns (GetTenantUsageResponse);
+  // ChangeTenantPlan 变更租户套餐（billing 资源，super-admin 专属，M6-billing-1）。
+  rpc ChangeTenantPlan(ChangeTenantPlanRequest) returns (ChangeTenantPlanResponse);
 
   // —— 管理员自身管理（system 域，super-admin 专属）——
   rpc CreateOperator(CreateOperatorRequest) returns (CreateOperatorResponse);
@@ -211,6 +213,23 @@ message GetTenantUsageResponse {
   string plan_name = 1;
   ResourceUsage applications = 2;
   ResourceUsage members = 3;
+  // M6-billing-1 定价/订阅回显（additive）。
+  int64 price_cents = 4;
+  string currency = 5;
+  string billing_period = 6;
+  string subscription_status = 7;
+  string current_period_end = 8; // RFC3339；空=无到期或无订阅
+}
+
+message ChangeTenantPlanRequest {
+  uint64 tenant_id = 1;
+  uint64 plan_id = 2;
+}
+message ChangeTenantPlanResponse {
+  uint64 tenant_id = 1;
+  uint64 plan_id = 2;
+  string status = 3;
+  string current_period_end = 4; // RFC3339；空=无到期
 }
 
 message CreateOperatorRequest {

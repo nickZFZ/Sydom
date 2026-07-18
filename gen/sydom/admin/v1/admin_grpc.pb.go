@@ -35,6 +35,7 @@ const (
 	AdminService_ListApplications_FullMethodName           = "/sydom.admin.v1.AdminService/ListApplications"
 	AdminService_GetApplication_FullMethodName             = "/sydom.admin.v1.AdminService/GetApplication"
 	AdminService_GetTenantUsage_FullMethodName             = "/sydom.admin.v1.AdminService/GetTenantUsage"
+	AdminService_ChangeTenantPlan_FullMethodName           = "/sydom.admin.v1.AdminService/ChangeTenantPlan"
 	AdminService_CreateOperator_FullMethodName             = "/sydom.admin.v1.AdminService/CreateOperator"
 	AdminService_SetOperatorStatus_FullMethodName          = "/sydom.admin.v1.AdminService/SetOperatorStatus"
 	AdminService_CreateAdminRole_FullMethodName            = "/sydom.admin.v1.AdminService/CreateAdminRole"
@@ -102,6 +103,8 @@ type AdminServiceClient interface {
 	ListApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error)
 	GetApplication(ctx context.Context, in *GetApplicationRequest, opts ...grpc.CallOption) (*GetApplicationResponse, error)
 	GetTenantUsage(ctx context.Context, in *GetTenantUsageRequest, opts ...grpc.CallOption) (*GetTenantUsageResponse, error)
+	// ChangeTenantPlan 变更租户套餐（billing 资源，super-admin 专属，M6-billing-1）。
+	ChangeTenantPlan(ctx context.Context, in *ChangeTenantPlanRequest, opts ...grpc.CallOption) (*ChangeTenantPlanResponse, error)
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(ctx context.Context, in *CreateOperatorRequest, opts ...grpc.CallOption) (*CreateOperatorResponse, error)
 	SetOperatorStatus(ctx context.Context, in *SetOperatorStatusRequest, opts ...grpc.CallOption) (*WriteResponse, error)
@@ -307,6 +310,15 @@ func (c *adminServiceClient) GetApplication(ctx context.Context, in *GetApplicat
 func (c *adminServiceClient) GetTenantUsage(ctx context.Context, in *GetTenantUsageRequest, opts ...grpc.CallOption) (*GetTenantUsageResponse, error) {
 	out := new(GetTenantUsageResponse)
 	err := c.cc.Invoke(ctx, AdminService_GetTenantUsage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ChangeTenantPlan(ctx context.Context, in *ChangeTenantPlanRequest, opts ...grpc.CallOption) (*ChangeTenantPlanResponse, error) {
+	out := new(ChangeTenantPlanResponse)
+	err := c.cc.Invoke(ctx, AdminService_ChangeTenantPlan_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -722,6 +734,8 @@ type AdminServiceServer interface {
 	ListApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error)
 	GetApplication(context.Context, *GetApplicationRequest) (*GetApplicationResponse, error)
 	GetTenantUsage(context.Context, *GetTenantUsageRequest) (*GetTenantUsageResponse, error)
+	// ChangeTenantPlan 变更租户套餐（billing 资源，super-admin 专属，M6-billing-1）。
+	ChangeTenantPlan(context.Context, *ChangeTenantPlanRequest) (*ChangeTenantPlanResponse, error)
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(context.Context, *CreateOperatorRequest) (*CreateOperatorResponse, error)
 	SetOperatorStatus(context.Context, *SetOperatorStatusRequest) (*WriteResponse, error)
@@ -833,6 +847,9 @@ func (UnimplementedAdminServiceServer) GetApplication(context.Context, *GetAppli
 }
 func (UnimplementedAdminServiceServer) GetTenantUsage(context.Context, *GetTenantUsageRequest) (*GetTenantUsageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTenantUsage not implemented")
+}
+func (UnimplementedAdminServiceServer) ChangeTenantPlan(context.Context, *ChangeTenantPlanRequest) (*ChangeTenantPlanResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeTenantPlan not implemented")
 }
 func (UnimplementedAdminServiceServer) CreateOperator(context.Context, *CreateOperatorRequest) (*CreateOperatorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOperator not implemented")
@@ -1260,6 +1277,24 @@ func _AdminService_GetTenantUsage_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).GetTenantUsage(ctx, req.(*GetTenantUsageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ChangeTenantPlan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeTenantPlanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ChangeTenantPlan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ChangeTenantPlan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ChangeTenantPlan(ctx, req.(*ChangeTenantPlanRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2108,6 +2143,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTenantUsage",
 			Handler:    _AdminService_GetTenantUsage_Handler,
+		},
+		{
+			MethodName: "ChangeTenantPlan",
+			Handler:    _AdminService_ChangeTenantPlan_Handler,
 		},
 		{
 			MethodName: "CreateOperator",
