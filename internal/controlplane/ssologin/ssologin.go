@@ -4,8 +4,11 @@ package ssologin
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/json"
 
+	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/store"
 	"github.com/nickZFZ/Sydom/internal/crypto"
 )
@@ -17,6 +20,7 @@ type IdPLogin struct {
 	ClientID     string
 	ClientSecret string
 	Enabled      bool
+	JITEnabled   bool
 }
 
 // Resolver 持 db+masterKey，实现 console 的窄接口（结构性满足）。
@@ -42,7 +46,7 @@ func (r *Resolver) decrypt(row store.IdPLoginRow) (IdPLogin, error) {
 	}
 	return IdPLogin{
 		TenantID: row.TenantID, Issuer: row.Issuer, ClientID: row.ClientID,
-		ClientSecret: string(plain), Enabled: row.Enabled,
+		ClientSecret: string(plain), Enabled: row.Enabled, JITEnabled: row.JITEnabled,
 	}, nil
 }
 
@@ -75,4 +79,54 @@ func (r *Resolver) ResolveIdPByTenant(ctx context.Context, tenantID int64) (IdPL
 // MatchOperatorForLogin 委托 store 严格映射。
 func (r *Resolver) MatchOperatorForLogin(ctx context.Context, tenantID int64, email string) (string, bool, error) {
 	return store.OperatorEmailMatch(ctx, r.db, tenantID, email)
+}
+
+// ProvisionOperatorForLogin 仅在 email 完全未知时 JIT 开通零权限成员：
+// 建 operator(principal=email, 随机 secret, status=1) + membership(TierMember) + 审计，不 bump 策略版本。
+// 既有 email（含既有非成员）→ ok=false（fail-close，防跨租户账户接管）。
+func (r *Resolver) ProvisionOperatorForLogin(ctx context.Context, tenantID int64, email string) (string, bool, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", false, err
+	}
+	defer tx.Rollback()
+
+	var exists bool
+	if err := tx.QueryRowContext(ctx,
+		`SELECT EXISTS(SELECT 1 FROM admin_operator WHERE email=$1)`, email).Scan(&exists); err != nil {
+		return "", false, err
+	}
+	if exists {
+		return "", false, nil // 既有 email → 不 JIT
+	}
+
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		return "", false, err
+	}
+	enc, err := crypto.Encrypt(r.masterKey, secret)
+	if err != nil {
+		return "", false, err
+	}
+	opID, err := store.InsertJITOperatorTx(ctx, tx, email, enc)
+	if err != nil {
+		return "", false, err // UNIQUE 竞态 / email>128 长度 → fail-close
+	}
+	if _, err := adminauthz.InsertMembership(ctx, tx, tenantID, opID, adminauthz.TierMember); err != nil {
+		return "", false, err
+	}
+	diff, err := json.Marshal(map[string]any{"tenant_id": tenantID, "via": "sso_jit"})
+	if err != nil {
+		return "", false, err
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx,
+		sql.NullInt64{Int64: tenantID, Valid: true}, "sso_jit", "jit_provision", "operator", email,
+		diff, sql.NullInt64{}); err != nil {
+		return "", false, err
+	}
+	// 不 BumpPolicyVersion：零 casbin 绑定=零策略变更，enforcer 无需重载。
+	if err := tx.Commit(); err != nil {
+		return "", false, err
+	}
+	return email, true, nil
 }

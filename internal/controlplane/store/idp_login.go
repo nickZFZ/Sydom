@@ -15,13 +15,14 @@ type IdPLoginRow struct {
 	ClientID        string
 	ClientSecretEnc []byte
 	Enabled         bool
+	JITEnabled      bool
 }
 
-const idpLoginCols = `ti.tenant_id, ti.issuer, ti.client_id, ti.client_secret_enc, ti.enabled`
+const idpLoginCols = `ti.tenant_id, ti.issuer, ti.client_id, ti.client_secret_enc, ti.enabled, ti.jit_enabled`
 
 func scanIdPLogin(row *sql.Row) (IdPLoginRow, bool, error) {
 	var r IdPLoginRow
-	err := row.Scan(&r.TenantID, &r.Issuer, &r.ClientID, &r.ClientSecretEnc, &r.Enabled)
+	err := row.Scan(&r.TenantID, &r.Issuer, &r.ClientID, &r.ClientSecretEnc, &r.Enabled, &r.JITEnabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return IdPLoginRow{}, false, nil
 	}
@@ -43,6 +44,16 @@ func IdPLoginByDomain(ctx context.Context, ex cp.DBTX, domain string) (IdPLoginR
 func IdPLoginByTenant(ctx context.Context, ex cp.DBTX, tenantID int64) (IdPLoginRow, bool, error) {
 	return scanIdPLogin(ex.QueryRowContext(ctx,
 		`SELECT `+idpLoginCols+` FROM tenant_idp ti WHERE ti.tenant_id = $1`, tenantID))
+}
+
+// InsertJITOperatorTx 建一个 SSO JIT operator（principal=email，status=1），返回 id。
+// 事务内调用；principal/email UNIQUE 违例或 email>128 长度违例由调用方按 fail-close 处理。
+func InsertJITOperatorTx(ctx context.Context, tx cp.DBTX, email string, secretEnc []byte) (int64, error) {
+	var id int64
+	err := tx.QueryRowContext(ctx,
+		`INSERT INTO admin_operator (principal, secret_enc, email, status) VALUES ($1,$2,$1,1) RETURNING id`,
+		email, secretEnc).Scan(&id)
+	return id, err
 }
 
 // OperatorEmailMatch 严格映射：email 匹配的 active operator 且为 tenantID 有效成员 → principal。

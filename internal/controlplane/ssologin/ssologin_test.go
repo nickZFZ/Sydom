@@ -60,3 +60,48 @@ func TestNewResolver_RejectsShortKey(t *testing.T) {
 	_, err := ssologin.NewResolver(nil, []byte("short"))
 	require.Error(t, err, "主密钥长度不足须 fail-close")
 }
+
+func TestProvisionOperatorForLogin(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	mk := bytes.Repeat([]byte{9}, 32)
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('A') RETURNING id`).Scan(&tid))
+	r, err := ssologin.NewResolver(db, mk)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// 全新 email → 建 operator(principal=email)+membership(TierMember)。
+	p, ok, err := r.ProvisionOperatorForLogin(ctx, tid, "newbie@acme.com")
+	require.NoError(t, err)
+	require.True(t, ok)
+	require.Equal(t, "newbie@acme.com", p)
+	var status int16
+	require.NoError(t, db.QueryRow(`SELECT status FROM admin_operator WHERE principal='newbie@acme.com'`).Scan(&status))
+	require.Equal(t, int16(1), status)
+	var tier int16
+	require.NoError(t, db.QueryRow(`SELECT m.tier FROM tenant_membership m JOIN admin_operator o ON o.id=m.operator_id
+		WHERE o.principal='newbie@acme.com' AND m.tenant_id=$1`, tid).Scan(&tier))
+	require.Equal(t, int16(3), tier, "TierMember")
+	// 零 casbin 绑定。
+	var binds int
+	require.NoError(t, db.QueryRow(`SELECT count(*) FROM admin_subject_role sr JOIN admin_operator o ON o.id=sr.operator_id
+		WHERE o.principal='newbie@acme.com'`).Scan(&binds))
+	require.Equal(t, 0, binds, "JIT operator 零 casbin 授权")
+	// secret 为密文（非空 bytea）。
+	var enc []byte
+	require.NoError(t, db.QueryRow(`SELECT secret_enc FROM admin_operator WHERE principal='newbie@acme.com'`).Scan(&enc))
+	require.NotEmpty(t, enc)
+
+	// 二次同 email → ok=false（既有不 JIT）。
+	_, ok, err = r.ProvisionOperatorForLogin(ctx, tid, "newbie@acme.com")
+	require.NoError(t, err)
+	require.False(t, ok)
+
+	// 既有非成员 email（另建 operator 但不入本租户）→ ok=false。
+	_, err = db.Exec(`INSERT INTO admin_operator (principal, secret_enc, email, status)
+		VALUES ('preexist','\xbb'::bytea,'pre@acme.com',1)`)
+	require.NoError(t, err)
+	_, ok, err = r.ProvisionOperatorForLogin(ctx, tid, "pre@acme.com")
+	require.NoError(t, err)
+	require.False(t, ok, "既有 email 即便非成员也不 JIT")
+}

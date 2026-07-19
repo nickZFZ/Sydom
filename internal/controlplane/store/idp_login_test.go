@@ -68,4 +68,13 @@ func TestIdPLoginByDomainAndOperatorMatch(t *testing.T) {
 	_, ok, err = store.OperatorEmailMatch(ctx, db, tA, "alice@acme.com")
 	require.NoError(t, err)
 	require.False(t, ok)
+
+	// jit_enabled 读出（默认 false→改 true）。
+	require.False(t, row.JITEnabled)
+	_, err = db.Exec(`UPDATE tenant_idp SET jit_enabled=true WHERE tenant_id=$1`, tA)
+	require.NoError(t, err)
+	row2, ok2, err := store.IdPLoginByTenant(ctx, db, tA)
+	require.NoError(t, err)
+	require.True(t, ok2)
+	require.True(t, row2.JITEnabled)
 }
