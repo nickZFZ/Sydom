@@ -36,6 +36,8 @@ service AdminService {
   // —— 管理员自身管理（system 域，super-admin 专属）——
   rpc CreateOperator(CreateOperatorRequest) returns (CreateOperatorResponse);
   rpc SetOperatorStatus(SetOperatorStatusRequest) returns (WriteResponse);
+  // SetOperatorEmail 设置/清除 operator 的 email（OIDC 登录严格映射锚，M6-sso-2）。
+  rpc SetOperatorEmail(SetOperatorEmailRequest) returns (WriteResponse);
   rpc CreateAdminRole(CreateAdminRoleRequest) returns (CreateAdminRoleResponse);
   rpc GrantAdminRole(GrantAdminRoleRequest) returns (WriteResponse);
   rpc BindOperatorRole(BindOperatorRoleRequest) returns (WriteResponse);
@@ -260,6 +262,7 @@ message GetTenantIdpResponse {
 
 message CreateOperatorRequest {
   string principal = 1;
+  string email = 2; // 可选，OIDC 登录映射锚；空=NULL
 }
 message CreateOperatorResponse {
   int64 operator_id = 1;
@@ -268,6 +271,10 @@ message CreateOperatorResponse {
 message SetOperatorStatusRequest {
   int64 operator_id = 1;
   uint32 status = 2;
+}
+message SetOperatorEmailRequest {
+  string principal = 1;
+  string email = 2; // 空=清除
 }
 message CreateAdminRoleRequest {
   string code = 1;

@@ -235,6 +235,16 @@ func (s *AdminServer) CreateOperator(ctx context.Context, r *adminv1.CreateOpera
 		}
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
+	// M6-sso-2：可选 email（OIDC 登录锚，小写化）。不改 adminauthz.InsertOperator（零触碰）。
+	if email := strings.ToLower(strings.TrimSpace(r.Email)); email != "" {
+		if _, err := tx.ExecContext(ctx,
+			`UPDATE admin_operator SET email=$2 WHERE id=$1`, id, email); err != nil {
+			if isUniqueViolation(err) {
+				return nil, status.Error(codes.AlreadyExists, "email already used")
+			}
+			return nil, status.Errorf(codes.Internal, "%v", err)
+		}
+	}
 	if err := adminauthz.BumpPolicyVersion(ctx, tx); err != nil {
 		return nil, status.Errorf(codes.Internal, "bump: %v", err)
 	}
@@ -252,6 +262,51 @@ func (s *AdminServer) CreateOperator(ctx context.Context, r *adminv1.CreateOpera
 		return nil, status.Errorf(codes.Internal, "commit: %v", err)
 	}
 	return &adminv1.CreateOperatorResponse{OperatorId: id, Secret: secret}, nil
+}
+
+// SetOperatorEmail 设置/清除 operator 的 email（OIDC 登录锚）。email 不参与 casbin 策略，故不 bump 版本。
+// 冲突→AlreadyExists；未知 operator→NotFound；空 email→清除（NULL）。
+func (s *AdminServer) SetOperatorEmail(ctx context.Context, r *adminv1.SetOperatorEmailRequest) (*adminv1.WriteResponse, error) {
+	email := strings.ToLower(strings.TrimSpace(r.Email))
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+
+	var res sql.Result
+	if email == "" {
+		res, err = tx.ExecContext(ctx, `UPDATE admin_operator SET email=NULL WHERE principal=$1`, r.Principal)
+	} else {
+		res, err = tx.ExecContext(ctx, `UPDATE admin_operator SET email=$2 WHERE principal=$1`, r.Principal, email)
+	}
+	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, status.Error(codes.AlreadyExists, "email already used")
+		}
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if n == 0 {
+		return nil, status.Error(codes.NotFound, "unknown operator")
+	}
+	// 审计：记 principal + 是否设置（email 是身份锚，非 secret；仍不记 secret）。
+	if err := adminauthz.InsertAdminAudit(ctx, tx, sql.NullInt64{}, cp.OperatorFromContext(ctx),
+		"set_email", "operator", r.Principal,
+		auditJSON(map[string]any{"email_set": email != ""}), sql.NullInt64{}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	ver, err := adminauthz.ReadPolicyVersion(ctx, tx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+	}
+	return &adminv1.WriteResponse{Version: uint64(ver), Changed: false}, nil
 }
 
 // 修正 A：原子事务 + 不忽略 bump 错误（一致性红线）。

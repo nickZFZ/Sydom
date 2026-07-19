@@ -781,6 +781,18 @@ func systemRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.SetOperatorStatus(ctx, m.(*adminv1.SetOperatorStatusRequest))
 			}},
+		{"PUT", "/v1/operators/{principal}/email", pfx + "SetOperatorEmail",
+			func(r *http.Request, body []byte) (proto.Message, error) {
+				m := &adminv1.SetOperatorEmailRequest{}
+				if err := decodeBody(body, m); err != nil {
+					return nil, err
+				}
+				m.Principal = r.PathValue("principal")
+				return m, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.SetOperatorEmail(ctx, m.(*adminv1.SetOperatorEmailRequest))
+			}},
 		{"POST", "/v1/operators/{operator_id}/roles", pfx + "BindOperatorRole",
 			func(r *http.Request, body []byte) (proto.Message, error) {
 				m := &adminv1.BindOperatorRoleRequest{}

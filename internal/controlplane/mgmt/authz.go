@@ -74,6 +74,7 @@ var ruleTable = map[string]rpcRule{
 	"/sydom.admin.v1.AdminService/GetApplication":             {"application", "read", false, scopeApp},
 	"/sydom.admin.v1.AdminService/CreateOperator":             {"admin", "create", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/SetOperatorStatus":          {"admin", "update", false, scopeSystem},
+	"/sydom.admin.v1.AdminService/SetOperatorEmail":           {"admin", "update", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/CreateAdminRole":            {"admin", "create", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/GrantAdminRole":             {"admin", "update", false, scopeSystem},
 	"/sydom.admin.v1.AdminService/BindOperatorRole":           {"admin", "update", false, scopeSystem},

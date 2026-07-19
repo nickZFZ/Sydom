@@ -40,6 +40,7 @@ const (
 	AdminService_GetTenantIdp_FullMethodName               = "/sydom.admin.v1.AdminService/GetTenantIdp"
 	AdminService_CreateOperator_FullMethodName             = "/sydom.admin.v1.AdminService/CreateOperator"
 	AdminService_SetOperatorStatus_FullMethodName          = "/sydom.admin.v1.AdminService/SetOperatorStatus"
+	AdminService_SetOperatorEmail_FullMethodName           = "/sydom.admin.v1.AdminService/SetOperatorEmail"
 	AdminService_CreateAdminRole_FullMethodName            = "/sydom.admin.v1.AdminService/CreateAdminRole"
 	AdminService_GrantAdminRole_FullMethodName             = "/sydom.admin.v1.AdminService/GrantAdminRole"
 	AdminService_BindOperatorRole_FullMethodName           = "/sydom.admin.v1.AdminService/BindOperatorRole"
@@ -113,6 +114,8 @@ type AdminServiceClient interface {
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(ctx context.Context, in *CreateOperatorRequest, opts ...grpc.CallOption) (*CreateOperatorResponse, error)
 	SetOperatorStatus(ctx context.Context, in *SetOperatorStatusRequest, opts ...grpc.CallOption) (*WriteResponse, error)
+	// SetOperatorEmail 设置/清除 operator 的 email（OIDC 登录严格映射锚，M6-sso-2）。
+	SetOperatorEmail(ctx context.Context, in *SetOperatorEmailRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	CreateAdminRole(ctx context.Context, in *CreateAdminRoleRequest, opts ...grpc.CallOption) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(ctx context.Context, in *GrantAdminRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	BindOperatorRole(ctx context.Context, in *BindOperatorRoleRequest, opts ...grpc.CallOption) (*WriteResponse, error)
@@ -360,6 +363,15 @@ func (c *adminServiceClient) CreateOperator(ctx context.Context, in *CreateOpera
 func (c *adminServiceClient) SetOperatorStatus(ctx context.Context, in *SetOperatorStatusRequest, opts ...grpc.CallOption) (*WriteResponse, error) {
 	out := new(WriteResponse)
 	err := c.cc.Invoke(ctx, AdminService_SetOperatorStatus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) SetOperatorEmail(ctx context.Context, in *SetOperatorEmailRequest, opts ...grpc.CallOption) (*WriteResponse, error) {
+	out := new(WriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_SetOperatorEmail_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -765,6 +777,8 @@ type AdminServiceServer interface {
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(context.Context, *CreateOperatorRequest) (*CreateOperatorResponse, error)
 	SetOperatorStatus(context.Context, *SetOperatorStatusRequest) (*WriteResponse, error)
+	// SetOperatorEmail 设置/清除 operator 的 email（OIDC 登录严格映射锚，M6-sso-2）。
+	SetOperatorEmail(context.Context, *SetOperatorEmailRequest) (*WriteResponse, error)
 	CreateAdminRole(context.Context, *CreateAdminRoleRequest) (*CreateAdminRoleResponse, error)
 	GrantAdminRole(context.Context, *GrantAdminRoleRequest) (*WriteResponse, error)
 	BindOperatorRole(context.Context, *BindOperatorRoleRequest) (*WriteResponse, error)
@@ -888,6 +902,9 @@ func (UnimplementedAdminServiceServer) CreateOperator(context.Context, *CreateOp
 }
 func (UnimplementedAdminServiceServer) SetOperatorStatus(context.Context, *SetOperatorStatusRequest) (*WriteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetOperatorStatus not implemented")
+}
+func (UnimplementedAdminServiceServer) SetOperatorEmail(context.Context, *SetOperatorEmailRequest) (*WriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetOperatorEmail not implemented")
 }
 func (UnimplementedAdminServiceServer) CreateAdminRole(context.Context, *CreateAdminRoleRequest) (*CreateAdminRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateAdminRole not implemented")
@@ -1399,6 +1416,24 @@ func _AdminService_SetOperatorStatus_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).SetOperatorStatus(ctx, req.(*SetOperatorStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_SetOperatorEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetOperatorEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).SetOperatorEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_SetOperatorEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).SetOperatorEmail(ctx, req.(*SetOperatorEmailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2231,6 +2266,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetOperatorStatus",
 			Handler:    _AdminService_SetOperatorStatus_Handler,
+		},
+		{
+			MethodName: "SetOperatorEmail",
+			Handler:    _AdminService_SetOperatorEmail_Handler,
 		},
 		{
 			MethodName: "CreateAdminRole",
