@@ -44,7 +44,7 @@ func newConsole(t *testing.T) (*httptest.Server, *RedisStore, *sql.DB) {
 	t.Cleanup(func() { _ = rdb.Close() })
 	store := NewRedisStore(rdb, time.Minute)
 
-	h := NewHandler(srv, resolver, enf, db, store, testLogger(t), false)
+	h := NewHandler(srv, resolver, enf, db, store, testLogger(t), false, SSODeps{})
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)
 	return ts, store, db

@@ -27,6 +27,7 @@ import (
 	"github.com/nickZFZ/Sydom/internal/controlplane/policysync"
 	"github.com/nickZFZ/Sydom/internal/controlplane/restgw"
 	"github.com/nickZFZ/Sydom/internal/controlplane/secret"
+	"github.com/nickZFZ/Sydom/internal/controlplane/ssologin"
 	"github.com/nickZFZ/Sydom/internal/health"
 	"github.com/nickZFZ/Sydom/internal/obs"
 	"github.com/nickZFZ/Sydom/internal/secheaders"
@@ -163,8 +164,17 @@ func Run(ctx context.Context, cfg Config, adminLis, syncLis, restLis, consoleLis
 			consoleLis = tls.NewListener(consoleLis, srvTLS)
 		}
 		store := console.NewRedisStore(rdb, cfg.ConsoleSessionTTL)
+		ssoResolver, err := ssologin.NewResolver(db, cfg.MasterKey) // M6-sso-2：域/租户→IdP 登录配置（解密）+ email 严格映射
+		if err != nil {
+			return fmt.Errorf("sso resolver: %w", err)
+		}
+		ssoDeps := console.SSODeps{
+			Resolver: ssoResolver, Matcher: ssoResolver,
+			HTTPClient:     &http.Client{Timeout: 10 * time.Second},
+			ConsoleBaseURL: cfg.ConsoleBaseURL,
+		}
 		consoleSrv = &http.Server{Handler: secheaders.Console(secure)(m.HTTPMiddleware(logger, console.NewHandler(
-			adminSrv, operatorResolver, enforcer, db, store, logger, secure)))}
+			adminSrv, operatorResolver, enforcer, db, store, logger, secure, ssoDeps)))}
 		logger.Info("control plane Console enabled", "console_addr", consoleLis.Addr().String())
 		launch("console-serve", func() error {
 			if e := consoleSrv.Serve(consoleLis); e != nil && !errors.Is(e, http.ErrServerClosed) {

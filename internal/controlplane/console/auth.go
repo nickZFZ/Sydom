@@ -9,6 +9,7 @@ import (
 
 	"github.com/nickZFZ/Sydom/internal/controlplane/adminauthz"
 	"github.com/nickZFZ/Sydom/internal/controlplane/mgmt"
+	"github.com/nickZFZ/Sydom/internal/controlplane/ssologin"
 )
 
 const sessionCookieName = "sydom_console_session"
@@ -16,6 +17,17 @@ const sessionCookieName = "sydom_console_session"
 // secretResolver 是登录验证所需的窄接口（生产由 *adminauthz.OperatorResolver 满足）。
 type secretResolver interface {
 	ResolveSecret(ctx context.Context, principal string) ([]byte, error)
+}
+
+// idpLoginResolver 是发起/回调解析 IdP 登录配置的窄接口（生产由 *ssologin.Resolver 满足）。
+type idpLoginResolver interface {
+	ResolveIdPByDomain(ctx context.Context, domain string) (ssologin.IdPLogin, bool, error)
+	ResolveIdPByTenant(ctx context.Context, tenantID int64) (ssologin.IdPLogin, bool, error)
+}
+
+// operatorMatcher 是 email→严格映射 operator 的窄接口（生产由 *ssologin.Resolver 满足）。
+type operatorMatcher interface {
+	MatchOperatorForLogin(ctx context.Context, tenantID int64, email string) (string, bool, error)
 }
 
 // Handler 是 Console BFF 的核心结构，持有所有依赖。
@@ -29,6 +41,12 @@ type Handler struct {
 	logger       *slog.Logger
 	cookieSecure bool
 	templates    pageSet
+
+	// M6-sso-2 企业 SSO 登录（可选注入；未装配时 SSO 路由 fail-close）。
+	idpResolver    idpLoginResolver
+	operatorMatch  operatorMatcher
+	oidcHTTP       *http.Client
+	consoleBaseURL string
 }
 
 func (h *Handler) handleLoginGet(w http.ResponseWriter, r *http.Request) {

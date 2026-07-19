@@ -28,6 +28,7 @@ type Config struct {
 	ConsoleAddr           string        // 空=不起 Console，向后兼容
 	ConsoleSessionTTL     time.Duration // 默认 30m
 	ConsoleCookieInsecure bool          // true=允许非 HTTPS 下发 cookie（本地/明文测试）
+	ConsoleBaseURL        string        // M6-sso-2：OIDC redirect_uri 基址（绝对 URL，不从请求 Host 派生）；空=SSO fail-close
 
 	TLSCertFile      string // 空=明文；与 TLSKeyFile 须同设（tlsconfig.Server 校验）
 	TLSKeyFile       string
@@ -52,6 +53,7 @@ type fileConfig struct {
 	ConsoleAddr           string `yaml:"console_addr"`
 	ConsoleSessionTTL     string `yaml:"console_session_ttl"`
 	ConsoleCookieInsecure bool   `yaml:"console_cookie_insecure"`
+	ConsoleBaseURL        string `yaml:"console_base_url"`
 
 	TLSCertFile      string `yaml:"tls_cert_file"`
 	TLSKeyFile       string `yaml:"tls_key_file"`
@@ -81,6 +83,7 @@ func LoadConfig(path string, getenv func(string) string) (Config, error) {
 
 		ConsoleAddr:           fc.ConsoleAddr,
 		ConsoleCookieInsecure: fc.ConsoleCookieInsecure,
+		ConsoleBaseURL:        firstNonEmpty(getenv("SYDOM_CONSOLE_BASE_URL"), fc.ConsoleBaseURL),
 
 		TLSCertFile:      fc.TLSCertFile,
 		TLSKeyFile:       fc.TLSKeyFile,

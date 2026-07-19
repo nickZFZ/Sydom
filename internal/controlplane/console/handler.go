@@ -12,15 +12,28 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// SSODeps 是 Console SSO 登录的注入依赖（run.go 装配；生产实现在 ssologin，持 db+masterKey）。
+// 零值=未装配 SSO：SSO 路由 fail-close，principal/secret 登录不受影响。
+type SSODeps struct {
+	Resolver       idpLoginResolver
+	Matcher        operatorMatcher
+	HTTPClient     *http.Client
+	ConsoleBaseURL string
+}
+
 // NewHandler 装配 Console 的 ServeMux（方法感知路由 + 静态文件）。
 func NewHandler(srv *mgmt.AdminServer, resolver secretResolver, enf *adminauthz.Enforcer,
-	db *sql.DB, sessions *RedisStore, logger *slog.Logger, cookieSecure bool) http.Handler {
+	db *sql.DB, sessions *RedisStore, logger *slog.Logger, cookieSecure bool, sso SSODeps) http.Handler {
 	h := &Handler{srv: srv, resolver: resolver, enf: enf, db: db,
-		sessions: sessions, logger: logger, cookieSecure: cookieSecure, templates: mustTemplates()}
+		sessions: sessions, logger: logger, cookieSecure: cookieSecure, templates: mustTemplates(),
+		idpResolver: sso.Resolver, operatorMatch: sso.Matcher,
+		oidcHTTP: sso.HTTPClient, consoleBaseURL: sso.ConsoleBaseURL}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /login", h.handleLoginGet)
 	mux.HandleFunc("POST /login", h.handleLoginPost)
+	mux.HandleFunc("POST /login/sso", h.handleSSOStart)          // M6-sso-2 企业 SSO 发起
+	mux.HandleFunc("GET /auth/oidc/callback", h.handleOIDCCallback) // M6-sso-2 OIDC 回调
 	mux.HandleFunc("POST /logout", h.handleLogout)
 	mux.Handle("GET /static/", http.FileServerFS(staticFS))
 

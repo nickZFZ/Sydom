@@ -4,6 +4,12 @@
   <div class="card login-card">
     <h1>司域 Console</h1>
     {{if .Error}}<div class="alert alert-error" role="alert">{{.Error}}</div>{{end}}
+    <form method="post" action="/login/sso" class="stacked-form">
+      <div class="form-field"><label for="sso_email">企业邮箱（SSO）</label>
+        <input id="sso_email" name="email" type="email" autocomplete="email"></div>
+      <button type="submit" class="btn btn-primary">用企业账号登录</button>
+    </form>
+    <div class="login-sep">或使用 Principal / Secret</div>
     <form method="post" action="/login" class="stacked-form">
       <div class="form-field"><label for="principal">Principal</label>
         <input id="principal" name="principal" autofocus></div>
