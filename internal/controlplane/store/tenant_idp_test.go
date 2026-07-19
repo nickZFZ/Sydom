@@ -43,6 +43,35 @@ func TestUpsertTenantIdpTx_UpsertAndDomains(t *testing.T) {
 	require.Equal(t, []string{"new.com"}, got2.Domains, "旧域应被替换")
 }
 
+func TestDeleteTenantIdpTx(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('d') RETURNING id`).Scan(&tid))
+	// 无配置→false。
+	tx0, _ := db.BeginTx(ctx, nil)
+	del, err := store.DeleteTenantIdpTx(ctx, tx0, tid)
+	require.NoError(t, err)
+	require.False(t, del)
+	require.NoError(t, tx0.Commit())
+	// 配置后删→true + 域清空。
+	_, err = db.Exec(`INSERT INTO tenant_idp (tenant_id, issuer, client_id, client_secret_enc) VALUES ($1,'https://i','c','\xaa'::bytea)`, tid)
+	require.NoError(t, err)
+	_, err = db.Exec(`INSERT INTO tenant_idp_domain (tenant_id, domain) VALUES ($1,'acme.com')`, tid)
+	require.NoError(t, err)
+	tx1, _ := db.BeginTx(ctx, nil)
+	del, err = store.DeleteTenantIdpTx(ctx, tx1, tid)
+	require.NoError(t, err)
+	require.True(t, del)
+	require.NoError(t, tx1.Commit())
+	got, err := store.TenantIdpOf(ctx, db, tid)
+	require.NoError(t, err)
+	require.False(t, got.Configured)
+	var n int
+	require.NoError(t, db.QueryRow(`SELECT count(*) FROM tenant_idp_domain WHERE tenant_id=$1`, tid).Scan(&n))
+	require.Equal(t, 0, n)
+}
+
 func TestTenantIdpSecretEnc(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	var tid int64

@@ -47,6 +47,23 @@ func UpsertTenantIdpTx(ctx context.Context, tx cp.DBTX, tenantID int64,
 	return nil
 }
 
+// DeleteTenantIdpTx 删除本租户 IdP 配置 + 其 email 域（域表引用 tenant 非 tenant_idp，不级联，须显式先删）。
+// 返回是否真有配置被删（无配置→false，供调用方映射 NotFound）。
+func DeleteTenantIdpTx(ctx context.Context, tx cp.DBTX, tenantID int64) (bool, error) {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM tenant_idp_domain WHERE tenant_id=$1`, tenantID); err != nil {
+		return false, err
+	}
+	res, err := tx.ExecContext(ctx, `DELETE FROM tenant_idp WHERE tenant_id=$1`, tenantID)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
 // TenantIdpSecretEnc 读租户 IdP 的原始加密 client_secret（密文）。无配置→ok=false。
 // 仅供 ConfigureTenantIdp 编辑保留时把旧密文原样回写；从不解密、绝不出控制面（INV-1）。
 func TenantIdpSecretEnc(ctx context.Context, ex cp.DBTX, tenantID int64) ([]byte, bool, error) {

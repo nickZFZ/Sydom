@@ -72,6 +72,32 @@ func (s *AdminServer) ConfigureTenantIdp(ctx context.Context, r *adminv1.Configu
 	return &adminv1.ConfigureTenantIdpResponse{TenantId: r.TenantId, Enabled: r.Enabled}, nil
 }
 
+// DeleteTenantIdp 删除本租户 OIDC IdP 配置（scopeTenant 自助）。无配置→NotFound。
+// 不级联删 operator/membership（已开通账户保留，仅失去 SSO 登录）。
+func (s *AdminServer) DeleteTenantIdp(ctx context.Context, r *adminv1.DeleteTenantIdpRequest) (*adminv1.WriteResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "begin: %v", err)
+	}
+	defer tx.Rollback()
+	deleted, err := store.DeleteTenantIdpTx(ctx, tx, int64(r.TenantId))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if !deleted {
+		return nil, status.Error(codes.NotFound, "no idp configured")
+	}
+	if err := adminauthz.InsertAdminAudit(ctx, tx,
+		sql.NullInt64{Int64: int64(r.TenantId), Valid: true}, cp.OperatorFromContext(ctx),
+		"delete_idp", "tenant_idp", fmt.Sprintf("%d", r.TenantId), nil, sql.NullInt64{}); err != nil {
+		return nil, status.Errorf(codes.Internal, "%v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+	}
+	return &adminv1.WriteResponse{}, nil
+}
+
 // GetTenantIdp 读本租户 IdP 元数据（脱敏，绝不回 client_secret）。
 func (s *AdminServer) GetTenantIdp(ctx context.Context, r *adminv1.GetTenantIdpRequest) (*adminv1.GetTenantIdpResponse, error) {
 	t, err := store.TenantIdpOf(ctx, s.db, int64(r.TenantId))

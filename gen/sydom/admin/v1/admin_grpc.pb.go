@@ -38,6 +38,7 @@ const (
 	AdminService_ChangeTenantPlan_FullMethodName           = "/sydom.admin.v1.AdminService/ChangeTenantPlan"
 	AdminService_ConfigureTenantIdp_FullMethodName         = "/sydom.admin.v1.AdminService/ConfigureTenantIdp"
 	AdminService_GetTenantIdp_FullMethodName               = "/sydom.admin.v1.AdminService/GetTenantIdp"
+	AdminService_DeleteTenantIdp_FullMethodName            = "/sydom.admin.v1.AdminService/DeleteTenantIdp"
 	AdminService_CreateOperator_FullMethodName             = "/sydom.admin.v1.AdminService/CreateOperator"
 	AdminService_SetOperatorStatus_FullMethodName          = "/sydom.admin.v1.AdminService/SetOperatorStatus"
 	AdminService_SetOperatorEmail_FullMethodName           = "/sydom.admin.v1.AdminService/SetOperatorEmail"
@@ -111,6 +112,8 @@ type AdminServiceClient interface {
 	// 企业 SSO：每租户 OIDC IdP 配置（M6-sso-1，scopeTenant 租户 owner 自助）。
 	ConfigureTenantIdp(ctx context.Context, in *ConfigureTenantIdpRequest, opts ...grpc.CallOption) (*ConfigureTenantIdpResponse, error)
 	GetTenantIdp(ctx context.Context, in *GetTenantIdpRequest, opts ...grpc.CallOption) (*GetTenantIdpResponse, error)
+	// 删除本租户 IdP 配置（M6-sso-5，scopeTenant 自助）。
+	DeleteTenantIdp(ctx context.Context, in *DeleteTenantIdpRequest, opts ...grpc.CallOption) (*WriteResponse, error)
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(ctx context.Context, in *CreateOperatorRequest, opts ...grpc.CallOption) (*CreateOperatorResponse, error)
 	SetOperatorStatus(ctx context.Context, in *SetOperatorStatusRequest, opts ...grpc.CallOption) (*WriteResponse, error)
@@ -345,6 +348,15 @@ func (c *adminServiceClient) ConfigureTenantIdp(ctx context.Context, in *Configu
 func (c *adminServiceClient) GetTenantIdp(ctx context.Context, in *GetTenantIdpRequest, opts ...grpc.CallOption) (*GetTenantIdpResponse, error) {
 	out := new(GetTenantIdpResponse)
 	err := c.cc.Invoke(ctx, AdminService_GetTenantIdp_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) DeleteTenantIdp(ctx context.Context, in *DeleteTenantIdpRequest, opts ...grpc.CallOption) (*WriteResponse, error) {
+	out := new(WriteResponse)
+	err := c.cc.Invoke(ctx, AdminService_DeleteTenantIdp_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -774,6 +786,8 @@ type AdminServiceServer interface {
 	// 企业 SSO：每租户 OIDC IdP 配置（M6-sso-1，scopeTenant 租户 owner 自助）。
 	ConfigureTenantIdp(context.Context, *ConfigureTenantIdpRequest) (*ConfigureTenantIdpResponse, error)
 	GetTenantIdp(context.Context, *GetTenantIdpRequest) (*GetTenantIdpResponse, error)
+	// 删除本租户 IdP 配置（M6-sso-5，scopeTenant 自助）。
+	DeleteTenantIdp(context.Context, *DeleteTenantIdpRequest) (*WriteResponse, error)
 	// —— 管理员自身管理（system 域，super-admin 专属）——
 	CreateOperator(context.Context, *CreateOperatorRequest) (*CreateOperatorResponse, error)
 	SetOperatorStatus(context.Context, *SetOperatorStatusRequest) (*WriteResponse, error)
@@ -896,6 +910,9 @@ func (UnimplementedAdminServiceServer) ConfigureTenantIdp(context.Context, *Conf
 }
 func (UnimplementedAdminServiceServer) GetTenantIdp(context.Context, *GetTenantIdpRequest) (*GetTenantIdpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTenantIdp not implemented")
+}
+func (UnimplementedAdminServiceServer) DeleteTenantIdp(context.Context, *DeleteTenantIdpRequest) (*WriteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTenantIdp not implemented")
 }
 func (UnimplementedAdminServiceServer) CreateOperator(context.Context, *CreateOperatorRequest) (*CreateOperatorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOperator not implemented")
@@ -1380,6 +1397,24 @@ func _AdminService_GetTenantIdp_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).GetTenantIdp(ctx, req.(*GetTenantIdpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_DeleteTenantIdp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTenantIdpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).DeleteTenantIdp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_DeleteTenantIdp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).DeleteTenantIdp(ctx, req.(*DeleteTenantIdpRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2258,6 +2293,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTenantIdp",
 			Handler:    _AdminService_GetTenantIdp_Handler,
+		},
+		{
+			MethodName: "DeleteTenantIdp",
+			Handler:    _AdminService_DeleteTenantIdp_Handler,
 		},
 		{
 			MethodName: "CreateOperator",

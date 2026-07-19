@@ -230,6 +230,32 @@ func TestConfigureTenantIdp_KeepSecretOnEmptyUpdate(t *testing.T) {
 	require.NotEqual(t, enc2, enc3, "带新 secret 须轮换密文")
 }
 
+func TestDeleteTenantIdp(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	srv := accountsSrv(db)
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('idp-del') RETURNING id`).Scan(&tid))
+	ctx := cp.WithOperator(context.Background(), "root")
+
+	// 无配置删→NotFound。
+	_, err := srv.DeleteTenantIdp(ctx, &adminv1.DeleteTenantIdpRequest{TenantId: uint64(tid)})
+	require.Equal(t, codes.NotFound, status.Code(err))
+
+	// 配置后删→成功、GetTenantIdp Configured=false、域清空。
+	_, err = srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
+		TenantId: uint64(tid), Issuer: "https://idp", ClientId: "cid",
+		ClientSecret: "s", Domains: []string{"acme.com"}, Enabled: true})
+	require.NoError(t, err)
+	_, err = srv.DeleteTenantIdp(ctx, &adminv1.DeleteTenantIdpRequest{TenantId: uint64(tid)})
+	require.NoError(t, err)
+	got, err := srv.GetTenantIdp(ctx, &adminv1.GetTenantIdpRequest{TenantId: uint64(tid)})
+	require.NoError(t, err)
+	require.False(t, got.Configured)
+	var domainCount int
+	require.NoError(t, db.QueryRow(`SELECT count(*) FROM tenant_idp_domain WHERE tenant_id=$1`, tid).Scan(&domainCount))
+	require.Equal(t, 0, domainCount, "删除须清空域")
+}
+
 func TestConfigureTenantIdp_FirstConfigRequiresSecret(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	srv := accountsSrv(db)

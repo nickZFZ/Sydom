@@ -32,6 +32,8 @@ service AdminService {
   // 企业 SSO：每租户 OIDC IdP 配置（M6-sso-1，scopeTenant 租户 owner 自助）。
   rpc ConfigureTenantIdp(ConfigureTenantIdpRequest) returns (ConfigureTenantIdpResponse);
   rpc GetTenantIdp(GetTenantIdpRequest) returns (GetTenantIdpResponse);
+  // 删除本租户 IdP 配置（M6-sso-5，scopeTenant 自助）。
+  rpc DeleteTenantIdp(DeleteTenantIdpRequest) returns (WriteResponse);
 
   // —— 管理员自身管理（system 域，super-admin 专属）——
   rpc CreateOperator(CreateOperatorRequest) returns (CreateOperatorResponse);
@@ -252,6 +254,7 @@ message ConfigureTenantIdpResponse {
   bool enabled = 2;
 }
 message GetTenantIdpRequest { uint64 tenant_id = 1; }
+message DeleteTenantIdpRequest { uint64 tenant_id = 1; }
 message GetTenantIdpResponse {
   bool configured = 1;
   string issuer = 2;

@@ -113,5 +113,16 @@ func accountRoutes() []route {
 			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
 				return s.GetTenantIdp(ctx, m.(*adminv1.GetTenantIdpRequest))
 			}},
+		{"DELETE", "/v1/tenants/{tenant_id}/idp", pfx + "DeleteTenantIdp",
+			func(r *http.Request, _ []byte) (proto.Message, error) {
+				id, err := pathUint64(r, "tenant_id")
+				if err != nil {
+					return nil, err
+				}
+				return &adminv1.DeleteTenantIdpRequest{TenantId: id}, nil
+			},
+			func(ctx context.Context, s *mgmt.AdminServer, m proto.Message) (proto.Message, error) {
+				return s.DeleteTenantIdp(ctx, m.(*adminv1.DeleteTenantIdpRequest))
+			}},
 	}
 }
