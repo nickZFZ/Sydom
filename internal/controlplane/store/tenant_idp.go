@@ -16,19 +16,21 @@ type TenantIdp struct {
 	ClientID   string
 	Domains    []string
 	Enabled    bool
+	JITEnabled bool
 }
 
 // UpsertTenantIdpTx 在调用方事务内 upsert 本租户 IdP config + 替换其 email 域集合。
 // domains 小写化写入；域被他租户占用→pq 23505（uq_tenant_idp_domain）由调用方映射。
 func UpsertTenantIdpTx(ctx context.Context, tx cp.DBTX, tenantID int64,
-	issuer, clientID string, secretEnc []byte, domains []string, enabled bool) error {
+	issuer, clientID string, secretEnc []byte, domains []string, enabled, jitEnabled bool) error {
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO tenant_idp (tenant_id, issuer, client_id, client_secret_enc, enabled)
-		 VALUES ($1,$2,$3,$4,$5)
+		`INSERT INTO tenant_idp (tenant_id, issuer, client_id, client_secret_enc, enabled, jit_enabled)
+		 VALUES ($1,$2,$3,$4,$5,$6)
 		 ON CONFLICT (tenant_id) DO UPDATE SET
 		   issuer=EXCLUDED.issuer, client_id=EXCLUDED.client_id,
-		   client_secret_enc=EXCLUDED.client_secret_enc, enabled=EXCLUDED.enabled, updated_at=now()`,
-		tenantID, issuer, clientID, secretEnc, enabled); err != nil {
+		   client_secret_enc=EXCLUDED.client_secret_enc, enabled=EXCLUDED.enabled,
+		   jit_enabled=EXCLUDED.jit_enabled, updated_at=now()`,
+		tenantID, issuer, clientID, secretEnc, enabled, jitEnabled); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx,
@@ -49,8 +51,8 @@ func UpsertTenantIdpTx(ctx context.Context, tx cp.DBTX, tenantID int64,
 func TenantIdpOf(ctx context.Context, ex cp.DBTX, tenantID int64) (TenantIdp, error) {
 	var t TenantIdp
 	err := ex.QueryRowContext(ctx,
-		`SELECT issuer, client_id, enabled FROM tenant_idp WHERE tenant_id=$1`, tenantID).
-		Scan(&t.Issuer, &t.ClientID, &t.Enabled)
+		`SELECT issuer, client_id, enabled, jit_enabled FROM tenant_idp WHERE tenant_id=$1`, tenantID).
+		Scan(&t.Issuer, &t.ClientID, &t.Enabled, &t.JITEnabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return TenantIdp{Configured: false}, nil
 	}

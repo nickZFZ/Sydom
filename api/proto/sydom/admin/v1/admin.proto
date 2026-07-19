@@ -245,6 +245,7 @@ message ConfigureTenantIdpRequest {
   string client_secret = 4;    // 明文入参，服务端加密存储；GetTenantIdp 绝不回
   repeated string domains = 5; // email 域（服务端 lowercase）
   bool enabled = 6;
+  bool jit_enabled = 7; // M6-sso-3：开启则该 IdP 域全新 email 首登 JIT 零权限开通
 }
 message ConfigureTenantIdpResponse {
   uint64 tenant_id = 1;
@@ -257,6 +258,7 @@ message GetTenantIdpResponse {
   string client_id = 3;
   repeated string domains = 4;
   bool enabled = 5;
+  bool jit_enabled = 6; // M6-sso-3
   // 绝不含 client_secret（INV-1）
 }
 

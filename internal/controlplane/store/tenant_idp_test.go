@@ -17,7 +17,7 @@ func TestUpsertTenantIdpTx_UpsertAndDomains(t *testing.T) {
 	tx, err := db.BeginTx(context.Background(), nil)
 	require.NoError(t, err)
 	require.NoError(t, store.UpsertTenantIdpTx(context.Background(), tx, tid,
-		"https://issuer", "cid", []byte("enc1"), []string{"Acme.com", "acme.co.uk"}, true))
+		"https://issuer", "cid", []byte("enc1"), []string{"Acme.com", "acme.co.uk"}, true, true))
 	require.NoError(t, tx.Commit())
 
 	got, err := store.TenantIdpOf(context.Background(), db, tid)
@@ -26,18 +26,20 @@ func TestUpsertTenantIdpTx_UpsertAndDomains(t *testing.T) {
 	require.Equal(t, "https://issuer", got.Issuer)
 	require.Equal(t, "cid", got.ClientID)
 	require.True(t, got.Enabled)
+	require.True(t, got.JITEnabled, "jit_enabled roundtrip")
 	require.ElementsMatch(t, []string{"acme.com", "acme.co.uk"}, got.Domains, "域应小写化")
 
 	// 再次 upsert：覆盖 + 替换域。
 	tx2, err := db.BeginTx(context.Background(), nil)
 	require.NoError(t, err)
 	require.NoError(t, store.UpsertTenantIdpTx(context.Background(), tx2, tid,
-		"https://issuer2", "cid2", []byte("enc2"), []string{"new.com"}, false))
+		"https://issuer2", "cid2", []byte("enc2"), []string{"new.com"}, false, false))
 	require.NoError(t, tx2.Commit())
 	got2, err := store.TenantIdpOf(context.Background(), db, tid)
 	require.NoError(t, err)
 	require.Equal(t, "https://issuer2", got2.Issuer)
 	require.False(t, got2.Enabled)
+	require.False(t, got2.JITEnabled, "jit_enabled 覆盖为 false")
 	require.Equal(t, []string{"new.com"}, got2.Domains, "旧域应被替换")
 }
 

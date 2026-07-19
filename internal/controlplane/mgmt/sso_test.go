@@ -166,3 +166,26 @@ func TestConfigureTenantIdp_SameTenant_Allowed(t *testing.T) {
 		&adminv1.ConfigureTenantIdpRequest{TenantId: uint64(tA), Issuer: "https://i", ClientId: "c", ClientSecret: "s", Domains: []string{"own.com"}})
 	require.NoError(t, err, "owner 配本租户 IdP 授权门须放行")
 }
+
+// M6-sso-3：jit_enabled 经 ConfigureTenantIdp 落库 + GetTenantIdp 回显。
+func TestConfigureTenantIdp_JITRoundtrip(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	srv := accountsSrv(db)
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('jit-t') RETURNING id`).Scan(&tid))
+	ctx := cp.WithOperator(context.Background(), "root")
+
+	_, err := srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
+		TenantId: uint64(tid), Issuer: "https://idp", ClientId: "cid",
+		ClientSecret: "s", Domains: []string{"acme.com"}, Enabled: true, JitEnabled: true,
+	})
+	require.NoError(t, err)
+
+	got, err := srv.GetTenantIdp(ctx, &adminv1.GetTenantIdpRequest{TenantId: uint64(tid)})
+	require.NoError(t, err)
+	require.True(t, got.JitEnabled, "GetTenantIdp 须回显 jit_enabled")
+
+	var jit bool
+	require.NoError(t, db.QueryRow(`SELECT jit_enabled FROM tenant_idp WHERE tenant_id=$1`, tid).Scan(&jit))
+	require.True(t, jit)
+}

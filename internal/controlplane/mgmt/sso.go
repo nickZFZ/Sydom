@@ -36,7 +36,7 @@ func (s *AdminServer) ConfigureTenantIdp(ctx context.Context, r *adminv1.Configu
 	}
 	defer tx.Rollback()
 	if err := store.UpsertTenantIdpTx(ctx, tx, int64(r.TenantId),
-		r.Issuer, r.ClientId, enc, r.Domains, r.Enabled); err != nil {
+		r.Issuer, r.ClientId, enc, r.Domains, r.Enabled, r.JitEnabled); err != nil {
 		if isUniqueViolation(err) {
 			return nil, status.Error(codes.AlreadyExists, "domain already claimed by another tenant")
 		}
@@ -49,7 +49,7 @@ func (s *AdminServer) ConfigureTenantIdp(ctx context.Context, r *adminv1.Configu
 	if err := adminauthz.InsertAdminAudit(ctx, tx,
 		sql.NullInt64{Int64: int64(r.TenantId), Valid: true}, cp.OperatorFromContext(ctx),
 		"configure_idp", "tenant_idp", fmt.Sprintf("%d", r.TenantId),
-		auditJSON(map[string]any{"issuer": r.Issuer, "client_id": r.ClientId, "domains": r.Domains, "enabled": r.Enabled}),
+		auditJSON(map[string]any{"issuer": r.Issuer, "client_id": r.ClientId, "domains": r.Domains, "enabled": r.Enabled, "jit_enabled": r.JitEnabled}),
 		sql.NullInt64{}); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
@@ -67,6 +67,6 @@ func (s *AdminServer) GetTenantIdp(ctx context.Context, r *adminv1.GetTenantIdpR
 	}
 	return &adminv1.GetTenantIdpResponse{
 		Configured: t.Configured, Issuer: t.Issuer, ClientId: t.ClientID,
-		Domains: t.Domains, Enabled: t.Enabled,
+		Domains: t.Domains, Enabled: t.Enabled, JitEnabled: t.JITEnabled,
 	}, nil
 }
