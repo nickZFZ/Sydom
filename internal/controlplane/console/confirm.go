@@ -16,6 +16,7 @@ var confirmPrompts = map[string]string{
 	svc + "RotateApplicationSecret": "确定轮换应用凭据吗？旧凭据将立即失效。",
 	svc + "ResetOperatorSecret":     "确定重置该操作员凭据吗？旧凭据将立即失效。",
 	svc + "DeleteDataPolicy":        "确定删除该数据策略吗？此操作不可撤销。",
+	svc + "DeleteTenantIdp":         "确定删除该租户的 SSO 配置吗？删除后该域 SSO 登录停用；仅 SSO 登录的 operator（含 JIT 开通、无密码）将无法登录，已开通的成员账户保留。此操作不可撤销。",
 	svc + "DeleteTenantTemplate":    "确定删除该模板吗？此操作不可撤销。",
 	svc + "SetApplicationStatus":    "确定停用该应用吗？停用后将拒绝该应用的写操作。",
 	// M4.2 批量移除族：无 JS 确认页文案与各模板 data-confirm（有 JS 路径）逐字一致。

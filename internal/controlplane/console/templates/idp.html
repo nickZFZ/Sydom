@@ -15,4 +15,14 @@
 <p class="hint">JIT：开启后该 IdP 域下<strong>全新</strong>用户首登自动开通为<strong>零权限</strong>成员。</p>
 <button class="btn btn-primary">保存</button>
 </form>
+{{if .Configured}}
+<form method="post" action="/tenants/{{.TenantID}}/idp/test" class="stacked-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<button class="btn">测试连接</button>
+</form>
+<form method="post" action="/tenants/{{.TenantID}}/idp/delete" class="stacked-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<button class="btn btn-danger">删除 SSO 配置</button>
+</form>
+{{end}}
 {{end}}
