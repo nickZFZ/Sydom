@@ -18,23 +18,36 @@ import (
 // ConfigureTenantIdp upsert 本租户 OIDC IdP 配置（scopeTenant 租户 owner 自助）。
 // client_secret 加密存储；域被他租户占用→AlreadyExists。
 func (s *AdminServer) ConfigureTenantIdp(ctx context.Context, r *adminv1.ConfigureTenantIdpRequest) (*adminv1.ConfigureTenantIdpResponse, error) {
-	if r.Issuer == "" || r.ClientId == "" || r.ClientSecret == "" || len(r.Domains) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "issuer, client_id, client_secret, domains required")
+	if r.Issuer == "" || r.ClientId == "" || len(r.Domains) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "issuer, client_id, domains required")
 	}
 	for _, d := range r.Domains {
 		if strings.TrimSpace(d) == "" {
 			return nil, status.Error(codes.InvalidArgument, "domain must not be empty")
 		}
 	}
-	enc, err := crypto.Encrypt(s.masterKey, []byte(r.ClientSecret))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
-	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "begin: %v", err)
 	}
 	defer tx.Rollback()
+	// client_secret 空=保持既有密文（编辑不改 secret）；非空=加密新值；首次配置须非空。
+	var enc []byte
+	if r.ClientSecret == "" {
+		existing, ok, err := store.TenantIdpSecretEnc(ctx, tx, int64(r.TenantId))
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "%v", err)
+		}
+		if !ok {
+			return nil, status.Error(codes.InvalidArgument, "client_secret required for first configuration")
+		}
+		enc = existing
+	} else {
+		enc, err = crypto.Encrypt(s.masterKey, []byte(r.ClientSecret))
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "encrypt: %v", err)
+		}
+	}
 	if err := store.UpsertTenantIdpTx(ctx, tx, int64(r.TenantId),
 		r.Issuer, r.ClientId, enc, r.Domains, r.Enabled, r.JitEnabled); err != nil {
 		if isUniqueViolation(err) {
@@ -49,7 +62,7 @@ func (s *AdminServer) ConfigureTenantIdp(ctx context.Context, r *adminv1.Configu
 	if err := adminauthz.InsertAdminAudit(ctx, tx,
 		sql.NullInt64{Int64: int64(r.TenantId), Valid: true}, cp.OperatorFromContext(ctx),
 		"configure_idp", "tenant_idp", fmt.Sprintf("%d", r.TenantId),
-		auditJSON(map[string]any{"issuer": r.Issuer, "client_id": r.ClientId, "domains": r.Domains, "enabled": r.Enabled, "jit_enabled": r.JitEnabled}),
+		auditJSON(map[string]any{"issuer": r.Issuer, "client_id": r.ClientId, "domains": r.Domains, "enabled": r.Enabled, "jit_enabled": r.JitEnabled, "secret_rotated": r.ClientSecret != ""}),
 		sql.NullInt64{}); err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}

@@ -189,3 +189,57 @@ func TestConfigureTenantIdp_JITRoundtrip(t *testing.T) {
 	require.NoError(t, db.QueryRow(`SELECT jit_enabled FROM tenant_idp WHERE tenant_id=$1`, tid).Scan(&jit))
 	require.True(t, jit)
 }
+
+// M6-sso-4：编辑时空 client_secret 保留旧密文；首次配置须提供 secret。
+func TestConfigureTenantIdp_KeepSecretOnEmptyUpdate(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	srv := accountsSrv(db)
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('idp-keep') RETURNING id`).Scan(&tid))
+	ctx := cp.WithOperator(context.Background(), "root")
+
+	// 首次配置（带 secret）。
+	_, err := srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
+		TenantId: uint64(tid), Issuer: "https://idp", ClientId: "cid",
+		ClientSecret: "s3cr3t", Domains: []string{"acme.com"}, Enabled: true, JitEnabled: false,
+	})
+	require.NoError(t, err)
+	var enc1 []byte
+	require.NoError(t, db.QueryRow(`SELECT client_secret_enc FROM tenant_idp WHERE tenant_id=$1`, tid).Scan(&enc1))
+
+	// 编辑：空 secret + 切 jit_enabled → 密文不变、jit 变。
+	_, err = srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
+		TenantId: uint64(tid), Issuer: "https://idp", ClientId: "cid",
+		ClientSecret: "", Domains: []string{"acme.com"}, Enabled: true, JitEnabled: true,
+	})
+	require.NoError(t, err)
+	var enc2 []byte
+	var jit bool
+	require.NoError(t, db.QueryRow(`SELECT client_secret_enc, jit_enabled FROM tenant_idp WHERE tenant_id=$1`, tid).Scan(&enc2, &jit))
+	require.Equal(t, enc1, enc2, "空 secret 编辑须保留旧密文")
+	require.True(t, jit, "jit_enabled 应已切换")
+
+	// 编辑：带新 secret → 密文变化（轮换）。
+	_, err = srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
+		TenantId: uint64(tid), Issuer: "https://idp", ClientId: "cid",
+		ClientSecret: "rotated", Domains: []string{"acme.com"}, Enabled: true, JitEnabled: true,
+	})
+	require.NoError(t, err)
+	var enc3 []byte
+	require.NoError(t, db.QueryRow(`SELECT client_secret_enc FROM tenant_idp WHERE tenant_id=$1`, tid).Scan(&enc3))
+	require.NotEqual(t, enc2, enc3, "带新 secret 须轮换密文")
+}
+
+func TestConfigureTenantIdp_FirstConfigRequiresSecret(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	srv := accountsSrv(db)
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('idp-first') RETURNING id`).Scan(&tid))
+	ctx := cp.WithOperator(context.Background(), "root")
+
+	_, err := srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
+		TenantId: uint64(tid), Issuer: "https://idp", ClientId: "cid",
+		ClientSecret: "", Domains: []string{"acme.com"}, Enabled: true,
+	})
+	require.Equal(t, codes.InvalidArgument, status.Code(err), "首次配置空 secret 须 InvalidArgument")
+}

@@ -43,6 +43,24 @@ func TestUpsertTenantIdpTx_UpsertAndDomains(t *testing.T) {
 	require.Equal(t, []string{"new.com"}, got2.Domains, "旧域应被替换")
 }
 
+func TestTenantIdpSecretEnc(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('se') RETURNING id`).Scan(&tid))
+	// 无配置→ok=false。
+	_, ok, err := store.TenantIdpSecretEnc(context.Background(), db, tid)
+	require.NoError(t, err)
+	require.False(t, ok)
+	// 有配置→返密文。
+	_, err = db.Exec(`INSERT INTO tenant_idp (tenant_id, issuer, client_id, client_secret_enc)
+		VALUES ($1,'https://i','cid','\xdead'::bytea)`, tid)
+	require.NoError(t, err)
+	enc, ok, err := store.TenantIdpSecretEnc(context.Background(), db, tid)
+	require.NoError(t, err)
+	require.True(t, ok)
+	require.Equal(t, []byte{0xde, 0xad}, enc)
+}
+
 func TestTenantIdpOf_Unconfigured(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	var tid int64

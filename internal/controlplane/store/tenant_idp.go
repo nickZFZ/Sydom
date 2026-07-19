@@ -47,6 +47,21 @@ func UpsertTenantIdpTx(ctx context.Context, tx cp.DBTX, tenantID int64,
 	return nil
 }
 
+// TenantIdpSecretEnc 读租户 IdP 的原始加密 client_secret（密文）。无配置→ok=false。
+// 仅供 ConfigureTenantIdp 编辑保留时把旧密文原样回写；从不解密、绝不出控制面（INV-1）。
+func TenantIdpSecretEnc(ctx context.Context, ex cp.DBTX, tenantID int64) ([]byte, bool, error) {
+	var enc []byte
+	err := ex.QueryRowContext(ctx,
+		`SELECT client_secret_enc FROM tenant_idp WHERE tenant_id=$1`, tenantID).Scan(&enc)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return enc, true, nil
+}
+
 // TenantIdpOf 读租户 IdP 元数据（不查 client_secret_enc）+ 聚合域。无配置→Configured=false。
 func TenantIdpOf(ctx context.Context, ex cp.DBTX, tenantID int64) (TenantIdp, error) {
 	var t TenantIdp
