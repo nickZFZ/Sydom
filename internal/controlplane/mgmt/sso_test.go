@@ -66,10 +66,38 @@ func TestConfigureTenantIdp_MissingFields_InvalidArgument(t *testing.T) {
 	var tid int64
 	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('c') RETURNING id`).Scan(&tid))
 	ctx := cp.WithOperator(context.Background(), "root")
+
+	cases := []struct {
+		name string
+		req  *adminv1.ConfigureTenantIdpRequest
+	}{
+		{"empty issuer", &adminv1.ConfigureTenantIdpRequest{
+			TenantId: uint64(tid), Issuer: "", ClientId: "c", ClientSecret: "s", Domains: []string{"x.com"}}},
+		{"empty client_id", &adminv1.ConfigureTenantIdpRequest{
+			TenantId: uint64(tid), Issuer: "https://i", ClientId: "", ClientSecret: "s", Domains: []string{"x.com"}}},
+		{"empty client_secret", &adminv1.ConfigureTenantIdpRequest{
+			TenantId: uint64(tid), Issuer: "https://i", ClientId: "c", ClientSecret: "", Domains: []string{"x.com"}}},
+		{"empty domains", &adminv1.ConfigureTenantIdpRequest{
+			TenantId: uint64(tid), Issuer: "https://i", ClientId: "c", ClientSecret: "s", Domains: nil}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := srv.ConfigureTenantIdp(ctx, tc.req)
+			require.Equal(t, codes.InvalidArgument, status.Code(err))
+		})
+	}
+}
+
+// 未知 tenant_id 触发外键违例（tenant_idp_tenant_id_fkey），须映射为 NotFound，
+// 不得把裸 pq 错误（含表名/约束名）以 Internal 透传。
+func TestConfigureTenantIdp_UnknownTenant_NotFound(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	srv := accountsSrv(db)
+	ctx := cp.WithOperator(context.Background(), "root")
 	_, err := srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
-		TenantId: uint64(tid), Issuer: "", ClientId: "c", ClientSecret: "s", Domains: []string{"x.com"},
+		TenantId: 999999, Issuer: "https://i", ClientId: "c", ClientSecret: "s", Domains: []string{"nx.com"},
 	})
-	require.Equal(t, codes.InvalidArgument, status.Code(err))
+	require.Equal(t, codes.NotFound, status.Code(err), "未知租户须 NotFound 而非 Internal/泄露裸 SQL")
 }
 
 // 授权门：跨租户配置 IdP 须 PermissionDenied（scopeTenant）。

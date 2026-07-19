@@ -34,6 +34,9 @@ func (s *AdminServer) ConfigureTenantIdp(ctx context.Context, r *adminv1.Configu
 		if isUniqueViolation(err) {
 			return nil, status.Error(codes.AlreadyExists, "domain already claimed by another tenant")
 		}
+		if isForeignKeyViolation(err) {
+			return nil, status.Error(codes.NotFound, "unknown tenant")
+		}
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 	// 审计绝不含 client_secret（INV-1）。
