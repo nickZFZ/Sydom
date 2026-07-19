@@ -25,9 +25,10 @@ type idpLoginResolver interface {
 	ResolveIdPByTenant(ctx context.Context, tenantID int64) (ssologin.IdPLogin, bool, error)
 }
 
-// operatorMatcher 是 email→严格映射 operator 的窄接口（生产由 *ssologin.Resolver 满足）。
+// operatorMatcher 是 email→严格映射 operator + JIT 开通的窄接口（生产由 *ssologin.Resolver 满足）。
 type operatorMatcher interface {
 	MatchOperatorForLogin(ctx context.Context, tenantID int64, email string) (string, bool, error)
+	ProvisionOperatorForLogin(ctx context.Context, tenantID int64, email string) (string, bool, error)
 }
 
 // Handler 是 Console BFF 的核心结构，持有所有依赖。

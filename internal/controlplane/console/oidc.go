@@ -104,10 +104,21 @@ func (h *Handler) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		h.ssoFail(w, r)
 		return
 	}
-	principal, ok, err := h.operatorMatch.MatchOperatorForLogin(r.Context(), st.TenantID, strings.ToLower(claims.Email))
-	if err != nil || !ok {
-		h.ssoFail(w, r) // fail-close：非成员/停用/未知 email/跨租户
+	email := strings.ToLower(claims.Email)
+	principal, ok, err := h.operatorMatch.MatchOperatorForLogin(r.Context(), st.TenantID, email)
+	if err != nil {
+		h.ssoFail(w, r)
 		return
+	}
+	if !ok {
+		// 严格映射未命中：租户显式开 JIT 则尝试自动开通（仅全新 email）。
+		if idp.JITEnabled {
+			principal, ok, err = h.operatorMatch.ProvisionOperatorForLogin(r.Context(), st.TenantID, email)
+		}
+		if err != nil || !ok {
+			h.ssoFail(w, r) // JIT 关 / 既有 email / 竞态 → 通用 401（无枚举 oracle）
+			return
+		}
 	}
 	id, _, err := h.sessions.Create(r.Context(), principal)
 	if err != nil {

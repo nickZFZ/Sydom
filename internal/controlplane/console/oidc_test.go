@@ -297,3 +297,93 @@ func TestOIDCLogin_MissingBaseURLFailClose(t *testing.T) {
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusUnauthorized, resp.StatusCode, "缺 consoleBaseURL 须 fail-close")
 }
+
+// —— M6-sso-3 JIT 自动开通 ——
+
+// JIT 开 + 全新 email → 自动开通零权限成员 + 会话。
+func TestOIDCLogin_JITProvisionsNewMember(t *testing.T) {
+	idp := newMockIdP(t)
+	idp.clientID = "cid"
+	ts, db, mk := newConsoleSSO(t, "https://console.test")
+	tid := seedIdP(t, db, mk, idp.srv.URL, true)
+	_, err := db.Exec(`UPDATE tenant_idp SET jit_enabled=true WHERE tenant_id=$1`, tid)
+	require.NoError(t, err)
+
+	c := ssoClient(t)
+	state, nonce := start(t, c, ts, "newbie@acme.com")
+	idp.nonce, idp.email, idp.emailVerified = nonce, "newbie@acme.com", true
+	resp := callback(t, c, ts, "code123", state)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+	require.True(t, hasSessionCookie(resp), "JIT 开通后须建会话")
+
+	// operator + membership 存在，零 casbin 绑定。
+	var tier int16
+	require.NoError(t, db.QueryRow(`SELECT m.tier FROM tenant_membership m JOIN admin_operator o ON o.id=m.operator_id
+		WHERE o.principal='newbie@acme.com' AND m.tenant_id=$1`, tid).Scan(&tier))
+	require.Equal(t, int16(3), tier)
+	var binds int
+	require.NoError(t, db.QueryRow(`SELECT count(*) FROM admin_subject_role sr JOIN admin_operator o ON o.id=sr.operator_id
+		WHERE o.principal='newbie@acme.com'`).Scan(&binds))
+	require.Equal(t, 0, binds, "JIT 成员零权限")
+}
+
+// JIT 关（默认）+ 全新 email → 401（回归守卫：严格映射不变）。
+func TestOIDCLogin_JITDisabledRejectsUnknown(t *testing.T) {
+	idp := newMockIdP(t)
+	idp.clientID = "cid"
+	ts, db, mk := newConsoleSSO(t, "https://console.test")
+	seedIdP(t, db, mk, idp.srv.URL, true) // jit_enabled 默认 false
+
+	c := ssoClient(t)
+	state, nonce := start(t, c, ts, "newbie@acme.com")
+	idp.nonce, idp.email, idp.emailVerified = nonce, "newbie@acme.com", true
+	resp := callback(t, c, ts, "code123", state)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode, "JIT 关时全新 email 须拒")
+}
+
+// JIT 开 + 既有非成员 email → 401（跨租户防护）。
+func TestOIDCLogin_JITRejectsExistingNonMember(t *testing.T) {
+	idp := newMockIdP(t)
+	idp.clientID = "cid"
+	ts, db, mk := newConsoleSSO(t, "https://console.test")
+	tid := seedIdP(t, db, mk, idp.srv.URL, true)
+	_, err := db.Exec(`UPDATE tenant_idp SET jit_enabled=true WHERE tenant_id=$1`, tid)
+	require.NoError(t, err)
+	// bob 已有 operator 但非本租户成员（无 membership）。
+	_, err = db.Exec(`INSERT INTO admin_operator (principal, secret_enc, email, status)
+		VALUES ('bob','\xbb'::bytea,'bob@acme.com',1)`)
+	require.NoError(t, err)
+
+	c := ssoClient(t)
+	state, nonce := start(t, c, ts, "bob@acme.com")
+	idp.nonce, idp.email, idp.emailVerified = nonce, "bob@acme.com", true
+	resp := callback(t, c, ts, "code123", state)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode, "既有非成员 email 即便 JIT 开也须拒")
+}
+
+// JIT 开 + 既有成员 email → 严格映射胜（不重复开通）。
+func TestOIDCLogin_JITExistingMemberStrictWins(t *testing.T) {
+	idp := newMockIdP(t)
+	idp.clientID = "cid"
+	ts, db, mk := newConsoleSSO(t, "https://console.test")
+	tid := seedIdP(t, db, mk, idp.srv.URL, true)
+	_, err := db.Exec(`UPDATE tenant_idp SET jit_enabled=true WHERE tenant_id=$1`, tid)
+	require.NoError(t, err)
+	seedOperator(t, db, "alice", "alice@acme.com", 1, tid) // 既有成员
+
+	c := ssoClient(t)
+	state, nonce := start(t, c, ts, "alice@acme.com")
+	idp.nonce, idp.email, idp.emailVerified = nonce, "alice@acme.com", true
+	resp := callback(t, c, ts, "code123", state)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusSeeOther, resp.StatusCode)
+	require.True(t, hasSessionCookie(resp))
+	// 不重复开通：alice 仍只有一条 membership。
+	var n int
+	require.NoError(t, db.QueryRow(`SELECT count(*) FROM tenant_membership m JOIN admin_operator o ON o.id=m.operator_id
+		WHERE o.principal='alice' AND m.tenant_id=$1`, tid).Scan(&n))
+	require.Equal(t, 1, n)
+}

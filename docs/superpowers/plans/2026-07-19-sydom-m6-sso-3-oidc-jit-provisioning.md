@@ -383,7 +383,8 @@ func TestOIDCLogin_JITExistingMemberStrictWins(t *testing.T) {
 （`idp` 变量已由上文 `ResolveIdPByTenant` 取得；`IdPLogin.JITEnabled` 由 T2 带出。）
 
 - [ ] **步骤 5：运行确认通过** — `go test ./internal/controlplane/console/ -run TestOIDCLogin_JIT -v`；预期 4 场景全 PASS。
-- [ ] **步骤 6：变异自检（有齿，改后复原）** — ① 临时删 `idp.JITEnabled` 门（改成 `if true {`）→ `go test -run TestOIDCLogin_JITDisabledRejectsUnknown`；预期红。复原。② 临时删 `ProvisionOperatorForLogin` 的 `if exists { return ... }`（ssologin.go）→ `go test -run TestOIDCLogin_JITRejectsExistingNonMember`；预期红。复原。各复原后重跑 PASS。
+- [ ] **步骤 6：变异自检（有齿，改后复原）** — ① 临时删 `idp.JITEnabled` 门（改成 `if true {`）→ `go test -run TestOIDCLogin_JITDisabledRejectsUnknown`；预期红。复原。② 临时把 `ProvisionOperatorForLogin` 的 `adminauthz.TierMember` 改成 `TierOwner` → `go test ./internal/controlplane/ssologin/ -run TestProvision`（tier=3 断言）；预期红。复原后重跑 PASS。
+  > **实测发现（勿用原计划的 exists-guard 变异）**：删 `if exists { return }` 守卫**不会**翻 `TestOIDCLogin_JITRejectsExistingNonMember` 红——`admin_operator.email` UNIQUE 约束是冗余第二道防线（既有 email 的 JIT INSERT 撞 UNIQUE→err→fail-close）。故 exists-guard 是清路径优化+清晰语义，真正强制「既有 email 不 JIT」的是 email UNIQUE 约束 + 严格映射的租户成员条件（后者已在 M6-sso-2 变异证有齿）。改用 TierMember 变异证「最小权限档位」断言有齿。
 - [ ] **步骤 7：Commit**
 
 ```bash
