@@ -3,8 +3,9 @@
 *.iml
 .vscode/
 
-# Claude Code
-.claude/
+# Claude Code (ignore all of .claude/ except the shared, checked-in project settings)
+.claude/*
+!.claude/settings.json
 
 # CodeGraph index (local code-intelligence, not in repo)
 .codegraph/
