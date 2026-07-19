@@ -26,6 +26,7 @@ var flashMessages = map[string]string{
 	svc + "UpsertDataPolicy":      "数据策略已保存",
 	svc + "DeleteDataPolicy":      "数据策略已删除",
 	svc + "ImportAppPolicy":       "策略已导入并应用",
+	svc + "ConfigureTenantIdp":    "IdP 配置已保存",
 	// 一次性 secret 动作(轮换/重置)不进 flash(走专管线)。
 
 	// 任务5：批量操作（M4.2）。

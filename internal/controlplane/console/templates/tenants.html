@@ -9,6 +9,7 @@
 <li>{{.TenantName}}（tier {{.Tier}}）—
   <a href="/tenants/{{.TenantId}}/members">成员</a> ·
   <a href="/tenants/{{.TenantId}}/usage">用量</a> ·
+  <a href="/tenants/{{.TenantId}}/idp">企业 SSO</a> ·
   <a href="/?tenant_id={{.TenantId}}">应用</a></li>
 {{else}}
 <li>暂无租户，<a href="/register">注册一个</a></li>

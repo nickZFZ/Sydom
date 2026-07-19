@@ -1,0 +1,18 @@
+{{define "title"}}企业 SSO · 司域 Console{{end}}
+{{define "content"}}
+<nav class="breadcrumb" aria-label="面包屑">租户 · 企业 SSO</nav>
+<h1>企业 SSO（租户 {{.TenantID}}）</h1>
+{{if .Configured}}<p class="hint">已配置。发行方 {{.Issuer}}。留空 client_secret 则保持不变。</p>
+{{else}}<p class="hint">尚未配置。首次配置须提供 client_secret。</p>{{end}}
+<form method="post" action="/tenants/{{.TenantID}}/idp" class="stacked-form">
+<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+<label>发行方 Issuer <input name="issuer" value="{{.Issuer}}" placeholder="https://idp.example" required></label>
+<label>Client ID <input name="client_id" value="{{.ClientID}}" required></label>
+<label>Client Secret <input name="client_secret" type="password" placeholder="{{if .Configured}}留空=保持不变{{else}}首次配置必填{{end}}"{{if not .Configured}} required{{end}}></label>
+<label>Email 域（一行一个）<textarea name="domains" rows="3" placeholder="acme.com">{{.Domains}}</textarea></label>
+<label><input type="checkbox" name="enabled"{{if .Enabled}} checked{{end}}> 启用 SSO 登录</label>
+<label><input type="checkbox" name="jit_enabled"{{if .JitEnabled}} checked{{end}}> 启用 JIT 自动开通</label>
+<p class="hint">JIT：开启后该 IdP 域下<strong>全新</strong>用户首登自动开通为<strong>零权限</strong>成员。</p>
+<button class="btn btn-primary">保存</button>
+</form>
+{{end}}
