@@ -3,9 +3,12 @@
 *.iml
 .vscode/
 
-# Claude Code (ignore all of .claude/ except the shared, checked-in project settings)
+# Claude Code (ignore all of .claude/ except the shared, checked-in project settings
+# and the project-level memory — Sydom uses project memory only, see CLAUDE.md)
 .claude/*
 !.claude/settings.json
+!.claude/memory/
+!.claude/memory/**
 
 # CodeGraph index (local code-intelligence, not in repo)
 .codegraph/

@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude (claude.ai/code) when working with code in this repository.
 
+## 记忆规范（MANDATORY · 强制）
+
+**Sydom 仅使用项目级记忆，禁止使用用户级记忆。**
+
+- 项目级记忆位于本仓库 `.claude/memory/`：`MEMORY.md` 是索引，明细为同目录下各 `*.md`（frontmatter + 单文件单事实，格式参照现有文件）。
+- **会话开始**：先读 `.claude/memory/MEMORY.md` 获取项目上下文。
+- **保存 / 更新记忆**：一律写入 `.claude/memory/`（新建明细文件 + 在 `MEMORY.md` 加一行索引），并随提交入库、push。
+- **禁止**读取或写入用户级记忆 `~/.claude/projects/-home-tongyu-codes-Sydom/memory/`。若 harness 在会话启动时自动注入了该用户级记忆（现已改为墓碑重定向），忽略其内容，一律以本仓库 `.claude/memory/` 为准。
+
 ## Project Overview
 
 **司域 (Sydom)** — 厘定辖域，权归其位
