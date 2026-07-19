@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	adminv1 "github.com/nickZFZ/Sydom/gen/sydom/admin/v1"
 	cp "github.com/nickZFZ/Sydom/internal/controlplane"
@@ -19,6 +20,11 @@ import (
 func (s *AdminServer) ConfigureTenantIdp(ctx context.Context, r *adminv1.ConfigureTenantIdpRequest) (*adminv1.ConfigureTenantIdpResponse, error) {
 	if r.Issuer == "" || r.ClientId == "" || r.ClientSecret == "" || len(r.Domains) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "issuer, client_id, client_secret, domains required")
+	}
+	for _, d := range r.Domains {
+		if strings.TrimSpace(d) == "" {
+			return nil, status.Error(codes.InvalidArgument, "domain must not be empty")
+		}
 	}
 	enc, err := crypto.Encrypt(s.masterKey, []byte(r.ClientSecret))
 	if err != nil {

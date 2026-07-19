@@ -88,6 +88,21 @@ func TestConfigureTenantIdp_MissingFields_InvalidArgument(t *testing.T) {
 	}
 }
 
+// 单个域条目 TrimSpace 后为空串须 InvalidArgument（不得写入占用全局唯一的 "" 槽位）。
+func TestConfigureTenantIdp_EmptyDomain_InvalidArgument(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	srv := accountsSrv(db)
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('empd') RETURNING id`).Scan(&tid))
+	ctx := cp.WithOperator(context.Background(), "root")
+	for _, doms := range [][]string{{"  "}, {"acme.com", ""}, {"acme.com", "   "}} {
+		_, err := srv.ConfigureTenantIdp(ctx, &adminv1.ConfigureTenantIdpRequest{
+			TenantId: uint64(tid), Issuer: "https://i", ClientId: "c", ClientSecret: "s", Domains: doms,
+		})
+		require.Equal(t, codes.InvalidArgument, status.Code(err), "空/纯空白域须 InvalidArgument：%v", doms)
+	}
+}
+
 // 未知 tenant_id 触发外键违例（tenant_idp_tenant_id_fkey），须映射为 NotFound，
 // 不得把裸 pq 错误（含表名/约束名）以 Internal 透传。
 func TestConfigureTenantIdp_UnknownTenant_NotFound(t *testing.T) {
@@ -117,4 +132,37 @@ func TestConfigureTenantIdp_CrossTenant_Denied(t *testing.T) {
 	req := &adminv1.ConfigureTenantIdpRequest{TenantId: uint64(tB), Issuer: "https://i", ClientId: "c", ClientSecret: "s", Domains: []string{"z.com"}}
 	_, err = mgmt.AuthorizeRule(ctx, enf, method, "alice", req)
 	require.Equal(t, codes.PermissionDenied, status.Code(err), "tenant-a 管理员配 tenant-b IdP 须拒")
+}
+
+// 授权门：跨租户读 IdP 须 PermissionDenied（scopeTenant，读路径同受租户隔离）。
+func TestGetTenantIdp_CrossTenant_Denied(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	mk := bytes.Repeat([]byte{0x11}, crypto.KeySize)
+	tA, _ := dbtest.SeedAppInTenant(t, db, "gt-a", "gdom-a", "GAK_a")
+	dbtest.SeedAppInTenant(t, db, "gt-b", "gdom-b", "GAK_b")
+	var tB int64
+	require.NoError(t, db.QueryRow(`SELECT id FROM tenant WHERE name='gt-b'`).Scan(&tB))
+	require.NoError(t, adminauthz.EnsureTenantAdmin(ctx, db, mk, tA, "alice", []byte("sa")))
+	enf, err := adminauthz.NewEnforcer(db)
+	require.NoError(t, err)
+	_, err = mgmt.AuthorizeRule(ctx, enf,
+		"/sydom.admin.v1.AdminService/GetTenantIdp", "alice",
+		&adminv1.GetTenantIdpRequest{TenantId: uint64(tB)})
+	require.Equal(t, codes.PermissionDenied, status.Code(err), "跨租户读 IdP 须拒")
+}
+
+// 授权门：租户 admin 对本租户 ConfigureTenantIdp 须放行（证明门非对所有人 fail-closed）。
+func TestConfigureTenantIdp_SameTenant_Allowed(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	mk := bytes.Repeat([]byte{0x11}, crypto.KeySize)
+	tA, _ := dbtest.SeedAppInTenant(t, db, "own-a", "odom-a", "OAK_a")
+	require.NoError(t, adminauthz.EnsureTenantAdmin(ctx, db, mk, tA, "alice", []byte("sa")))
+	enf, err := adminauthz.NewEnforcer(db)
+	require.NoError(t, err)
+	_, err = mgmt.AuthorizeRule(ctx, enf,
+		"/sydom.admin.v1.AdminService/ConfigureTenantIdp", "alice",
+		&adminv1.ConfigureTenantIdpRequest{TenantId: uint64(tA), Issuer: "https://i", ClientId: "c", ClientSecret: "s", Domains: []string{"own.com"}})
+	require.NoError(t, err, "owner 配本租户 IdP 授权门须放行")
 }
