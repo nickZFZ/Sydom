@@ -22,12 +22,12 @@ func TestConsole_UsagePage(t *testing.T) {
 	body := readBody(t, resp)
 
 	require.Equal(t, 1, strings.Count(body, "<h1>"), "须单 h1")
-	require.Contains(t, body, "免费版")          // planLabel(free)
-	require.Contains(t, body, "应用：1 / 3")     // 应用行（used=1 limit=3，有齿）
-	require.Contains(t, body, "成员：0 / 3")     // 成员行（SeedAppInTenant 无 membership）
-	require.Contains(t, body, "<meter")         // 原生 meter（CSP 安全可视化）
-	require.Contains(t, body, `value="1"`)      // 有齿：钉死应用用量
-	require.Contains(t, body, `max="3"`)        // 有齿：钉死套餐上限
+	require.Contains(t, body, "免费版")       // planLabel(free)
+	require.Contains(t, body, "应用：1 / 3")  // 应用行（used=1 limit=3，有齿）
+	require.Contains(t, body, "成员：0 / 3")  // 成员行（SeedAppInTenant 无 membership）
+	require.Contains(t, body, "<meter")    // 原生 meter（CSP 安全可视化）
+	require.Contains(t, body, `value="1"`) // 有齿：钉死应用用量
+	require.Contains(t, body, `max="3"`)   // 有齿：钉死套餐上限
 	require.NotContains(t, body, "应用已达上限") // 未达上限：不含告警（双向有齿）
 }
 
@@ -49,7 +49,7 @@ func TestConsole_UsagePage_AtLimitWarning(t *testing.T) {
 
 	require.Contains(t, body, "应用：3 / 3")
 	require.Contains(t, body, `value="3"`)
-	require.Contains(t, body, "应用已达上限")   // 应用至上限告警（有齿）
+	require.Contains(t, body, "应用已达上限")    // 应用至上限告警（有齿）
 	require.NotContains(t, body, "成员已达上限") // 成员 0/3 未达上限（跨维度双向有齿）
 }
 

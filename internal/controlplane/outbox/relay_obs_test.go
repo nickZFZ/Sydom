@@ -24,7 +24,7 @@ func TestRelay_DrainError_Logged(t *testing.T) {
 	ctx, cancel := context.WithTimeout(obs.With(context.Background(), logger), 200*time.Millisecond)
 	defer cancel()
 
-	pub := &recordingPub{} // 到不了 Publish（query 先失败）
+	pub := &recordingPub{}                                     // 到不了 Publish（query 先失败）
 	_ = outbox.RunRelayLoop(ctx, db, pub, 20*time.Millisecond) // 同 goroutine 阻塞至 ctx 超时
 
 	require.Contains(t, buf.String(), "relay drain error", "drain(DB 错误)须记 warn")

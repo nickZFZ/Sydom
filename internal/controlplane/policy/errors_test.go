@@ -15,9 +15,9 @@ import (
 // classify 是写路径错误分类器：把底层驱动/领域错误归入领域 sentinel，
 // 同时保留原始错误在链上（供上层脱敏日志），未匹配者原样返回（落 Internal）。
 func TestClassify(t *testing.T) {
-	uniq := &pq.Error{Code: "23505"}                                  // unique_violation
-	fk := &pq.Error{Code: "23503"}                                    // foreign_key_violation
-	wrappedUniq := fmt.Errorf("policy: mutate grant: %w", uniq)       // 真实调用链里 classify 收到的是被包裹后的
+	uniq := &pq.Error{Code: "23505"}                            // unique_violation
+	fk := &pq.Error{Code: "23503"}                              // foreign_key_violation
+	wrappedUniq := fmt.Errorf("policy: mutate grant: %w", uniq) // 真实调用链里 classify 收到的是被包裹后的
 	wrappedCycle := fmt.Errorf("policy: precheck add: %w", projection.ErrCycle)
 	infra := errors.New("dial tcp: connection refused") // 非领域错误
 

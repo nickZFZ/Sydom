@@ -32,7 +32,7 @@ func NewHandler(srv *mgmt.AdminServer, resolver secretResolver, enf *adminauthz.
 
 	mux.HandleFunc("GET /login", h.handleLoginGet)
 	mux.HandleFunc("POST /login", h.handleLoginPost)
-	mux.HandleFunc("POST /login/sso", h.handleSSOStart)          // M6-sso-2 企业 SSO 发起
+	mux.HandleFunc("POST /login/sso", h.handleSSOStart)             // M6-sso-2 企业 SSO 发起
 	mux.HandleFunc("GET /auth/oidc/callback", h.handleOIDCCallback) // M6-sso-2 OIDC 回调
 	mux.HandleFunc("POST /logout", h.handleLogout)
 	mux.Handle("GET /static/", http.FileServerFS(staticFS))
