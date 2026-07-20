@@ -42,3 +42,32 @@ func TestWriteErr_GrantMissingRefs_FailedPrecondition(t *testing.T) {
 	})
 	require.Equal(t, codes.FailedPrecondition, status.Code(err), "引用缺失须回 FailedPrecondition 而非 Internal")
 }
+
+// 更新不存在的数据策略（id 无对应行，UPDATE 命中 0 行）→ NotFound。
+// store 先前返回裸 fmt.Errorf 未带 store.ErrNotFound，classify 认不出 → 落 Internal。
+func TestWriteErr_UpsertDataPolicyMissingID_NotFound(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	srv := accountsSrv(db)
+	ctx := context.Background()
+
+	_, err := srv.UpsertDataPolicy(ctx, &adminv1.UpsertDataPolicyRequest{
+		AppId: uint64(appID), Id: 999999, SubjectType: "role", SubjectId: "m",
+		Resource: "order", Condition: `{"field":"dept","op":"EQ","value":"$user.dept"}`, Effect: "allow",
+	})
+	require.Equal(t, codes.NotFound, status.Code(err), "更新不存在的数据策略须回 NotFound 而非 Internal")
+	require.NotContains(t, status.Convert(err).Message(), "999999", "内部行 id/表细节不得泄露给客户端")
+}
+
+// 删除不存在的数据策略（DELETE 命中 0 行，fail-close 报错）→ NotFound。
+func TestWriteErr_DeleteDataPolicyMissingID_NotFound(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	appID := dbtest.SeedApp(t, db)
+	srv := accountsSrv(db)
+	ctx := context.Background()
+
+	_, err := srv.DeleteDataPolicy(ctx, &adminv1.DeleteDataPolicyRequest{
+		AppId: uint64(appID), DataPolicyId: 999999,
+	})
+	require.Equal(t, codes.NotFound, status.Code(err), "删除不存在的数据策略须回 NotFound 而非 Internal")
+}

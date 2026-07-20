@@ -208,7 +208,7 @@ func UpsertDataPolicy(ctx context.Context, ex cp.DBTX, appID int64, p cp.DataPol
 		return p.ID, false, err
 	}
 	if n == 0 {
-		return 0, false, fmt.Errorf("data_policy id=%d not found for app %d", p.ID, appID)
+		return 0, false, fmt.Errorf("%w: data_policy id=%d for app %d", ErrNotFound, p.ID, appID)
 	}
 	return p.ID, false, nil
 }
@@ -225,7 +225,7 @@ func DeleteDataPolicy(ctx context.Context, ex cp.DBTX, appID, id int64) error {
 		return err
 	}
 	if n == 0 {
-		return fmt.Errorf("data_policy id=%d not found for app %d", id, appID)
+		return fmt.Errorf("%w: data_policy id=%d for app %d", ErrNotFound, id, appID)
 	}
 	return nil
 }
