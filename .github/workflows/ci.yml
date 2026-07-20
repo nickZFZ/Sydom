@@ -1,0 +1,84 @@
+name: CI
+
+# 司域持续集成：把既有的本地验证门（gofmt / vet / build / test / proto / helm）
+# 固化为回归防线。所有步骤均可在本地用相同命令复现（见各 run 与 Makefile）。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 同一 ref 上新推送到来时，取消仍在进行的旧运行，省算力。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-build:
+    name: gofmt · vet · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod # 用 go.mod 声明的 Go 版本，与本地工具链一致
+          cache: true
+      - name: gofmt（全仓无格式漂移）
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::以下文件未通过 gofmt，请运行 gofmt -w 后重新提交：" >&2
+            echo "$unformatted" >&2
+            exit 1
+          fi
+      - name: go vet
+        run: go vet ./...
+      - name: go build
+        run: go build ./...
+
+  proto:
+    name: proto 漂移 · 向后兼容
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # proto-breaking 对 main 基线比对需完整历史
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: 安装 proto 工具链（buf / protoc-gen-*，Makefile 已钉版本）
+        run: make proto-tools
+      - name: proto 漂移检测（生成码与 .proto 同步且已入库）
+        run: make proto-check
+      - name: 确保 main 基线在本地可用（PR 场景需拉取）
+        run: git fetch --no-tags origin +refs/heads/main:refs/heads/main || true
+      - name: proto 向后兼容门（对 main 无破坏性变更）
+        run: make proto-breaking
+
+  test:
+    name: go test（含 testcontainers）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      # ubuntu-latest runner 自带并运行 Docker，testcontainers 直接复用其 socket，
+      # 无需 services: 块（各测试包自起 postgres:17-alpine / redis 容器）。
+      - name: go test ./...
+        run: go test ./...
+
+  helm:
+    name: helm lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: helm lint（控制面 chart）
+        run: helm lint deploy/helm/sydom-controlplane
