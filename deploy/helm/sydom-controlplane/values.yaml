@@ -41,9 +41,45 @@ ports:
   admin: 8081
   sync: 8082
   health: 8083
+  rest: 8084           # REST/JSON 网关（restGateway.enabled 时起监听）
+  console: 8085        # Web Console BFF（console.enabled 时起监听）
+
+# REST/JSON 网关（SP2）。默认关；开启则控制面起 rest_addr 监听器、Service 增 rest 端口，
+# 可经 Ingress 暴露。生产模式该监听器自持 TLS（同 admin/console，M5.3a fail-close）。
+restGateway:
+  enabled: false
+
+# Web Console 服务端 BFF（SP3）。默认关；开启则起 console_addr 监听器、Service 增 console 端口。
+# baseURL＝对外绝对 URL（OIDC redirect_uri 基址，M6-sso-2；不从请求 Host 派生），
+# 经 Ingress 暴露时须 = https://<ingress.hosts.console>；空 → 企业 SSO fail-close（登录流不起）。
+console:
+  enabled: false
+  baseURL: ""          # 例 https://console.sydom.example.com
 
 service:
   type: ClusterIP
+
+# 对外接入（Ingress，M5.3-k8s Ingress）。默认关；需集群已装 ingress-nginx controller。
+# 只暴露人/程序面（Console + REST + gRPC AdminService）。安全边界：
+#   • policysync mTLS(grpc-sync) 绝不经此终止型 ingress——nginx 会用自身证书代理、
+#     丢失 sidecar 客户端证书身份=破坏 mTLS。sidecar 直连 grpc-sync Service（见 NOTES）。
+#   • health/metrics 不对外暴露。
+# 假定 tls.enabled（后端监听器自持 TLS）：nginx 入口用 ingress TLS 证书对外终止、
+# 对后端重加密（gRPC→backend-protocol GRPCS、HTTP→HTTPS）。因该注解是每 Ingress 对象级，
+# 故渲染为两个 Ingress：<fullname>-grpc（GRPCS，admin）与 <fullname>-http（HTTPS，console/rest）。
+ingress:
+  enabled: false
+  className: "nginx"
+  # 入口对外 TLS（终止）。secretName 指向含 tls.crt/tls.key 的 Secret（cert-manager 或手动创建）。
+  tls:
+    enabled: true
+    secretName: "sydom-controlplane-ingress-tls"
+  annotations: {}      # 追加自定义 nginx 注解（backend-protocol 已按面自动注入，勿在此覆盖）
+  # 各面独立 host；host 为空则该面不路由。console/rest 还须对应 .enabled=true 才渲染规则。
+  hosts:
+    console: ""        # 例 console.sydom.example.com（须 = console.baseURL 的主机名）
+    rest: ""           # 例 rest.sydom.example.com
+    admin: ""          # 例 admin.sydom.example.com（gRPC AdminService，GRPCS）
 
 resources:
   requests: { cpu: 100m, memory: 128Mi }

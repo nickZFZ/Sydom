@@ -1,0 +1,90 @@
+{{- /*
+对外接入（Ingress，M5.3-k8s Ingress，controller=ingress-nginx）。默认关。
+backend-protocol 是每 Ingress 对象级注解，故按后端协议拆两个 Ingress：
+  • <fullname>-http：backend-protocol HTTPS，路由 Console / REST（人+程序 HTTP 面）
+  • <fullname>-grpc：backend-protocol GRPCS，路由 gRPC AdminService
+安全边界：policysync mTLS(grpc-sync) 与 health/metrics 绝不经此终止型 ingress 暴露。
+后端各监听器生产模式自持 TLS（M5.3a fail-close）→ nginx 对后端重加密（GRPCS/HTTPS），
+入口用 ingress.tls.secretName 对外终止。gRPC 经 ingress 需 h2，实际要求 ingress.tls.enabled。
+*/}}
+{{- if .Values.ingress.enabled }}
+{{- $fullname := include "sydom-controlplane.fullname" . }}
+{{- $ing := .Values.ingress }}
+{{- $httpHosts := list }}
+{{- if and .Values.console.enabled $ing.hosts.console }}
+{{- $httpHosts = append $httpHosts (dict "host" $ing.hosts.console "svcPort" .Values.ports.console) }}
+{{- end }}
+{{- if and .Values.restGateway.enabled $ing.hosts.rest }}
+{{- $httpHosts = append $httpHosts (dict "host" $ing.hosts.rest "svcPort" .Values.ports.rest) }}
+{{- end }}
+{{- if $httpHosts }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}-http
+  labels:
+    {{- include "sydom-controlplane.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    {{- with $ing.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $ing.className }}
+  {{- if $ing.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range $httpHosts }}
+        - {{ .host | quote }}
+        {{- end }}
+      secretName: {{ $ing.tls.secretName }}
+  {{- end }}
+  rules:
+    {{- range $httpHosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullname }}
+                port:
+                  number: {{ .svcPort }}
+    {{- end }}
+{{- end }}
+{{- if $ing.hosts.admin }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}-grpc
+  labels:
+    {{- include "sydom-controlplane.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+    {{- with $ing.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $ing.className }}
+  {{- if $ing.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $ing.hosts.admin | quote }}
+      secretName: {{ $ing.tls.secretName }}
+  {{- end }}
+  rules:
+    - host: {{ $ing.hosts.admin | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullname }}
+                port:
+                  number: {{ .Values.ports.admin }}
+{{- end }}
+{{- end }}

@@ -61,6 +61,14 @@ spec:
               containerPort: {{ .Values.ports.sync }}
             - name: health
               containerPort: {{ .Values.ports.health }}
+            {{- if .Values.restGateway.enabled }}
+            - name: rest
+              containerPort: {{ .Values.ports.rest }}
+            {{- end }}
+            {{- if .Values.console.enabled }}
+            - name: console
+              containerPort: {{ .Values.ports.console }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz

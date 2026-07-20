@@ -23,3 +23,17 @@ spec:
       port: {{ .Values.ports.health }}
       targetPort: health
       protocol: TCP
+    {{- if .Values.restGateway.enabled }}
+    - name: rest
+      port: {{ .Values.ports.rest }}
+      targetPort: rest
+      protocol: TCP
+      appProtocol: https
+    {{- end }}
+    {{- if .Values.console.enabled }}
+    - name: console
+      port: {{ .Values.ports.console }}
+      targetPort: console
+      protocol: TCP
+      appProtocol: https
+    {{- end }}
