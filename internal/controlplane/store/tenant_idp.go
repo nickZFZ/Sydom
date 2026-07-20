@@ -37,11 +37,19 @@ func UpsertTenantIdpTx(ctx context.Context, tx cp.DBTX, tenantID int64,
 		`DELETE FROM tenant_idp_domain WHERE tenant_id=$1`, tenantID); err != nil {
 		return err
 	}
+	// 同请求内先归一（小写+去空白）再去重：否则大小写/空白不同但实为同一域的条目会
+	// 逐条插入、第二条撞全局 UNIQUE（uq_tenant_idp_domain）被误判成「他租户占用」。
+	seen := make(map[string]struct{}, len(domains))
 	for _, d := range domains {
+		norm := strings.ToLower(strings.TrimSpace(d))
+		if _, dup := seen[norm]; dup {
+			continue
+		}
+		seen[norm] = struct{}{}
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO tenant_idp_domain (tenant_id, domain) VALUES ($1,$2)`,
-			tenantID, strings.ToLower(strings.TrimSpace(d))); err != nil {
-			return err // 域全局冲突→pq 23505
+			tenantID, norm); err != nil {
+			return err // 域被他租户占用→pq 23505
 		}
 	}
 	return nil

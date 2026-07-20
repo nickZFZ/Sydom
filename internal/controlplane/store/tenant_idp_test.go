@@ -43,6 +43,28 @@ func TestUpsertTenantIdpTx_UpsertAndDomains(t *testing.T) {
 	require.Equal(t, []string{"new.com"}, got2.Domains, "旧域应被替换")
 }
 
+// 同一请求内重复域（大小写/空白差异，归一后相同）应被去重，而非撞全局 UNIQUE 报错。
+// 先前逐条插入不去重，第二条归一后相同的域触发 uq_tenant_idp_domain（pq 23505），
+// 经上层映射成「他租户占用」的 AlreadyExists——对「自重复」是误导。
+func TestUpsertTenantIdpTx_DeduplicatesDomains(t *testing.T) {
+	db := dbtest.SetupSchema(t)
+	ctx := context.Background()
+	var tid int64
+	require.NoError(t, db.QueryRow(`INSERT INTO tenant (name) VALUES ('dedup') RETURNING id`).Scan(&tid))
+
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	require.NoError(t, store.UpsertTenantIdpTx(ctx, tx, tid,
+		"https://issuer", "cid", []byte("enc"),
+		[]string{"Acme.com", "acme.com", "  ACME.com  "}, true, false),
+		"同请求内归一后相同的域应去重，不应撞 UNIQUE 报错")
+	require.NoError(t, tx.Commit())
+
+	got, err := store.TenantIdpOf(ctx, db, tid)
+	require.NoError(t, err)
+	require.Equal(t, []string{"acme.com"}, got.Domains, "重复域应折叠为单条")
+}
+
 func TestDeleteTenantIdpTx(t *testing.T) {
 	db := dbtest.SetupSchema(t)
 	ctx := context.Background()
